@@ -43,8 +43,12 @@
           </div>
           <div class="hero__card">
             <h3>六大阶段进程</h3>
-            <ul class="stage-grid">
-              <li>初识</li>
+            <p class="stage-status">
+              当前阶段：<span id="stage-name">初识</span>
+              <span class="stage-progress" id="stage-progress">1 / 6</span>
+            </p>
+            <ul class="stage-grid" id="stage-grid">
+              <li class="is-active">初识</li>
               <li>暧昧</li>
               <li>确认关系</li>
               <li>热恋</li>
@@ -54,15 +58,15 @@
             <div class="metrics">
               <div>
                 <span>好感度</span>
-                <div class="bar"><span style="width: 68%"></span></div>
+                <div class="bar"><span id="bar-affection" style="width: 68%"></span></div>
               </div>
               <div>
                 <span>默契值</span>
-                <div class="bar"><span style="width: 52%"></span></div>
+                <div class="bar"><span id="bar-chemistry" style="width: 52%"></span></div>
               </div>
               <div>
                 <span>理解度</span>
-                <div class="bar"><span style="width: 40%"></span></div>
+                <div class="bar"><span id="bar-understanding" style="width: 40%"></span></div>
               </div>
             </div>
           </div>
@@ -107,7 +111,7 @@
             <p>聊天式剧情 + 选项推动故事，关键节点可插入个性化记忆。</p>
           </div>
           <div class="chat-layout">
-            <div class="chat">
+            <div class="chat" id="chat-log">
               <div class="bubble bubble--them">
                 我们第一次见面是在？
                 <span class="bubble__hint">📍 请输入地点</span>
@@ -118,10 +122,10 @@
               </div>
             </div>
             <div class="choices">
-              <button>继续聊天</button>
-              <button>制造惊喜</button>
-              <button>保持距离</button>
-              <button class="ghost">保存进度</button>
+              <button data-action="chat">继续聊天</button>
+              <button data-action="surprise">制造惊喜</button>
+              <button data-action="distance">保持距离</button>
+              <button class="ghost" data-action="memory">记录回忆</button>
             </div>
           </div>
         </section>

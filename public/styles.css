@@ -140,12 +140,30 @@ body {
   list-style: none;
 }
 
+.stage-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+.stage-progress {
+  opacity: 0.6;
+}
+
 .stage-grid li {
   background: rgba(255, 255, 255, 0.7);
   padding: 8px 12px;
   border-radius: 12px;
   text-align: center;
   font-size: 0.9rem;
+}
+
+.stage-grid li.is-active {
+  background: rgba(255, 139, 179, 0.25);
+  border: 1px solid rgba(255, 139, 179, 0.6);
 }
 
 .metrics {
@@ -254,6 +272,43 @@ body {
 
 .choices button {
   background: rgba(255, 255, 255, 0.9);
+}
+
+.app[data-theme="mirror"] {
+  color: var(--text-light);
+}
+
+.app[data-theme="mirror"] .top-bar,
+.app[data-theme="mirror"] .panel,
+.app[data-theme="mirror"] .hero__card {
+  background: rgba(26, 22, 37, 0.75);
+  color: var(--text-light);
+}
+
+.app[data-theme="mirror"] .stage-grid li,
+.app[data-theme="mirror"] .card,
+.app[data-theme="mirror"] .ending-card {
+  background: rgba(74, 59, 107, 0.6);
+  color: var(--text-light);
+}
+
+.app[data-theme="mirror"] .bubble--them,
+.app[data-theme="mirror"] .choices button {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-light);
+}
+
+.app[data-theme="mirror"] .bubble--me {
+  background: rgba(255, 139, 179, 0.25);
+}
+
+.app[data-theme="mirror"] .ghost {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-light);
+}
+
+.app[data-theme="mirror"] .bar {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .panel--ending {
