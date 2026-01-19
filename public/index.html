@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Love Simulator · 恋人模拟器</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app" data-theme="bright">
+      <header class="top-bar">
+        <div class="brand">
+          <span class="brand__dot"></span>
+          <div>
+            <h1>Love Simulator</h1>
+            <p>恋人模拟器 · AI剧情恋爱冒险</p>
+          </div>
+        </div>
+        <div class="lang-toggle">
+          <button class="pill pill--active" data-lang="zh">中文</button>
+          <button class="pill" data-lang="en">English</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero__content">
+            <h2>开始你的爱情故事</h2>
+            <p>
+              体验六大恋爱阶段、三维数值成长与镜像视角反转。输入你的独家记忆，让AI
+              帮你书写专属恋爱冒险。
+            </p>
+            <div class="hero__actions">
+              <button class="cta">开始游戏</button>
+              <button class="ghost">查看设计蓝图</button>
+            </div>
+          </div>
+          <div class="hero__card">
+            <h3>六大阶段进程</h3>
+            <p class="stage-status">
+              当前阶段：<span id="stage-name">初识</span>
+              <span class="stage-progress" id="stage-progress">1 / 6</span>
+            </p>
+            <ul class="stage-grid" id="stage-grid">
+              <li class="is-active">初识</li>
+              <li>暧昧</li>
+              <li>确认关系</li>
+              <li>热恋</li>
+              <li>磨合</li>
+              <li>稳定/危机</li>
+            </ul>
+            <div class="metrics">
+              <div>
+                <span>好感度</span>
+                <div class="bar"><span id="bar-affection" style="width: 68%"></span></div>
+              </div>
+              <div>
+                <span>默契值</span>
+                <div class="bar"><span id="bar-chemistry" style="width: 52%"></span></div>
+              </div>
+              <div>
+                <span>理解度</span>
+                <div class="bar"><span id="bar-understanding" style="width: 40%"></span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel__header">
+            <h3>角色信息设置</h3>
+            <p>三步完成角色与AI配置，系统会生成专属角色卡片。</p>
+          </div>
+          <div class="panel__grid">
+            <article class="card">
+              <h4>我的资料</h4>
+              <ul>
+                <li>姓名、性别、MBTI、星座</li>
+                <li>爱好标签多选</li>
+                <li>特殊记忆输入</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h4>恋人设定</h4>
+              <ul>
+                <li>性格标签与兴趣偏好</li>
+                <li>外观或习惯细节</li>
+                <li>专属互动口吻</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h4>API 配置</h4>
+              <ul>
+                <li>支持 OpenAI / Gemini</li>
+                <li>本地缓存 API Key</li>
+                <li>进度多端保存</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel--chat">
+          <div class="panel__header">
+            <h3>游戏主界面</h3>
+            <p>聊天式剧情 + 选项推动故事，关键节点可插入个性化记忆。</p>
+          </div>
+          <div class="chat-layout">
+            <div class="chat" id="chat-log">
+              <div class="bubble bubble--them">
+                我们第一次见面是在？
+                <span class="bubble__hint">📍 请输入地点</span>
+              </div>
+              <div class="bubble bubble--me">在海边的咖啡馆。</div>
+              <div class="bubble bubble--them">
+                你把窗边的位置留给了我，这让我觉得很温暖。
+              </div>
+            </div>
+            <div class="choices">
+              <button data-action="chat">继续聊天</button>
+              <button data-action="surprise">制造惊喜</button>
+              <button data-action="distance">保持距离</button>
+              <button class="ghost" data-action="memory">记录回忆</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--ending">
+          <div class="panel__header">
+            <h3>结局与镜像视角</h3>
+            <p>故事结束后可进入镜像模式，体验恋人真实内心。</p>
+          </div>
+          <div class="ending-grid">
+            <div class="ending-card">
+              <h4>💍 完美结局</h4>
+              <p>灵魂伴侣，彼此理解并走向未来。</p>
+            </div>
+            <div class="ending-card">
+              <h4>💑 幸福结局</h4>
+              <p>稳定陪伴，继续经营恋情。</p>
+            </div>
+            <div class="ending-card">
+              <h4>😐 普通结局</h4>
+              <p>感情平淡，但仍愿意同行。</p>
+            </div>
+            <div class="ending-card">
+              <h4>💔 遗憾结局</h4>
+              <p>分歧累积，最终分手。</p>
+            </div>
+            <div class="ending-card">
+              <h4>😢 悲伤结局</h4>
+              <p>不欢而散，留下遗憾。</p>
+            </div>
+          </div>
+          <div class="mirror">
+            <div>
+              <h4>镜像视角</h4>
+              <p>
+                切换暗紫模式，展示恋人独白、隐藏线索与时间轴回放。
+              </p>
+            </div>
+            <button class="cta">查看真相</button>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
