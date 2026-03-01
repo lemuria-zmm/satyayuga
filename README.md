@@ -1,4 +1,4 @@
-# 恋人模拟器 (Love Simulator)
+# satyayuga · 恋人模拟器 (Love Simulator)
 
 基于 `React + framer-motion + lucide-react` 的双语（中文/English）剧情驱动文字恋爱冒险游戏。
 
