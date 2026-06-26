@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>丹青院·世界观设计文档</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400&display=swap');
+
+  :root {
+    --ink: #1a1208;
+    --ink-light: #3d2e1a;
+    --silk: #f5f0e8;
+    --silk-dark: #e8e0ce;
+    --vermillion: #c0392b;
+    --gold: #b8860b;
+    --gold-light: #d4a843;
+    --jade: #2d6b5a;
+    --jade-light: #4a9a82;
+    --azure: #1a4a6b;
+    --mist: #8fa3a8;
+    --border: rgba(184, 134, 11, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: #2a1f0e;
+    background-image: 
+      radial-gradient(ellipse at 20% 20%, rgba(184,134,11,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(45,107,90,0.06) 0%, transparent 60%);
+    font-family: 'Noto Serif SC', serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .outer-frame {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--silk);
+    border: 1px solid var(--gold);
+    box-shadow: 
+      0 0 0 4px rgba(184,134,11,0.15),
+      0 0 0 8px rgba(184,134,11,0.08),
+      0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .outer-frame::before, .outer-frame::after {
+    content: '';
+    position: absolute;
+    left: 12px; right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .outer-frame::before { top: 12px; }
+  .outer-frame::after { bottom: 12px; }
+
+  /* Corner ornaments */
+  .corner {
+    position: absolute;
+    width: 30px; height: 30px;
+    border-color: var(--gold);
+    border-style: solid;
+    opacity: 0.7;
+  }
+  .corner-tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+  .corner-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+  .corner-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+  .corner-br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+  .main-content {
+    padding: 60px 70px;
+  }
+
+  /* Header */
+  .doc-header {
+    text-align: center;
+    padding-bottom: 50px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 50px;
+    position: relative;
+  }
+
+  .doc-header::after {
+    content: '◆';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--silk);
+    padding: 0 12px;
+    color: var(--gold);
+    font-size: 12px;
+  }
+
+  .game-title {
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 12px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .game-subtitle {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--gold);
+    letter-spacing: 6px;
+    margin-bottom: 20px;
+  }
+
+  .doc-meta {
+    font-size: 12px;
+    color: var(--mist);
+    letter-spacing: 2px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .tag-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    padding: 3px 12px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 50px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .section-num {
+    font-size: 11px;
+    color: var(--vermillion);
+    letter-spacing: 2px;
+    font-family: 'Noto Sans SC', sans-serif;
+    min-width: 60px;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 4px;
+    position: relative;
+    padding-bottom: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+
+  /* Prose */
+  .prose {
+    font-size: 15px;
+    line-height: 2;
+    color: var(--ink-light);
+    text-align: justify;
+  }
+
+  .prose p { margin-bottom: 16px; }
+
+  .prose .highlight {
+    color: var(--vermillion);
+    font-weight: 600;
+  }
+
+  .prose .gold { color: var(--gold); }
+
+  /* Quote block */
+  .quote-block {
+    margin: 24px 0;
+    padding: 20px 28px;
+    border-left: 3px solid var(--gold);
+    background: rgba(184,134,11,0.04);
+    font-size: 14px;
+    line-height: 2;
+    color: var(--ink);
+    font-style: normal;
+    letter-spacing: 1px;
+  }
+
+  /* Info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .info-item {
+    padding: 16px 20px;
+    background: rgba(184,134,11,0.05);
+    border: 1px solid var(--border);
+  }
+
+  .info-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--mist);
+    font-family: 'Noto Sans SC', sans-serif;
+    margin-bottom: 6px;
+  }
+
+  .info-value {
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  /* Character cards */
+  .character-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-top: 20px;
+  }
+
+  .char-card {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .char-card.protagonist {
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(184,134,11,0.1);
+  }
+
+  .char-badge {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    text-align: center;
+  }
+
+  .char-badge.vermillion { background: #8b1a12; }
+  .char-badge.jade { background: var(--jade); }
+  .char-badge.azure { background: var(--azure); }
+  .char-badge.gold-bg { background: #6b5010; }
+  .char-badge.dark { background: #2a1f0e; }
+
+  .char-name-big {
+    font-size: 24px;
+    color: #f5f0e8;
+    letter-spacing: 4px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .char-role {
+    font-size: 11px;
+    color: rgba(245,240,232,0.6);
+    letter-spacing: 2px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .char-body {
+    padding: 20px 24px;
+    background: rgba(184,134,11,0.02);
+  }
+
+  .char-tagline {
+    font-size: 13px;
+    color: var(--vermillion);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .char-desc {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink-light);
+    margin-bottom: 12px;
+  }
+
+  .char-traits {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .trait {
+    font-size: 11px;
+    padding: 2px 10px;
+    border: 1px solid var(--border);
+    color: var(--mist);
+    letter-spacing: 1px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .trait.red { border-color: rgba(192,57,43,0.4); color: var(--vermillion); }
+  .trait.jade { border-color: rgba(45,107,90,0.4); color: var(--jade-light); }
+
+  /* System cards */
+  .system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .system-card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    background: rgba(184,134,11,0.03);
+  }
+
+  .system-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .system-name {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .system-desc {
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--mist);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  /* Rank table */
+  .rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+
+  .rank-table th {
+    background: var(--ink);
+    color: var(--silk);
+    padding: 10px 16px;
+    text-align: left;
+    letter-spacing: 2px;
+    font-weight: 400;
+    font-size: 11px;
+  }
+
+  .rank-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-light);
+    vertical-align: top;
+    line-height: 1.7;
+  }
+
+  .rank-table tr:hover td { background: rgba(184,134,11,0.04); }
+
+  .rank-num {
+    color: var(--vermillion);
+    font-weight: 600;
+  }
+
+  /* Ending table */
+  .ending-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .ending-card {
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .ending-card.true-end {
+    border-color: var(--vermillion);
+    background: rgba(192,57,43,0.04);
+    grid-column: 1 / -1;
+  }
+
+  .ending-type {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--mist);
+    font-family: 'Noto Sans SC', sans-serif;
+    margin-bottom: 6px;
+  }
+
+  .ending-name {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .ending-card.true-end .ending-name { color: var(--vermillion); }
+
+  .ending-desc {
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink-light);
+  }
+
+  .ending-trigger {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--mist);
+    font-family: 'Noto Sans SC', sans-serif;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* Painting list */
+  .painting-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .painting-item {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+
+  .painting-meta {
+    background: rgba(26,16,8,0.06);
+    padding: 14px 16px;
+    border-right: 1px solid var(--border);
+  }
+
+  .painting-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  .painting-arch {
+    font-size: 11px;
+    color: var(--vermillion);
+    letter-spacing: 1px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .painting-info {
+    padding: 14px 20px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--ink-light);
+  }
+
+  .painting-role {
+    font-size: 11px;
+    color: var(--jade-light);
+    letter-spacing: 1px;
+    font-family: 'Noto Sans SC', sans-serif;
+    margin-top: 6px;
+  }
+
+  /* Scene grid */
+  .scene-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .scene-card {
+    padding: 16px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .scene-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .scene-name {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .scene-desc {
+    font-size: 11px;
+    color: var(--mist);
+    line-height: 1.7;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  /* State machine */
+  .state-flow {
+    margin: 20px 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    background: rgba(26,16,8,0.03);
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .flow-node {
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--ink);
+    background: var(--silk);
+  }
+
+  .flow-node.trigger {
+    border-color: var(--vermillion);
+    color: var(--vermillion);
+  }
+
+  .flow-node.result {
+    border-color: var(--jade);
+    color: var(--jade);
+  }
+
+  .flow-arrow {
+    color: var(--gold);
+    font-size: 14px;
+  }
+
+  .flow-condition {
+    font-size: 11px;
+    color: var(--mist);
+    font-family: 'Noto Sans SC', sans-serif;
+    padding: 0 4px;
+  }
+
+  /* Footer */
+  .doc-footer {
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  .footer-ornament {
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 20px;
+    margin-bottom: 12px;
+  }
+
+  .footer-text {
+    font-size: 11px;
+    color: var(--mist);
+    letter-spacing: 3px;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 40px 0;
+  }
+
+  /* LLM anchor box */
+  .anchor-box {
+    background: rgba(26,16,8,0.06);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 13px;
+    font-family: 'Noto Sans SC', sans-serif;
+    line-height: 2;
+    color: var(--ink-light);
+  }
+
+  .anchor-box .label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--vermillion);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .anchor-item {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .anchor-key {
+    color: var(--gold);
+    font-size: 12px;
+  }
+
+  @media (max-width: 700px) {
+    .main-content { padding: 40px 28px; }
+    .info-grid, .system-grid, .ending-grid, .scene-grid { grid-template-columns: 1fr; }
+    .char-card { grid-template-columns: 1fr; }
+    .painting-item { grid-template-columns: 1fr; }
+    .ending-card.true-end { grid-column: 1; }
+    .game-title { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="outer-frame">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <div class="main-content">
+
+    <!-- Header -->
+    <div class="doc-header">
+      <div class="game-title">丹青院</div>
+      <div class="game-subtitle">墨枢秘录</div>
+      <div class="doc-meta">游戏世界观设计文档 · 内部版本 v0.1</div>
+      <div class="tag-row">
+        <span class="tag">架空历史</span>
+        <span class="tag">恋爱模拟</span>
+        <span class="tag">解谜探索</span>
+        <span class="tag">LLM驱动叙事</span>
+      </div>
+    </div>
+
+    <!-- 一、世界观概述 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 01</span>
+        <span class="section-title">世界观概述</span>
+      </div>
+
+      <div class="quote-block">
+        本朝自太祖定鼎，于宫城西侧设丹青院，隶属内廷，专司宫廷绘事。<br>
+        本朝某年，圣上广开画学，以诗句命题，取天下画才入院供奉。<br>
+        玩家，正是这一年踏入丹青院的考生。<br>
+        <br>
+        而希孟，已在院中。
+      </div>
+
+      <div class="prose">
+        <p>《丹青院·墨枢秘录》是一款以架空北宋宫廷为背景的<span class="highlight">恋爱模拟 × 解谜探索</span>游戏。世界观以北宋崇宁年间（约1104年）翰林图画院的真实制度为原型，经过架空处理，保留历史的文化气质与视觉美感，规避可被考证的专有名词与史实细节。</p>
+
+        <p>游戏以<span class="highlight">丹青院</span>为核心空间，玩家扮演初入院门的画学考生，在技艺修炼与职级晋升的主轴之外，逐渐卷入一场围绕<span class="highlight">天才画师希孟</span>与一幅神秘长卷的秘密之中。</p>
+
+        <p>游戏的叙事核心是：<span class="gold">一个人将自己的一生画进了一幅画，而我们只有读懂那幅画，才能读懂他。</span></p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">架空处理原则</div>
+          <div class="info-value">保留历史氛围与制度感，替换所有可被考证的专有名词。角色去姓留名，画作改题不改意，朝代称"本朝"不点明。</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">叙事基调</div>
+          <div class="info-value">东方美学 · 克制情感 · 谜题驱动 · 开放结局。美好与哀伤并存，选择有重量，没有绝对正确的路。</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">目标用户</div>
+          <div class="info-value">中文用户为主，18岁以上。喜好历史架空题材、乙女/耽美游戏、剧情向解谜的玩家群体。</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">玩家性别</div>
+          <div class="info-value">玩家可选男女，游戏文本采用性别中性化处理，恋爱线对所有性别开放。LLM生成时注入玩家性别参数。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 二、专有名词对照 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 02</span>
+        <span class="section-title">架空名词对照表</span>
+      </div>
+
+      <div class="prose">
+        <p>以下为历史原型与游戏内架空名称的对照。游戏内所有文本、UI、LLM提示词均使用架空名称，禁止出现历史原名。</p>
+      </div>
+
+      <table class="rank-table" style="margin-top:16px">
+        <thead>
+          <tr>
+            <th style="width:25%">历史原型</th>
+            <th style="width:25%">游戏内名称</th>
+            <th>处理说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>翰林图画院</td><td><strong>丹青院</strong></td><td>核心场所，保留"院"的建制感</td></tr>
+          <tr><td>宋徽宗</td><td><strong>圣上 / 院主</strong></td><td>只以称谓出现，不具名，保留鉴赏者与最高裁判身份</td></tr>
+          <tr><td>蔡京</td><td><strong>太傅 / 权臣</strong></td><td>作为政治压力的象征存在，不具名</td></tr>
+          <tr><td>王希孟</td><td><strong>希孟</strong>（去姓）</td><td>男主，保留名，去掉姓氏</td></tr>
+          <tr><td>张择端</td><td><strong>择端</strong></td><td>功能型NPC，界画/市井技能导师</td></tr>
+          <tr><td>李唐</td><td><strong>唐翁</strong></td><td>功能型NPC，山水技能导师，老者身份</td></tr>
+          <tr><td>李嵩</td><td><strong>嵩</strong></td><td>功能型NPC，人物技能导师</td></tr>
+          <tr><td>《千里江山图》</td><td><strong>《万峰碧色图》</strong></td><td>希孟主线核心画作，青绿山水长卷</td></tr>
+          <tr><td>《骷髅幻戏图》</td><td><strong>《骸游图》</strong></td><td>解谜核心，密室主线画作</td></tr>
+          <tr><td>《清明上河图》</td><td><strong>《京城春市图》</strong></td><td>择端线，市井场景载体</td></tr>
+          <tr><td>《货郎图》</td><td><strong>《百货行吟图》</strong></td><td>嵩线，人物解谜素材</td></tr>
+          <tr><td>《溪山行旅图》</td><td><strong>《烟岚行旅图》</strong></td><td>考试检定素材，山水科题目</td></tr>
+          <tr><td>画学（科举）</td><td><strong>丹青试</strong></td><td>院内考试制度，保留诗题命画的机制</td></tr>
+          <tr><td>玄览阁（虚构）</td><td><strong>秘阁</strong></td><td>院内禁地，封存画作，解谜核心空间</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 三、主要角色 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 03</span>
+        <span class="section-title">主要角色设定</span>
+      </div>
+
+      <div class="character-section">
+
+        <!-- 玩家 -->
+        <div class="char-card protagonist">
+          <div class="char-badge dark">
+            <div class="char-name-big">玩家</div>
+            <div class="char-role">主角 · 考生</div>
+          </div>
+          <div class="char-body">
+            <div class="char-tagline">「我只是想画好画——但这里没有什么是简单的。」</div>
+            <div class="char-desc">
+              性别由玩家自选，进院前可自定义名字。出身平民，凭天资通过丹青试初试进入画院，是"画学"制度设立后的第一批考生之一。
+              初入院门时技能平庸但潜力未定，与资深院生希孟的偶然相遇，改变了一切的走向。
+            </div>
+            <div class="char-traits">
+              <span class="trait">性别可选</span>
+              <span class="trait">名字自定义</span>
+              <span class="trait">初始技能随机</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 希孟 -->
+        <div class="char-card">
+          <div class="char-badge vermillion">
+            <div class="char-name-big">希孟</div>
+            <div class="char-role">男主 · 天才画师</div>
+          </div>
+          <div class="char-body">
+            <div class="char-tagline">「你问我为什么画这幅画。我不知道——或者说，我不想知道。」</div>
+            <div class="char-desc">
+              丹青院资历最浅却才气最盛的画师，年纪与玩家相仿。擅青绿山水，正秘密绘制一幅规模空前的长卷《万峰碧色图》。
+              外冷内热，习惯用沉默保护自己。极少开口，但说出口的话值得反复咀嚼。他在乎很多事，但绝不会说他在乎。
+              <br><br>
+              <strong>谜题核心：</strong>他为什么要画这幅画？圣上赏赐权臣的画背后藏着什么？他的消失，是命运还是选择？
+            </div>
+            <div class="char-traits">
+              <span class="trait red">主线男主</span>
+              <span class="trait red">可攻略</span>
+              <span class="trait">好感度系统绑定</span>
+              <span class="trait">命运结局分支</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 择端 -->
+        <div class="char-card">
+          <div class="char-badge azure">
+            <div class="char-name-big">择端</div>
+            <div class="char-role">NPC · 界画导师</div>
+          </div>
+          <div class="char-body">
+            <div class="char-tagline">「街上的人比宫里的画有意思多了。」</div>
+            <div class="char-desc">
+              院中前辈，善界画与市井场景，是少有的喜欢在宫外游荡写生的画师。温和、健谈，对玩家友善，时常带玩家出院门体验市井生活。
+              正在秘密绘制一幅记录京城繁华的长卷《京城春市图》，但他的观察眼光远比画面上看到的更加深刻与危险。
+            </div>
+            <div class="char-traits">
+              <span class="trait jade">界画技能导师</span>
+              <span class="trait jade">屋木技能导师</span>
+              <span class="trait">市井随机事件触发</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 唐翁 -->
+        <div class="char-card">
+          <div class="char-badge gold-bg">
+            <div class="char-name-big">唐翁</div>
+            <div class="char-role">NPC · 山水导师</div>
+          </div>
+          <div class="char-body">
+            <div class="char-tagline">「画山水，先要知道自己站在哪里。」</div>
+            <div class="char-desc">
+              院中资历最深的老画师，北方山水大家，性格严苛但公正。对玩家态度冷淡，但一旦被认可，会传授最核心的笔墨秘诀。
+              他见过太多天才在这个院子里消失——对希孟的态度复杂，既欣赏又隐隐担忧。
+            </div>
+            <div class="char-traits">
+              <span class="trait jade">山水技能导师</span>
+              <span class="trait">考试内部点评</span>
+              <span class="trait">解锁斧劈皴秘法</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 嵩 -->
+        <div class="char-card">
+          <div class="char-badge jade">
+            <div class="char-name-big">嵩</div>
+            <div class="char-role">NPC · 人物导师</div>
+          </div>
+          <div class="char-body">
+            <div class="char-tagline">「我只画我见过的人。那些人值得被记住。」</div>
+            <div class="char-desc">
+              出身低微、靠技艺升至艺学的画师，擅人物与风俗画，对市井底层有深厚情感。与权贵保持距离，内心有强烈的社会意识。
+              他的《百货行吟图》系列藏有关于京城底层生活的真实记录，是重要的解谜线索来源之一。
+            </div>
+            <div class="char-traits">
+              <span class="trait jade">人物技能导师</span>
+              <span class="trait jade">佛道技能导师</span>
+              <span class="trait">《百货行吟图》解谜线索</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LLM人设锚 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">APPENDIX</span>
+        <span class="section-title">LLM 角色人设锚（提示词工程用）</span>
+      </div>
+
+      <div class="prose" style="margin-bottom:16px">
+        <p>以下为希孟的核心人设锚，所有涉及希孟的LLM调用必须将此段注入系统提示词。其他角色格式相同，后续补充。</p>
+      </div>
+
+      <div class="anchor-box">
+        <span class="label">CHAR ANCHOR · 希孟 · 系统提示词注入段</span>
+        <div class="anchor-item"><span class="anchor-key">性格核心：</span><span>外冷内热，习惯用沉默保护自己，极少主动靠近他人</span></div>
+        <div class="anchor-item"><span class="anchor-key">说话特征：</span><span>语言简短克制，不解释自己的情绪，偶尔用反问代替回应</span></div>
+        <div class="anchor-item"><span class="anchor-key">禁止行为：</span><span>主动示好、撒娇、卖萌、直白说出"我喜欢你"、过度解释自己</span></div>
+        <div class="anchor-item"><span class="anchor-key">情感表达：</span><span>通过行动而非语言——递一支笔、在玩家面前展开画卷、沉默地停留</span></div>
+        <div class="anchor-item"><span class="anchor-key">对画的态度：</span><span>谈到《万峰碧色图》时态度微妙，有时沉默，有时用"它"代替"我"</span></div>
+        <div class="anchor-item"><span class="anchor-key">OOC禁止：</span><span>不得出现现代语气词、网络用语；不得主动发起亲密肢体接触；不得以积极正向的态度面对自己的命运</span></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 四、核心系统 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 04</span>
+        <span class="section-title">核心游戏系统</span>
+      </div>
+
+      <div class="system-grid">
+        <div class="system-card">
+          <div class="system-icon">🖌️</div>
+          <div class="system-name">技能系统</div>
+          <div class="system-desc">六科各0-100分：佛道、人物、山水、鸟兽、花竹、屋木。体力制（每日10点），通过练习、请教NPC、写生提升。考试科目与对应技能检定挂钩。</div>
+        </div>
+        <div class="system-card">
+          <div class="system-icon">📜</div>
+          <div class="system-name">考试系统</div>
+          <div class="system-desc">三轮制：画论问答→诗题作画（LLM出题+评分）→技能检定。诗题考试为核心体验，玩家选构图方案，LLM扮演考官生成评语，不同方案影响得分。</div>
+        </div>
+        <div class="system-card">
+          <div class="system-icon">🏅</div>
+          <div class="system-name">晋升系统</div>
+          <div class="system-desc">五阶：学子→画正→艺学→祗候→待诏。每月开放一次丹青试，技能与考试综合评定，晋升解锁新场景、新剧情与新道具。</div>
+        </div>
+        <div class="system-card">
+          <div class="system-icon">🌸</div>
+          <div class="system-name">好感度系统</div>
+          <div class="system-desc">核心绑定希孟，0-100分五档。日常互动（观画/切磋/闲谈）消耗体力触发，不同档位解锁专属场景、技法传授、支线事件与结局分支。</div>
+        </div>
+        <div class="system-card">
+          <div class="system-icon">🔍</div>
+          <div class="system-name">解谜系统</div>
+          <div class="system-desc">三层结构：视觉观察→线索拼合→解读选择。以真实宋画为素材，玩家选择解读方向，LLM根据选择生成希孟的反应。无标准答案，解读影响剧情走向。</div>
+        </div>
+        <div class="system-card">
+          <div class="system-icon">🗂️</div>
+          <div class="system-name">收藏系统</div>
+          <div class="system-desc">完成特定条件（解谜/考试高分/好感度达标）自动解锁画作档案。每幅画包含架空简介、创作背景、解谜解析，类似互动百科。MVP阶段交易功能后置。</div>
+        </div>
+      </div>
+
+      <!-- 时间系统 -->
+      <div style="margin-top: 24px;">
+        <div class="prose"><p style="margin-bottom:10px"><strong>时间/日历系统</strong></p></div>
+        <div class="anchor-box">
+          <span class="label">TIME SYSTEM</span>
+          <div class="anchor-item"><span class="anchor-key">基本单位：</span><span>游戏月（现实约7天），每月含30个行动点</span></div>
+          <div class="anchor-item"><span class="anchor-key">每日行动：</span><span>10点体力，分配给练习/互动/写生/解谜，无法储存</span></div>
+          <div class="anchor-item"><span class="anchor-key">月末事件：</span><span>丹青试考试、季节随机事件、希孟画作进度推进</span></div>
+          <div class="anchor-item"><span class="anchor-key">叙事压力：</span><span>希孟的《万峰碧色图》进度条随月份推进（约12个游戏月完成）。进度100%时，真结局触发窗口开启。玩家能感知到"时间不多了"。</span></div>
+          <div class="anchor-item"><span class="anchor-key">季节变化：</span><span>春/夏/秋/冬对应不同的随机事件池、场景描述与互动文本，增强沉浸感</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 五、职级系统 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 05</span>
+        <span class="section-title">职级晋升路径</span>
+      </div>
+
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th>阶级</th>
+            <th>称谓</th>
+            <th>晋升条件</th>
+            <th>解锁内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="rank-num">一阶</span></td>
+            <td><strong>学子</strong></td>
+            <td>入院即得，无条件</td>
+            <td>基础场景、基础互动、初识希孟</td>
+          </tr>
+          <tr>
+            <td><span class="rank-num">二阶</span></td>
+            <td><strong>画正</strong></td>
+            <td>任意两科技能≥30，首次丹青试合格</td>
+            <td>解锁秘阁入口、希孟第一次主动开口、《骸游图》出现</td>
+          </tr>
+          <tr>
+            <td><span class="rank-num">三阶</span></td>
+            <td><strong>艺学</strong></td>
+            <td>四科技能≥50，丹青试成绩优</td>
+            <td>解锁写生地图（院外）、与希孟夜谈场景、《万峰碧色图》进度首次可见</td>
+          </tr>
+          <tr>
+            <td><span class="rank-num">四阶</span></td>
+            <td><strong>祗候</strong></td>
+            <td>六科技能≥65，丹青试名列前茅，解开秘阁第一幅画</td>
+            <td>解锁希孟的私人画室（寝室/密室）、圣上首次出场、政治线剧情开启</td>
+          </tr>
+          <tr>
+            <td><span class="rank-num">五阶</span></td>
+            <td><strong>待诏</strong></td>
+            <td>六科均≥80，丹青试第一，解开秘阁至少三幅画</td>
+            <td>游戏主线目标达成，触发结局判断，玩家此时做出最后的选择</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 六、好感度系统 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 06</span>
+        <span class="section-title">好感度系统（希孟线）</span>
+      </div>
+
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th>好感度</th>
+            <th>关系档位</th>
+            <th>希孟的状态变化</th>
+            <th>解锁内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0–20</td>
+            <td>陌路</td>
+            <td>几乎不主动搭话，对玩家视而不见</td>
+            <td>基础偶遇对话（LLM生成，态度冷漠）</td>
+          </tr>
+          <tr>
+            <td>20–40</td>
+            <td>同僚</td>
+            <td>开始注意到玩家的画，偶尔停下来看</td>
+            <td>解锁"观画"互动场景，希孟偶尔给出一句评价</td>
+          </tr>
+          <tr>
+            <td>40–60</td>
+            <td>同道</td>
+            <td>会在玩家练习时出现，不说话，但不离开</td>
+            <td>解锁青绿山水技法传授；触发第一次希孟主动的场景</td>
+          </tr>
+          <tr>
+            <td>60–80</td>
+            <td>知己</td>
+            <td>开始谈及《万峰碧色图》；夜里有时会来找玩家</td>
+            <td>解锁秘阁共同解谜场景；希孟第一次展示自己画作的局部</td>
+          </tr>
+          <tr>
+            <td>80–100</td>
+            <td>莫逆</td>
+            <td>「我想让你看这幅画完成的样子。」</td>
+            <td>解锁真结局选择窗口；希孟消失前最后的场景；三种消失方式分支</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="prose" style="margin-top:20px">
+        <p>好感度提升方式：日常互动（观画+2、切磋+3、闲谈+1）、解谜结果（选中希孟相关解读+5）、特定剧情节点（不可复现，+10~+20）。好感度不会因任何选择而下降——希孟的疏远通过叙事表现，不以数值体现。</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 七、解谜系统 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 07</span>
+        <span class="section-title">解谜系统设计</span>
+      </div>
+
+      <div class="prose">
+        <p>秘阁共封存<span class="highlight">七幅画卷</span>，每幅对应一层真相，构成游戏的核心叙事骨架。解谜采用三层递进结构，没有标准答案，玩家的解读选择影响后续剧情走向而非判断对错。</p>
+      </div>
+
+      <div class="painting-list">
+        <div class="painting-item">
+          <div class="painting-meta">
+            <div class="painting-title">《骸游图》</div>
+            <div class="painting-arch">原型：骷髅幻戏图</div>
+          </div>
+          <div class="painting-info">
+            骷髅操控傀儡、货担药瓶、哺乳母子同处一图。三层谜题：视觉细节→药贩身份线索→权力操控的解读。
+            <div class="painting-role">秘阁第一幅 · 解锁条件：晋升画正 · 叙事功能：引入"操控与被操控"的主题，预示政治线</div>
+          </div>
+        </div>
+        <div class="painting-item">
+          <div class="painting-meta">
+            <div class="painting-title">《百货行吟图》</div>
+            <div class="painting-arch">原型：货郎图</div>
+          </div>
+          <div class="painting-info">
+            嵩所作，记录京城底层货郎与儿童。谜题层涉及画中人物的真实身份——某人的孩子？某事的目击者？
+            <div class="painting-role">秘阁第二幅 · 解锁条件：与嵩好感度≥40 · 叙事功能：建立市井视角，补充政治事件的民间维度</div>
+          </div>
+        </div>
+        <div class="painting-item">
+          <div class="painting-meta">
+            <div class="painting-title">《烟岚行旅图》</div>
+            <div class="painting-arch">原型：溪山行旅图</div>
+          </div>
+          <div class="painting-info">
+            巨碑式山水，行旅人渺小如蚁。谜题涉及画中路人的去向——他们去哪里？从哪里来？画里的地名是否指向真实地点？
+            <div class="painting-role">秘阁第三幅 · 解锁条件：晋升艺学 · 叙事功能：引入"逃离"主题，为希孟出走结局埋线</div>
+          </div>
+        </div>
+        <div class="painting-item">
+          <div class="painting-meta">
+            <div class="painting-title">《京城春市图》局部</div>
+            <div class="painting-arch">原型：清明上河图</div>
+          </div>
+          <div class="painting-info">
+            择端长卷的一个截段，被单独封存。谜题在于：这一段画面里，某个角落有一张面孔——他是谁，为什么要被封存？
+            <div class="painting-role">秘阁第四幅 · 解锁条件：与择端好感度≥60 · 叙事功能：揭示择端知道某个危险的秘密</div>
+          </div>
+        </div>
+        <div class="painting-item">
+          <div class="painting-meta">
+            <div class="painting-title">《万峰碧色图》局部</div>
+            <div class="painting-arch">原型：千里江山图（局部）</div>
+          </div>
+          <div class="painting-info">
+            希孟长卷的一个片段，不知何时被送入秘阁。谜题：这一段山水里，有一个细节与整幅画的风格不符——希孟为什么要在这里留下这个？
+            <div class="painting-role">秘阁第五~七幅 · 随希孟好感度递进解锁 · 叙事功能：核心谜题，逐步揭示希孟的真实意图与命运选择</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 八、主要场景 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 08</span>
+        <span class="section-title">主要游戏场景</span>
+      </div>
+
+      <div class="scene-grid">
+        <div class="scene-card">
+          <div class="scene-icon">🏛️</div>
+          <div class="scene-name">院堂</div>
+          <div class="scene-desc">丹青院主厅，进行技能练习、与NPC偶遇、日常互动的核心场所。每日行动的起点。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">📝</div>
+          <div class="scene-name">考场</div>
+          <div class="scene-desc">丹青试专属空间，每月月末开放。有独立的仪式感UI，诗题在此揭晓，考官评语在此降临。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">📚</div>
+          <div class="scene-name">书房</div>
+          <div class="scene-desc">研读画论、提升理论技能。偶尔发现旧书批注——那是前人留下的线索，也是解谜的素材来源之一。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🔒</div>
+          <div class="scene-name">秘阁</div>
+          <div class="scene-desc">院内禁地，封存画卷之处。解谜核心场景，每次进入需要满足条件。希孟有时会在这里出现，但从不解释原因。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🌿</div>
+          <div class="scene-name">后花园</div>
+          <div class="scene-desc">休憩与私密对话的场所。好感度相关的关键场景多发生在此。季节变化在这里最为明显。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🛏️</div>
+          <div class="scene-name">寝室</div>
+          <div class="scene-desc">玩家私人空间。存放已解锁的画作收藏，查看角色状态与日记（记录剧情摘要）。希孟好感80+解锁他的寝室场景。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🏙️</div>
+          <div class="scene-name">京城街市</div>
+          <div class="scene-desc">晋升艺学后解锁的院外场景，随机事件丰富。与择端写生互动、发现画论素材、触发底层视角叙事的主要地点。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">🌊</div>
+          <div class="scene-name">希孟画室</div>
+          <div class="scene-desc">好感度60+解锁的专属场景。《万峰碧色图》在这里铺展，随进度条变化，画面越来越完整，张力越来越重。</div>
+        </div>
+        <div class="scene-card">
+          <div class="scene-icon">👑</div>
+          <div class="scene-name">御览殿</div>
+          <div class="scene-desc">晋升祗候后触发的特殊场景，圣上亲临鉴赏。政治线剧情在此开启，气氛从此改变。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 九、结局设计 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 09</span>
+        <span class="section-title">结局架构</span>
+      </div>
+
+      <div class="prose" style="margin-bottom:20px">
+        <p>游戏结局由<span class="highlight">职级进度 × 好感度 × 解谜进度 × 关键节点选择</span>四维度共同决定。唯一固定真结局是希孟以某种方式消失，其余结局由玩家路径决定，不存在绝对的"坏结局"，每条路都有其重量。</p>
+      </div>
+
+      <div class="ending-grid">
+
+        <div class="ending-card true-end">
+          <div class="ending-type">TRUE ENDING · 唯一固定真结局</div>
+          <div class="ending-name">「他完成了那幅画」</div>
+          <div class="ending-desc">
+            希孟消失了。《万峰碧色图》完成，被呈入御览殿，转赠权臣，而他本人再无记载。
+            这个结局有三种抵达方式——献祭（画即是他）、抹去（画是证据）、出走（画是告别）——由玩家在最终节点的选择决定其性质，但结果一致：他不在了。
+            真结局达成后，秘阁第七幅画解锁，揭示他留给玩家的最后一个细节。
+          </div>
+          <div class="ending-trigger">触发条件：好感度≥80 + 晋升待诏 + 解开秘阁≥5幅 + 《万峰碧色图》进度100%</div>
+        </div>
+
+        <div class="ending-card">
+          <div class="ending-type">ROUTE ENDING · 希孟线</div>
+          <div class="ending-name">「他留下来了」</div>
+          <div class="ending-desc">
+            在某个关键节点，玩家做出了某种选择，使政治漩涡的力量偏转。希孟没有消失，但也没有完成那幅画。这是一个安静的、有所失去的Happy Ending。
+          </div>
+          <div class="ending-trigger">触发条件：好感度≥80 + 在第五章特定节点选择「阻止他继续画」+ 解谜特定路径</div>
+        </div>
+
+        <div class="ending-card">
+          <div class="ending-type">ROUTE ENDING · 择端线</div>
+          <div class="ending-name">「出了院门，烟火正好」</div>
+          <div class="ending-desc">
+            与择端离开丹青院，隐入京城市井。不是逃跑，是选择。玩家最终没有成为待诏，但得到了另一种自由。
+          </div>
+          <div class="ending-trigger">触发条件：与择端互动≥30次 + 丹青试主动放弃一次 + 特定对话节点</div>
+        </div>
+
+        <div class="ending-card">
+          <div class="ending-type">NORMAL ENDING · 主线</div>
+          <div class="ending-name">「待诏」</div>
+          <div class="ending-desc">
+            玩家成为待诏，这是丹青院的最高位置。希孟已不在，院子里的人来了又走，画还在。这是一个关于留下来的人的结局。
+          </div>
+          <div class="ending-trigger">触发条件：晋升待诏 + 不满足任何特殊结局条件</div>
+        </div>
+
+        <div class="ending-card" style="grid-column: 1 / -1;">
+          <div class="ending-type">HIDDEN ENDING · 需全解谜</div>
+          <div class="ending-name">「秘阁的最后一幅画」</div>
+          <div class="ending-desc">
+            解开秘阁全部七幅画后触发。玩家发现：秘阁从来不是用来保存画的——它是用来保存那些"不该存在的目击者"的记忆的。丹青院的整个建制，背后有一个更深的秘密。这个结局不关乎希孟，关乎整个体制的本质。
+          </div>
+          <div class="ending-trigger">触发条件：解开全部七幅画 + 与所有NPC好感度≥50 + 在御览殿做出特定选择</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 十、MVP开发路径 -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">PART 10</span>
+        <span class="section-title">MVP 开发路径</span>
+      </div>
+
+      <div class="prose" style="margin-bottom:20px">
+        <p>MVP以"走通一条完整主线"为目标，验证核心体验是否成立。完成后应能让玩家体验到：技能成长的满足感、诗题考试的独特性、希孟好感度的情感张力、第一次解谜的惊喜感。</p>
+      </div>
+
+      <div class="state-flow">
+        <div class="flow-row">
+          <span class="flow-node trigger">开局选择性别/姓名</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">进入丹青院·学子阶段</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">第一次遇见希孟（固定场景）</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-node">练习技能 × 3天</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">与希孟互动 × 1次（LLM生成）</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node trigger">月末丹青试（诗题考试）</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-node result">晋升画正</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">秘阁入口解锁</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">发现《骸游图》（第一次解谜）</span>
+        </div>
+        <div class="flow-row">
+          <span class="flow-node trigger">希孟出现，对你的解读做出反应</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node result">好感度第一次突破20</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-node">MVP可玩版本结束</span>
+        </div>
+      </div>
+
+      <table class="rank-table" style="margin-top:16px">
+        <thead>
+          <tr><th>阶段</th><th>核心任务</th><th>技术重点</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Week 1–2</td>
+            <td>基础UI + 数据结构 + 时间系统</td>
+            <td>状态管理、localStorage、场景切换</td>
+          </tr>
+          <tr>
+            <td>Week 3–4</td>
+            <td>考试系统 + LLM首次接入</td>
+            <td>诗题生成提示词、评语生成、API调用</td>
+          </tr>
+          <tr>
+            <td>Week 5–6</td>
+            <td>好感度系统 + 希孟NPC对话</td>
+            <td>人设锚注入、状态变量传参、对话渲染</td>
+          </tr>
+          <tr>
+            <td>Week 7–8</td>
+            <td>解谜系统 + 收藏解锁</td>
+            <td>画作展示、三层谜题交互、档案UI</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      <div class="footer-ornament">◆ ◇ ◆</div>
+      <div class="footer-text">丹青院·墨枢秘录 · 游戏世界观设计文档 v0.1 · 内部使用</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

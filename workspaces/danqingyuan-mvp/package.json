@@ -1,0 +1,27 @@
+{
+  "name": "danqingyuan-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:proxy": "VITE_LLM_ADAPTER=proxy VITE_LLM_PROXY_URL=http://127.0.0.1:8787/api/llm vite --host 127.0.0.1",
+    "llm:proxy": "node server/llm-proxy.mjs",
+    "llm:proxy:openai": "LLM_PROVIDER=openai node server/llm-proxy.mjs",
+    "llm:proxy:deepseek": "LLM_PROVIDER=deepseek node server/llm-proxy.mjs",
+    "llm:smoke": "node scripts/llm-smoke.mjs",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3"
+  }
+}

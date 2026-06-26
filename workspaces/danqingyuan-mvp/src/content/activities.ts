@@ -1,0 +1,335 @@
+import type { LocationId, SkillId, TimeSlot } from '../types';
+
+/**
+ * 活动卡内容池（v2 设计文档 §5）。
+ * 引擎按时段筛选活动卡生成可选行动；选择活动会自动跳转到对应地点。
+ */
+export interface ActivityCard {
+  id: string;
+  label: string;
+  timeSlots: TimeSlot[];
+  locationId: LocationId;
+  staminaCost: number;
+  /** 体力恢复（食单/休息类） */
+  staminaGain?: number;
+  /** 钱文消费（仅市井消费卡，院内供应免费） */
+  moneyCost?: number;
+  effects?: {
+    skills?: Partial<Record<SkillId, number>>;
+    mood?: number;
+    knowledge?: number;
+  };
+  /** 次日晨起体力修正（早歇 +1，蹴鞠 -1） */
+  nextDayStaminaBonus?: number;
+  /** 活动卡道具图（白底 PNG，CSS multiply 融合到纸签上） */
+  art?: string;
+  /**
+   * 行动分轨（2026-06-12 拍板，行动三分法）：
+   * - mechanical（默认，可不填）：午膳/喝茶/投壶/夜市等机械类，走纯模板 + 数值结算，不调 LLM；
+   * - growth：晨课/写生/查证等成长类，调 LLM 两阶段场景，行动仅作背景、叙事主轴交给主线/主题；
+   * - narrative：偶遇/首次到地/主线节拍日，完整 LLM（本轮偶遇系统未做，活动卡暂不用此值）。
+   * 注：判定统一走 sceneEngine.getActionTrack，该字段仅作活动卡的数据来源。
+   */
+  track?: 'mechanical' | 'growth' | 'narrative';
+  /**
+   * 小游戏接入口预留（2026-06-12，本轮全部留空）：
+   * 将来投壶→投掷小游戏、点茶→调茶选项等；有值则 runAction 跳小游戏组件，无值走当前结算。
+   */
+  minigameId?: string;
+  /**
+   * 学识门槛（2026-06-12 Gate①）：玩家学识 ≥ 此值时该活动卡才出现（如书房深查需 ≥10）。
+   * 未设则不 gate。判定在 gameEngine.getDaySlotActions。
+   */
+  minKnowledge?: number;
+  /** 行动结算时落的旗标（2026-06-12，如买画材落 art_supplies_ready buff） */
+  setsFlag?: string;
+  /** 模板文本池，引擎随机取一条（机械类用作正文；成长类仅作 LLM 失败兜底） */
+  narratives: string[];
+}
+
+/** 上午/下午行动（2026-06-11 拍板：修习三签已去除，画技成长走晨课与活动附带收益） */
+export const DAY_ACTIVITIES: ActivityCard[] = [
+  {
+    id: 'library_research',
+    art: '/cards/tool-scroll-stack.png',
+    label: '书房查证',
+    track: 'growth',
+    timeSlots: [],
+    locationId: 'library',
+    staminaCost: 1,
+    effects: { knowledge: 2 },
+    narratives: [
+      '你翻检旧画论，在一条夹注里多停了片刻。读画的眼力，原是这样一点点磨出来的。',
+      '书房无人。你抄了半页《林泉高致》，墨迹干时，窗外日影已移了一寸。',
+      '架上的画卷档案积着薄尘。你按年月翻过去，渐渐摸清了院中藏画的脉络。',
+    ],
+  },
+  {
+    id: 'library_deep_research',
+    art: '/cards/tool-archive-box.png',
+    label: '书房深查',
+    track: 'growth',
+    timeSlots: [],
+    locationId: 'library',
+    staminaCost: 2,
+    effects: { knowledge: 3 },
+    minKnowledge: 10,
+    narratives: [
+      '见识够了，你才看得懂第四层旧档的门道。一函积尘的批注被你翻出来，字里行间藏着旁人没留意的来龙去脉。',
+      '你按图索骥，从画卷档案的夹缝里抽出几页旧批。落款的年月对不上画上的题记——这中间，似乎被人动过手脚。',
+    ],
+  },
+  {
+    id: 'market_sketch',
+    art: '/cards/tool-paperweight.png',
+    label: '街市写生',
+    track: 'growth',
+    timeSlots: [],
+    locationId: 'market',
+    staminaCost: 2,
+    effects: { skills: { figure: 1, architecture: 1 }, knowledge: 1 },
+    narratives: [
+      '你在桥头支起小案。挑夫、货郎、药铺掌柜，一一入了你的速写。',
+      '摊位的朝向、行人的视线，你越画越觉得这座城自有一套看不见的秩序。',
+      '一个孩童在摊前停了很久。你画下他，又画下他身后那条被遮住的小巷。',
+    ],
+  },
+  {
+    id: 'garden_view',
+    art: '/cards/tool-pigment-dishes.png',
+    label: '后花园观景',
+    track: 'growth',
+    timeSlots: [],
+    locationId: 'garden',
+    staminaCost: 1,
+    effects: { mood: 1, skills: { landscape: 1 } },
+    narratives: [
+      '池水尽头浮着一点云影，转眼又散了。你记下这一瞬的留白。',
+      '竹影轻摇。你什么也没画，只是看，看久了，山水的远近忽然清楚了一些。',
+      '风过水面，皱起细纹。你想起课上那句"水有源"，又看了一眼池水的来处。',
+    ],
+  },
+  {
+    id: 'consult_teacher',
+    art: '/cards/tool-brush-set.png',
+    label: '请教导师',
+    track: 'growth',
+    timeSlots: [],
+    locationId: 'hall',
+    staminaCost: 1,
+    effects: { knowledge: 1 },
+    narratives: [
+      '李唐看过你的习作，只圈了一处："此处用笔，尚可。"得他一字，已属不易。',
+      '你执卷请教。李唐讲得极简，但每一句都落在你疑惑的正中。',
+    ],
+  },
+  {
+    id: 'teahouse',
+    art: '/cards/buy-teahouse.png',
+    label: '茶坊吃茶',
+    timeSlots: ['noon'],
+    locationId: 'market',
+    staminaCost: 1,
+    moneyCost: 5,
+    effects: { mood: 2 },
+    narratives: [
+      '你数过铜钱，挑了临窗的座头。建盏里汤花如雪，街声隔窗，竟也成了画意。',
+      '茶博士候汤点茶，手法利落。你慢慢啜着，半日的疲意散了大半。',
+    ],
+  },
+  {
+    id: 'rent_book',
+    art: '/cards/buy-rent-book.png',
+    label: '赁书',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'market',
+    staminaCost: 0,
+    moneyCost: 6,
+    effects: { knowledge: 1 },
+    narratives: [
+      '街口赁书铺子按日取钱。你挑了一册画论揣回去，灯下翻了几页，见识又长了一寸。',
+      '老书贾认得你是画院的，多让了一文。你赁了卷旧谱，路上就忍不住翻看起来。',
+    ],
+  },
+  {
+    id: 'buy_art_supplies',
+    art: '/cards/buy-art-supplies.png',
+    label: '买画材',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'market',
+    staminaCost: 0,
+    moneyCost: 10,
+    setsFlag: 'art_supplies_ready',
+    narratives: [
+      '纸墨铺里挑了好纸、新墨与两支狼毫。备齐了称手的家伙，下一笔总该更有底气。',
+      '你掂量着钱袋，还是买下那刀澄心堂纸。好马配好鞍，下次落笔不能再将就。',
+    ],
+  },
+];
+
+/** 午膳（午间）：食堂食单 5 选 1（院内按例收几文，2026-06-15 起防刷体力）；街市另有花钱的街边吃食 */
+export const MEAL_ACTIVITIES: ActivityCard[] = [
+  {
+    id: 'meal_chuibing',
+    art: '/cards/food-chuibing.png',
+    label: '炊饼配豆羹',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 1,
+    moneyCost: 1,
+    narratives: ['炊饼焦黄，豆羹滚热。院中常例，朴实管饱。'],
+  },
+  {
+    id: 'meal_mantou',
+    art: '/cards/food-guanjiang-mantou.png',
+    label: '灌浆馒头',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 2,
+    moneyCost: 2,
+    effects: { mood: 1 },
+    narratives: ['今日膳堂有灌浆馒头。咬开一角，汤汁烫口，众学子都吃得很急。'],
+  },
+  {
+    id: 'meal_botuo',
+    art: '/cards/food-botuo.png',
+    label: '馎饦汤面',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 2,
+    moneyCost: 2,
+    narratives: ['一碗馎饦下肚，热汤暖到指尖。下午的笔，应当稳了。'],
+  },
+  {
+    id: 'meal_mijian',
+    art: '/cards/food-mijian-diancha.png',
+    label: '蜜煎果子配点茶',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 1,
+    moneyCost: 3,
+    effects: { mood: 2 },
+    narratives: ['蜜煎甜而不腻，盏中汤花将散未散。风雅这一刻，是自己给自己的。'],
+  },
+  {
+    id: 'meal_together',
+    art: '/cards/food-gongshan.png',
+    label: '与同僚共膳',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 1,
+    moneyCost: 1,
+    narratives: ['长桌相对，碗箸声里夹着院中闲话。你多听了几句，似乎谁都比你消息灵通。'],
+  },
+  {
+    id: 'meal_street',
+    art: '/cards/buy-night-snack.png',
+    label: '街边吃食',
+    timeSlots: ['noon'],
+    locationId: 'market',
+    staminaCost: 0,
+    staminaGain: 2,
+    moneyCost: 4,
+    effects: { mood: 1 },
+    narratives: [
+      '桥头摊上买了两个胡饼，就着一碗甜浆。市声嘈嘈，倒比膳堂吃得有滋味。',
+      '你蹲在摊边吃灌肺，摊主与隔壁卖货郎拌嘴，半条街都听乐了。',
+    ],
+  },
+];
+
+/** 空时段轻量签（2026-06-11 拍板）：非午间食堂有一件小事可做（宿舍小憩已移除，宿舍仅晚间开启） */
+export const IDLE_ACTIVITIES: ActivityCard[] = [
+  {
+    id: 'idle_tea',
+    art: '/cards/buy-teahouse.png',
+    label: '讨碗热茶',
+    timeSlots: ['noon'],
+    locationId: 'dining_hall',
+    staminaCost: 0,
+    staminaGain: 1,
+    effects: { mood: 1 },
+    narratives: [
+      '膳堂这会儿清闲。火头娘子给你舀了碗热茶，顺口数落了两句今早的柴价。',
+      '你倚着长桌喝茶，灶上还温着汤。手暖了，心也定了些。',
+    ],
+  },
+];
+
+/** 晚间娱乐（不限次数、不推进时间；体力/钱文为闸，回宿舍就寝才收日） */
+export const EVENING_ACTIVITIES: ActivityCard[] = [
+  {
+    id: 'eve_touhu',
+    art: '/cards/play-touhu.png',
+    label: '投壶',
+    timeSlots: ['evening'],
+    locationId: 'market',
+    staminaCost: 1,
+    effects: { mood: 2 },
+    narratives: ['街市瓦子前支着铜壶，过往行人围作一圈。你连中两矢，赢得一片喝彩。'],
+  },
+  {
+    id: 'eve_weiqi',
+    art: '/cards/play-weiqi.png',
+    label: '弈棋',
+    timeSlots: ['evening'],
+    locationId: 'market',
+    staminaCost: 1,
+    effects: { mood: 1, knowledge: 1 },
+    narratives: ['茶肆灯下有人对弈，你凑上去手谈一局。输了半子，却看懂一手布局，倒像上了一课。'],
+  },
+  {
+    id: 'eve_tingqin',
+    art: '/cards/play-guqin.png',
+    label: '听琴',
+    timeSlots: ['evening'],
+    locationId: 'garden',
+    staminaCost: 1,
+    effects: { mood: 2 },
+    narratives: ['不知是谁在后花园抚琴。月色落在水面，琴声断处，正是留白。'],
+  },
+  {
+    id: 'eve_cuju',
+    art: '/cards/play-cuju.png',
+    label: '蹴鞠',
+    timeSlots: ['evening'],
+    locationId: 'market',
+    staminaCost: 2,
+    effects: { mood: 2 },
+    nextDayStaminaBonus: -1,
+    narratives: ['街市空场上鞠球翻飞，你也下场踢了几脚。痛快是痛快，明早怕是要腰酸。'],
+  },
+  {
+    id: 'eve_tingqu',
+    art: '/cards/play-tingqu.png',
+    label: '出院听曲',
+    timeSlots: ['evening'],
+    locationId: 'market',
+    staminaCost: 1,
+    moneyCost: 8,
+    effects: { mood: 3 },
+    narratives: ['瓦子里灯火通明，琵琶声压过满场人语。散场时夜风一吹，你竟有些舍不得走。'],
+  },
+  {
+    id: 'eve_nightmarket',
+    art: '/cards/buy-night-snack.png',
+    label: '夜市闲逛',
+    timeSlots: ['evening'],
+    locationId: 'market',
+    staminaCost: 1,
+    moneyCost: 4,
+    effects: { mood: 1 },
+    narratives: ['州桥夜市灯火连绵。你买了一包炙烤小食，边走边吃，看灯影落在河面上。'],
+  },
+];
+
+export const ALL_ACTIVITIES: ActivityCard[] = [...DAY_ACTIVITIES, ...MEAL_ACTIVITIES, ...EVENING_ACTIVITIES, ...IDLE_ACTIVITIES];
+
+export const ACTIVITY_BY_ID: Record<string, ActivityCard> = Object.fromEntries(
+  ALL_ACTIVITIES.map((card) => [card.id, card]),
+);
