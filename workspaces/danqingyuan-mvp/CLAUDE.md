@@ -3,6 +3,12 @@
 > 宋代翰林图画院**生活模拟养成**游戏（参考《火山的女儿》）。React + Vite 前端 + Node LLM 代理。
 > 本文件每次会话自动加载，免去重读代码。深入细节看 §文档指针。
 
+## 新 session 自检（每次开窗口先做）
+1. 本文件已自动加载 → 架构/铁律/进度已在上下文。本机 `~/.claude/.../memory/` 决策编年通常也自动加载。
+2. **若本机无记忆（换了电脑/新机）**：先读 `workspaces/docs/project-memory/project_danqingyuan_v2_redesign.md`（决策全编年）+ 最新 `workspaces/docs/plans/*-changelog.md`，等同于补回记忆。
+3. 确认当前分支：开发在 **`danqingyuan-v2-baseline`** 分支（不在 main）。两个常驻服务（proxy:8787 / dev:5176）若没起，按 §启动 拉起。
+4. 用户开场通常只给一个指向（"继续做成长数值"/"试玩发现X"）——背景已在上下文，不必再问"项目是什么"，直接干。
+
 ## 启动（两个常驻服务）
 ```
 cd workspaces/danqingyuan-mvp
