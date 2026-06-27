@@ -233,7 +233,9 @@ export class MockLlmAdapter implements LlmAdapter {
         ? `${weather}。${facts.join('，')}。${padding}`
         : phase === 'intro'
           ? `丹青院门前，${facts.join('，')}。${padding}`
-          : `你${playerChoice ? `选择了「${playerChoice}」。` : '应了一声。'}${facts.join('，')}。${padding}`;
+          : phase === 'practice'
+            ? `${facts.join('，')}。你凝神运笔，半日不觉。${padding}`
+            : `你${playerChoice ? `选择了「${playerChoice}」。` : '应了一声。'}${facts.join('，')}。${padding}`;
     const narrativeText = base.repeat(Math.ceil((lengthBudget?.segmentMin ?? 200) / base.length)).slice(0, lengthBudget?.segmentMax ?? 500);
 
     const output: SceneNarratorOutput =
@@ -248,10 +250,10 @@ export class MockLlmAdapter implements LlmAdapter {
             ],
             atmosphereTags: ['日常', weather],
           }
-        : phase === 'intro'
+        : phase === 'intro' || phase === 'practice'
           ? {
               narrativeText,
-              atmosphereTags: ['入院', weather],
+              atmosphereTags: [phase === 'practice' ? '用功' : '入院', weather],
             }
           : {
               narrativeText,

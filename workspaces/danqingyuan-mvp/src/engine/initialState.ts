@@ -74,6 +74,7 @@ export function createInitialGameState(options: CreateGameStateOptions = {}): Ga
       isExamDay: false,
       narrativeCharsToday: 0,
       slotSceneCount: 0,
+      skillGainedToday: 0,
     },
     stats: {
       mood: Math.max(0, Math.min(10, 6 + (originEffect.mood ?? 0))),

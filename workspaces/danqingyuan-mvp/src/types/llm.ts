@@ -161,7 +161,7 @@ export interface PaintingIntentEvaluatorOutput {
 }
 
 /** 剧情写作器（v2 §6）：引擎先算结果，LLM 推演场景。intro=入院引文（无分支），open+mid+resolve=多轮场景（mid 仅第 1 日加轮用）。 */
-export type ScenePhase = 'intro' | 'open' | 'mid' | 'continue' | 'resolve' | 'end';
+export type ScenePhase = 'intro' | 'open' | 'mid' | 'continue' | 'resolve' | 'end' | 'practice';
 
 export interface SceneNarratorPlayerCard {
   name: string;

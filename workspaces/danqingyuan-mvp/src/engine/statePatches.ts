@@ -65,6 +65,11 @@ export function applyValidatedStatePatch(state: GameState, patch: ValidatedState
     next.time.nextDayStaminaBonus += patch.nextDayStaminaBonus;
   }
 
+  // 沙盒练习每日技能涨幅累加（2026-06-27）：用于封顶 DAILY_SKILL_CAP，跨日清零
+  if (patch.skillGainedTodayDelta) {
+    next.time.skillGainedToday += patch.skillGainedTodayDelta;
+  }
+
   if (patch.eventIdsCompleted) {
     next.progress.completedEventIds = Array.from(
       new Set([...next.progress.completedEventIds, ...patch.eventIdsCompleted]),
@@ -94,7 +99,6 @@ function advanceTime(state: GameState) {
   const slotIndex = TIME_SLOT_ORDER.indexOf(state.time.timeSlot);
   // 叙事场景计数跨时段清零（2026-06-18）：进入新时段重新允许 3 场自动开场
   state.time.slotSceneCount = 0;
-
   if (slotIndex < TIME_SLOT_ORDER.length - 1) {
     state.time.timeSlot = TIME_SLOT_ORDER[slotIndex + 1];
     return;
@@ -113,6 +117,8 @@ function advanceTime(state: GameState) {
   state.time.stamina = clamp(DAILY_BASE_STAMINA + state.time.nextDayStaminaBonus, 0, state.time.maxStamina);
   state.time.nextDayStaminaBonus = 0;
   state.time.narrativeCharsToday = 0;
+  // 沙盒练习每日技能涨幅封顶跨日清零（2026-06-27）
+  state.time.skillGainedToday = 0;
   // 即时推荐意图当日有效，跨日清空（2026-06-17）
   state.suggestedIntents = {};
   // 每日闲聊次数 + 当日好感涨幅跨日清零（2026-06-25/26）：次日恢复满额、涨幅封顶重置

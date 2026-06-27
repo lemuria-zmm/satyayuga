@@ -73,6 +73,9 @@ export function dailyChatQuota(stage: RelationshipStage): number {
 /** 每日好感涨幅封顶（2026-06-26）：防高档+warm 一日拉满，保证七日养成曲线 */
 export const DAILY_AFFINITY_CAP = 12;
 
+/** 每日技能涨幅封顶（2026-06-27 沙盒练习系统）：防买饭回体力无限刷技能；仅三画技正增长计入，学识不受限 */
+export const DAILY_SKILL_CAP = 4;
+
 export type NpcEmotionState =
   | 'distant'
   | 'noticing'
@@ -187,6 +190,8 @@ export interface TimeState {
   narrativeCharsToday: number;
   /** 当前叙事时段已演场景数（2026-06-18）：满 3 场后报时钟收尾签亮起、停止自动开场；跨时段清零 */
   slotSceneCount: number;
+  /** 当日已累计的技能涨幅（2026-06-27 沙盒练习系统）：仅三画技正增长计入，跨日清零，用于每日封顶 DAILY_SKILL_CAP */
+  skillGainedToday: number;
 }
 
 /** 体力之外的玩家属性。体力随每日作息走，留在 TimeState。 */

@@ -3,7 +3,7 @@ import type { GameState } from '../types';
 const SAVE_KEY = 'danqingyuan-mvp:auto-save';
 
 /** schema 11（2026-06-26）：对话往来历史 chatHistory（per relationship） */
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 export interface SaveFile {
   saveId: string;
@@ -77,12 +77,18 @@ function migrateV9(saveFile: SaveFile): SaveFile {
   return { ...saveFile, schemaVersion: 10 };
 }
 
-/** v10→v11 旧档迁移（2026-06-26）：补对话往来历史 chatHistory + 当日好感涨幅 affinityGainedToday（passthrough） */
+/** v10→v11 旧档迁移（2026-06-26）：补对话往来历史 chatHistory + 当日好感涨幅 affinityGainedToday */
 function migrateV10(saveFile: SaveFile): SaveFile {
   for (const rel of Object.values(saveFile.gameState.relationships)) {
     rel.chatHistory ??= [];
     rel.affinityGainedToday ??= 0;
   }
+  return { ...saveFile, schemaVersion: 11 };
+}
+
+/** v11→v12 旧档迁移（2026-06-27 沙盒练习系统）：补当日技能涨幅 skillGainedToday */
+function migrateV11(saveFile: SaveFile): SaveFile {
+  saveFile.gameState.time.skillGainedToday ??= 0;
   return { ...saveFile, schemaVersion: SCHEMA_VERSION };
 }
 
@@ -122,6 +128,9 @@ export function loadSaveFile(): SaveFile | null {
     }
     if (parsed.schemaVersion === 10) {
       parsed = migrateV10(parsed);
+    }
+    if (parsed.schemaVersion === 11) {
+      parsed = migrateV11(parsed);
     }
     if (parsed.schemaVersion !== SCHEMA_VERSION) {
       return null;

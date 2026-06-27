@@ -31,13 +31,13 @@ export const SEGMENT_MAX = 500;
  */
 export const DAY_CHARS_MAX = 12000;
 
-/** 行动分轨（2026-06-12 拍板，行动三分法） */
-export type ActionTrack = 'mechanical' | 'growth' | 'narrative';
+/** 行动分轨（2026-06-12 拍板，行动三分法；2026-06-27 加 practice 第四轨） */
+export type ActionTrack = 'mechanical' | 'growth' | 'narrative' | 'practice';
 
 /**
  * 行动分轨判定（单一事实源）：
  * - 晨课（attend_class）恒为 growth；
- * - 活动卡（activity）读 ActivityCard.track，默认 mechanical；
+ * - 活动卡（activity）读 ActivityCard.track，默认 mechanical（练习卡 track:'practice'）；
  * - 其余行动（move_to / take_exam / sleep / solve_puzzle / talk_to_npc / practice_skill[死路径]）→ mechanical 防御默认，永不触发 LLM。
  * 注：'narrative' 本轮无来源（NPC 偶遇系统未做），getActionTrack 本轮永不返回它；
  * 保留枚举供 prompt 区分对待，下一轮偶遇命中时再由调用方产出。
@@ -50,9 +50,13 @@ export function getActionTrack(action: GameAction): ActionTrack {
   return 'mechanical';
 }
 
-/** 是否走 LLM 两阶段场景（成长类/叙事类）；机械类不调 LLM，纯模板 + 数值结算 */
+/**
+ * 是否走 LLM 两阶段场景（成长类/叙事类）；机械类不调 LLM，纯模板 + 数值结算。
+ * 注（2026-06-27）：practice 也调 LLM，但走独立的单段轻量路径（App.runPractice），**不进**三件套场景循环，
+ * 故此处仍返回 false——isLlmScene 专指"是否进 startScene 三件套"，practice 由 runAction 单独拦截。
+ */
 export function isLlmScene(action: GameAction): boolean {
-  return getActionTrack(action) !== 'mechanical';
+  return getActionTrack(action) === 'growth' || getActionTrack(action) === 'narrative';
 }
 
 const STYLE_LABELS: Record<GameState['player']['styleOrigin'], string> = {

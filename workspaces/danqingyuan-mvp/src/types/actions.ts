@@ -67,6 +67,8 @@ export interface ValidatedStatePatch {
   nextDayStaminaBonus?: number;
   timeAdvance?: boolean;
   eventIdsCompleted?: string[];
+  /** 当日技能涨幅累加（2026-06-27 沙盒练习封顶）：仅练习结算填，累加到 time.skillGainedToday */
+  skillGainedTodayDelta?: number;
 }
 
 export interface ActionResult {

@@ -42,6 +42,7 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 7. **闲聊计次=一句一次**，DialogueScreen 进场快照 budget（勿让 maxTurns 随 chatsToday 重渲染递减→双扣 bug）。
 8. **数值带正反馈必须两端封顶+保底**（好感日涨封顶12、neutral保底+1、陌路quota6）。
 9. **prompt 改动必重启 proxy**；scene/dialogue prompt 版本号前后端常量须一致。
+10. **沙盒练习（practice track）走独立轻量路径**：调 LLM 但**不进 isLlmScene→startScene 三件套**（isLlmScene 只认 growth/narrative）；runPractice 拿单段文即 setActiveScene(null) 结算，不写主线账本、不推时段。技能收益引擎确定性给（computePracticeGain），每日封顶 DAILY_SKILL_CAP=4（仅三画技、学识不限）。
 
 ## 防返工纪律（每轮收尾自检）
 1. 临时调试 console.log 当轮清除（`grep -rn "console.log" src/ server/` 应只剩 proxy 启动横幅）。
@@ -59,8 +60,8 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 
 ## 当前进度 / 下一步
 - ✅ 引擎/活动卡/剧情写作器/A+C叙事时段重构/希孟NPC完整系统（好感融叙事+多轮闲聊+数值平衡+OOC约束）/LLM调用加固。
-- **下一个主攻：成长数值重设计**（退役固定签后技能/学识近乎冻结，叙事场景不给数值，"画院养成"支柱空缺。待决策见 project-memory 末尾"成长数值重设计待决策"）。
-- 之后：目标线（小测考官/丹青试gating/秘阁三幕重做+8张线索）→ 扩充择端/嵩/李唐好感线 → 地图引擎（待出图）。
+- ✅ **成长数值重设计（06-27，沙盒练习成长系统）**：午/晚沙盒玩家自主走书房/后花园/街市点"练习签"主动练技能——第四条行动路径 `practice`，调 LLM 出单段沉浸文（runPractice，不进三件套）+ 引擎确定性给技能（本科+2/副+1/学识+1，每日封顶4，体力闸防刷）。
+- **下一个主攻**：目标线（小测考官/丹青试gating/秘阁三幕重做+8张线索）→ 扩充择端/嵩/李唐好感线 → 地图引擎（待出图）。
 
 ## 工作流约定
 - **每完成一个改动就 git commit**，message 对应 changelog 条目（如「希孟多轮闲聊系统」）。`git log`=改动历史，`git diff A B`=任意两版代码 diff。

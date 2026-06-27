@@ -3,6 +3,7 @@ import { LOCATIONS } from '../content/locations';
 import { COURSES } from '../content/courses';
 import { ACTIVITY_BY_ID, ALL_ACTIVITIES } from '../content/activities';
 import type { ActivityCard } from '../content/activities';
+import { DAILY_SKILL_CAP } from '../types/core';
 import { applyValidatedStatePatch } from './statePatches';
 import { buildDailySummary, isLlmScene } from './sceneEngine';
 import { commitMemoryPatch } from '../memory/writer';
@@ -107,6 +108,64 @@ export function practiceGain(state: GameState, skillId: SkillId): number {
   if (todayCourse?.skillBonus && skillId in todayCourse.skillBonus) gain += 1;
   return Math.max(1, gain);
 }
+
+/**
+ * 沙盒练习基础收益（2026-06-27）：本科（=玩家 styleOrigin）每次 +2，副技能 +1；学识固定 +1。
+ * 出身持续优势 / 买画材 buff 由 applyGrowthBonuses 另行叠加；每日封顶在 resolvePractice 裁剪。
+ */
+export function computePracticeGain(state: GameState, target: SkillId | 'knowledge'): number {
+  if (target === 'knowledge') return 1;
+  return target === state.player.styleOrigin ? 2 : 1;
+}
+
+/**
+ * 沙盒练习结算（2026-06-27）：track:'practice' 的活动卡。
+ * 引擎确定性给技能/学识（不信 LLM 自报）+ 扣体力 + 不推进时段（沙盒）；LLM 只负责沉浸文（App.runPractice）。
+ * 每日技能涨幅封顶 DAILY_SKILL_CAP：三画技正增长当日累计满 4 后裁剪为 0（学识不计入封顶、不受限）。
+ */
+function resolvePractice(state: GameState, action: GameAction): { patch: ValidatedStatePatch; text: string } {
+  const card = ACTIVITY_BY_ID[action.activityId ?? ''];
+  if (!card?.practiceSkill) {
+    // 防御：练习卡缺 practiceSkill（不应发生）——只扣体力出兜底文，不给数值
+    return { patch: { staminaDelta: -action.staminaCost, timeAdvance: false }, text: '你练了半日，却没什么长进。' };
+  }
+
+  const patch: ValidatedStatePatch = {
+    staminaDelta: -card.staminaCost,
+    timeAdvance: false, // 沙盒：不推进时段
+  };
+  const target = card.practiceSkill;
+  if (target === 'knowledge') {
+    patch.knowledgeDelta = computePracticeGain(state, target);
+  } else {
+    patch.skillDelta = { [target]: computePracticeGain(state, target) };
+  }
+
+  // 出身持续优势（耕读学识+1 / 匠作界画+1）+ 买画材 buff：与晨课同样吃 growth 加成
+  applyGrowthBonuses(state, patch, 'growth');
+
+  // 每日技能封顶：三画技正增长之和受 DAILY_SKILL_CAP - skillGainedToday 约束（学识不计入）
+  if (patch.skillDelta) {
+    const remaining = Math.max(0, DAILY_SKILL_CAP - state.time.skillGainedToday);
+    let applied = 0;
+    const capped: Partial<Record<SkillId, number>> = {};
+    for (const [skillId, delta] of Object.entries(patch.skillDelta) as [SkillId, number][]) {
+      if (delta > 0) {
+        const room = Math.max(0, remaining - applied);
+        const granted = Math.min(delta, room);
+        applied += granted;
+        capped[skillId] = granted;
+      } else {
+        capped[skillId] = delta;
+      }
+    }
+    patch.skillDelta = capped;
+    if (applied > 0) patch.skillGainedTodayDelta = applied;
+  }
+
+  return { patch, text: pickNarrative(card.narratives) };
+}
+
 
 function activityToAction(card: ActivityCard, origin: GameState['player']['origin']): GameAction {
   return {
@@ -345,6 +404,11 @@ function resolveActivity(state: GameState, action: GameAction): { patch: Validat
       patch: { timeAdvance: !isSandbox },
       text: isSandbox ? '这件事不知怎么没做成。时辰还早。' : '这件事不知怎么没做成。日影照旧往前挪。',
     };
+  }
+
+  // 沙盒练习卡（2026-06-27）：独立结算（确定性技能 + 封顶 + 不推时段）；LLM 沉浸文由 App.runPractice 单独调
+  if (card.track === 'practice') {
+    return resolvePractice(state, action);
   }
 
   const patch: ValidatedStatePatch = {

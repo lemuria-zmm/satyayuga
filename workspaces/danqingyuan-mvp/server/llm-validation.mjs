@@ -254,13 +254,13 @@ const allowedSceneNpcIds = new Set(['ximeng', 'zeduan', 'litang', 'song']);
 /** 剧情约定只能约在必开放的寻常去处（2026-06-16）：剔除 secret_archive/ximeng_studio */
 const allowedHookLocationIds = new Set(['hall', 'library', 'garden', 'market', 'dining_hall', 'dormitory']);
 
-/** scene_narrator v9（2026-06-17）：intro/open/continue/end 输出校验。phase 归一：end→resolve、mid→continue */
+/** scene_narrator v9（2026-06-17）：intro/open/continue/end 输出校验。phase 归一：end→resolve、mid→continue、practice→intro（2026-06-27 单段沉浸，同 intro 宽松契约） */
 function validateSceneNarratorOutput(output, errors, input) {
   const rawPhase = input?.phase;
   const phase =
     rawPhase === 'resolve' || rawPhase === 'end'
       ? 'resolve'
-      : rawPhase === 'intro'
+      : rawPhase === 'intro' || rawPhase === 'practice'
         ? 'intro'
         : rawPhase === 'continue' || rawPhase === 'mid'
           ? 'continue'

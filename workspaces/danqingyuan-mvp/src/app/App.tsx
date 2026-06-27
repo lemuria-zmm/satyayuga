@@ -67,7 +67,7 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-26.v15';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-27.v16';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
 /** 希孟首遇闲聊句数（2026-06-26）：独立于每日主动闲聊额度，首遇当场可说几句即自然收尾 */
 const FIRST_MEET_CHAT_TURNS = 4;
@@ -945,6 +945,13 @@ export function App() {
     // 小游戏接入口预留（2026-06-12，本轮全部留空）：将来投壶→小游戏、点茶→调茶
     const card = action.type === 'activity' ? ACTIVITY_BY_ID[action.activityId ?? ''] : undefined;
 
+    // 沙盒练习（2026-06-27）：引擎已确定性结算技能（resolvePractice），调 LLM 出单段沉浸文。
+    // 走独立轻量路径——不进三件套场景循环、不写主线账本、不推进时段。在 isLlmScene 分支之前拦截。
+    if (getActionTrack(action) === 'practice') {
+      void runPractice(base, action, result);
+      return;
+    }
+
     // 成长/叙事行动（2026-06-15 延迟结算）：已算好引擎成品但**先不提交、不推进时段**，
     // 仅进 loading 发起 LLM；待场景 resolve 完成（或 LLM 失败/预算跳过）才提交 nextState。
     // 这样"晨课正文刚出、进度条已跳上午"的脱节被根治——时间严格卡在场景完成点。
@@ -974,6 +981,88 @@ export function App() {
     if (card?.minigameId) {
       // TODO 本轮占位：将来 setActiveMinigame(card.minigameId) 跳小游戏组件再结算
       return;
+    }
+  }
+
+  /**
+   * 沙盒练习（2026-06-27 成长数值重设计）：玩家在午/晚沙盒主动练技能。
+   * 引擎已确定性结算技能（resolvePractice，含每日封顶），此处仅调 LLM 出单段沉浸文覆盖正文。
+   * 与三件套场景的区别：单段即结束、不进 reading 态（无继续/推荐/去别处 dock）、不写主线账本、不推进时段。
+   * loading 复用 ActiveScene 的 'loading-open'（显示「墨正落纸……」）；拿到文本即 setActiveScene(null)。
+   * 失败兜底：用练习卡模板句，技能照常结算（练习收益是确定性的，不因 LLM 失败而丢）。
+   */
+  async function runPractice(base: GameState, action: GameAction, result: ReturnType<typeof applyAction>) {
+    const nextState = result.nextState ?? base;
+    const card = ACTIVITY_BY_ID[action.activityId ?? ''];
+    const locationId = action.locationId ?? base.currentLocation;
+    const fallbackText = card?.narratives?.[Math.floor(Math.random() * (card.narratives.length || 1))] ?? '你专心练了半日。';
+
+    // 提交引擎结算（技能/体力/封顶累加），先落兜底文；地点跟到练习处
+    const commit = (text: string) => {
+      const committed: GameState = { ...nextState, lastRenderedText: text, currentLocation: locationId };
+      showSettlement(result.statePatch);
+      saveGameState(committed);
+      setHasSave(true);
+      setState(committed);
+      setActiveScene(null);
+    };
+
+    // loading 态：复用 ActiveScene 'loading-open'（沉浸文 loading 提示），不进 reading
+    setActiveScene({
+      status: 'loading-open',
+      action,
+      locationId,
+      day: base.time.day,
+      timeSlot: base.time.timeSlot,
+      npcsPresent: [],
+      facts: [],
+      allowedClueIds: [],
+      segmentCount: 1,
+      maxSegments: 1,
+      sceneCanContinue: false,
+      shouldConclude: true,
+      suggestedActions: [],
+      fallbackText,
+    });
+    setState((prev) => (prev ? { ...prev, lastRenderedText: '', currentLocation: locationId } : prev));
+
+    try {
+      const response = await llmAdapter.narrateScene({
+        traceId: `scene-practice-${Date.now()}`,
+        role: 'scene_narrator',
+        promptVersion: SCENE_PROMPT_VERSION,
+        input: {
+          phase: 'practice',
+          day: base.time.day,
+          timeSlot: base.time.timeSlot,
+          locationId,
+          currentLocationLabel: LOCATIONS[locationId]?.name,
+          weather: getWeather(base.time.day),
+          season: SEASON,
+          player: buildScenePlayerCard(base.player),
+          actionLabel: action.label,
+          facts: [`${base.player.name}在${LOCATIONS[locationId]?.name}专心练习：${action.label}`],
+          // 练习纯个人沉浸：不点主题暗线、不插 NPC、不推主线
+          themeBeat: '',
+          // 练习纯个人沉浸：不插 NPC、不推主线
+          npcsPresent: [],
+          lengthBudget: {
+            segmentMin: SEGMENT_MIN,
+            segmentMax: SEGMENT_MAX,
+            dayCharsUsed: base.time.narrativeCharsToday,
+            dayCharsMax: DAY_CHARS_MAX,
+          },
+          allowedClueIds: [],
+          playerStyleTags: base.memory.playerStyle.tags,
+          recentLedger: [],
+          canonWarnings: base.memory.coreCanon.spoilerBoundaries,
+        },
+        context: buildMemoryContext(base, 'scene_narrator'),
+      });
+      commit(response.output.narrativeText || fallbackText);
+    } catch {
+      // LLM 失败：落模板兜底句，技能照常结算
+      commit(fallbackText);
     }
   }
 

@@ -30,7 +30,7 @@ export interface ActivityCard {
    * - narrative：偶遇/首次到地/主线节拍日，完整 LLM（本轮偶遇系统未做，活动卡暂不用此值）。
    * 注：判定统一走 sceneEngine.getActionTrack，该字段仅作活动卡的数据来源。
    */
-  track?: 'mechanical' | 'growth' | 'narrative';
+  track?: 'mechanical' | 'growth' | 'narrative' | 'practice';
   /**
    * 小游戏接入口预留（2026-06-12，本轮全部留空）：
    * 将来投壶→投掷小游戏、点茶→调茶选项等；有值则 runAction 跳小游戏组件，无值走当前结算。
@@ -43,6 +43,11 @@ export interface ActivityCard {
   minKnowledge?: number;
   /** 行动结算时落的旗标（2026-06-12，如买画材落 art_supplies_ready buff） */
   setsFlag?: string;
+  /**
+   * 沙盒练习目标（2026-06-27 练习成长系统）：track:'practice' 的卡声明此处练的是哪项画技或学识。
+   * 实际涨量由引擎 computePracticeGain 按"是否本科"判定（本科 +2 / 副 +1 / 学识 +1），卡上不写死数值。
+   */
+  practiceSkill?: SkillId | 'knowledge';
   /** 模板文本池，引擎随机取一条（机械类用作正文；成长类仅作 LLM 失败兜底） */
   narratives: string[];
 }
@@ -328,7 +333,118 @@ export const EVENING_ACTIVITIES: ActivityCard[] = [
   },
 ];
 
-export const ALL_ACTIVITIES: ActivityCard[] = [...DAY_ACTIVITIES, ...MEAL_ACTIVITIES, ...EVENING_ACTIVITIES, ...IDLE_ACTIVITIES];
+/**
+ * 沙盒练习卡（2026-06-27 成长数值重设计）：午/晚沙盒时段，玩家自主走到书房/后花园/街市主动练技能。
+ * track:'practice' → 调 LLM 出单段沉浸文（不进三件套循环、不推主线）+ 引擎确定性给技能（computePracticeGain）。
+ * 防刷=体力闸（每张扣 1~2 体力，沙盒不推时间但体力靠吃饭恢复、吃饭花钱）+ 每日技能涨幅封顶 DAILY_SKILL_CAP=4。
+ * 收益按 practiceSkill 声明、量由引擎判主/副（本科 +2 / 副 +1 / 学识 +1），卡上不写死 effects 数值。
+ */
+export const PRACTICE_ACTIVITIES: ActivityCard[] = [
+  // —— 书房（学识）——
+  {
+    id: 'practice_read_treatise',
+    art: '/cards/tool-scroll-stack.png',
+    label: '研读画论',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'library',
+    staminaCost: 1,
+    practiceSkill: 'knowledge',
+    narratives: [
+      '你在窗下摊开《林泉高致》，一句"山有三远"读了又读，指尖在纸上虚摹峰峦的起落。',
+      '画论里讲设色的次第，你边读边对照架上旧画，许多从前看不懂的地方，忽然通了。',
+    ],
+  },
+  {
+    id: 'practice_view_scrolls',
+    art: '/cards/tool-archive-box.png',
+    label: '阅古画卷',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'library',
+    staminaCost: 1,
+    practiceSkill: 'knowledge',
+    narratives: [
+      '你小心展开一卷前朝旧画，凑近了看它的皴法与落墨，看久了，眼里像是多了一把尺子。',
+      '画卷的绢色已旧，可笔意仍活。你一寸寸看过去，把前人藏在虚处的心思记在心里。',
+    ],
+  },
+  {
+    id: 'practice_deep_study',
+    art: '/cards/tool-archive-box.png',
+    label: '钻研旧档',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'library',
+    staminaCost: 2,
+    practiceSkill: 'knowledge',
+    minKnowledge: 10,
+    narratives: [
+      '见识够了，你才看得懂第四层旧档的门道。一函积尘的批注被你翻出来，字里行间另有乾坤。',
+      '你按图索骥，从画卷档案的夹缝里抽出几页旧批，越钻越深，半日不觉。',
+    ],
+  },
+  // —— 后花园（山水）——
+  {
+    id: 'practice_garden_sketch',
+    art: '/cards/tool-paperweight.png',
+    label: '对景写生',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'garden',
+    staminaCost: 1,
+    practiceSkill: 'landscape',
+    narratives: [
+      '你携纸笔坐到池边，对着水光竹影落笔。山石的远近，在腕底一点点活了过来。',
+      '园中一角的太湖石被你画了三遍。第三遍时，你才算摸到它瘦、皱、透的筋骨。',
+    ],
+  },
+  {
+    id: 'practice_garden_observe',
+    art: '/cards/tool-pigment-dishes.png',
+    label: '观竹石听泉',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'garden',
+    staminaCost: 2,
+    practiceSkill: 'landscape',
+    narratives: [
+      '你什么也不画，只是看。竹影移过粉墙，泉声断续，看久了，山水的虚实忽然在心里排布开来。',
+      '风过水面皱起细纹，又慢慢抚平。你盯着这一池活水，想起课上那句"水有源"，似有所悟。',
+    ],
+  },
+  // —— 街市（人物 / 界画）——
+  {
+    id: 'practice_market_figure',
+    art: '/cards/tool-paperweight.png',
+    label: '速写市井人物',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'market',
+    staminaCost: 2,
+    practiceSkill: 'figure',
+    narratives: [
+      '你在桥头支起小案。挑夫、货郎、药铺掌柜，一一入了速写。人物的活法，比临帖扎实。',
+      '一个孩童在摊前停了很久，你飞快勾下他的神态——人最难画的，原是那一点没说出口的心思。',
+    ],
+  },
+  {
+    id: 'practice_market_architecture',
+    art: '/cards/tool-brush-set.png',
+    label: '画桥梁屋宇',
+    track: 'practice',
+    timeSlots: ['noon', 'evening'],
+    locationId: 'market',
+    staminaCost: 2,
+    practiceSkill: 'architecture',
+    narratives: [
+      '你对着州桥的飞虹起稿，斗拱、栏板、桥洞，一笔不苟。界画的难，全在这分毫不让的规矩里。',
+      '临街的酒楼楼阁层叠，你用界尺一寸寸量着画。线越画越直，心也越画越静。',
+    ],
+  },
+];
+
+export const ALL_ACTIVITIES: ActivityCard[] = [...DAY_ACTIVITIES, ...MEAL_ACTIVITIES, ...EVENING_ACTIVITIES, ...IDLE_ACTIVITIES, ...PRACTICE_ACTIVITIES];
 
 export const ACTIVITY_BY_ID: Record<string, ActivityCard> = Object.fromEntries(
   ALL_ACTIVITIES.map((card) => [card.id, card]),
