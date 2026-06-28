@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CHARACTERS } from '../content/characters';
-import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward } from '../engine/gameEngine';
+import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward, computeExamScore, determineEnding } from '../engine/gameEngine';
 import { createInitialGameState } from '../engine/initialState';
 import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
@@ -32,6 +32,7 @@ import { ArchiveScreen } from '../components/ArchiveScreen';
 import { GuideDialogue } from '../components/GuideDialogue';
 import type { ExamAnswer } from '../components/ExamScreen';
 import { ExamScreen } from '../components/ExamScreen';
+import { EndingScreen } from '../components/EndingScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
@@ -51,6 +52,7 @@ import type {
   CharacterDialogueOutput,
   ChatReplyTone,
   CurriculumState,
+  EndingResult,
   GameAction,
   GameState,
   LocationId,
@@ -161,6 +163,8 @@ export function App() {
   const [isExamOpen, setIsExamOpen] = useState(false);
   const [isPuzzleOpen, setIsPuzzleOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  // 结局页临时关闭（2026-06-28）：玩家点「入秘阁一观」后暂隐结局页，进主界面看《骸游图》；可再唤回 */
+  const [endingDismissed, setEndingDismissed] = useState(false);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
@@ -1149,6 +1153,7 @@ export function App() {
     setHasSave(false);
     setIsExamOpen(false);
     setIsPuzzleOpen(false);
+    setEndingDismissed(false);
     setDialogueNpcId(null);
     setExamQuestions([]);
     setPuzzleAssessmentPrompt(null);
@@ -1203,14 +1208,15 @@ export function App() {
     }
     const evaluations = evaluationResponses.map((response) => response.output);
     const rawScore = evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0) / evaluations.length;
-    // Gate③（2026-06-12）：学识确定性加分 floor(knowledge/5)，0~10 分；学识满 50 → +10 分。与 LLM 软加成叠加，最终 clamp 0~100
+    // 学识加分 floor(k/5) 在 quick 用简单口径；final 走引擎 computeExamScore（含本科技能 gating）
     const knowledgeBonus = Math.floor(state.stats.knowledge / 5);
-    const averageScore = Math.max(0, Math.min(100, rawScore + knowledgeBonus));
-    const passed = averageScore >= 60;
+    const quickScore = Math.max(0, Math.min(100, rawScore + knowledgeBonus));
+    const passed = quickScore >= 60;
     const feedback = evaluations.map((evaluation) => evaluation.visibleFeedback).join('；');
 
     let patch: ValidatedStatePatch;
     let renderedText: string;
+    let endingResult: EndingResult | undefined;
 
     if (examMode === 'quick') {
       // 温书自测（2026-06-28）：夜读自省，答得好（≥60）给本科技能/学识小额加成（受心情修正+每日封顶）；答差不罚。
@@ -1229,22 +1235,22 @@ export function App() {
         ? `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 灯花结了又落，心里渐渐有了底。`
         : `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 有几处仍是夹生，你记下了，明日再看。`;
     } else {
-      // 丹青试（第7日，维持现状）：通过→晋画正+解锁秘阁
-      renderedText = passed
-        ? `丹青试两题批毕：${feedback} 你晋为画正，秘阁入口由此开启。`
-        : `丹青试两题批毕：${feedback} 你未能晋升，但监试留你再观一日。`;
+      // 丹青试（第7日，2026-06-28 多维结局）：本科技能 gating + 分数定主轴档（优/良/中/落第）→ EndingScreen
+      const exam = computeExamScore(state, rawScore);
+      endingResult = determineEnding(state, exam);
+      renderedText = `丹青试两题批毕：${feedback}`;
       patch = {
         skillDelta: mergeSkillDeltas(evaluations),
         staminaDelta: -examAction.staminaCost,
         timeAdvance: true,
         flagsSet: {
           firstExamTaken: true,
-          firstExamPassed: passed,
-          archiveUnlocked: passed,
+          firstExamPassed: endingResult.tier !== 'fail',
+          archiveUnlocked: endingResult.unlockArchive,
           ...collectSuggestedFlags(evaluations),
         },
-        rankChange: passed ? 'painter_regular' : undefined,
-        unlockedLocations: passed ? ['secret_archive'] : undefined,
+        rankChange: endingResult.rankChange,
+        unlockedLocations: endingResult.unlockArchive ? ['secret_archive'] : undefined,
       };
     }
 
@@ -1260,6 +1266,7 @@ export function App() {
         },
       }),
       lastRenderedText: renderedText,
+      ...(endingResult ? { ending: endingResult } : {}),
     };
 
     saveGameState(nextState);
@@ -1597,6 +1604,18 @@ export function App() {
         ledger={state.memory.storyLedger}
         summaries={state.memory.summaries}
         onClose={() => setIsArchiveOpen(false)}
+      />
+    );
+  }
+
+  // 丹青试结局页（2026-06-28）：丹青试结算后出独立结局页；「入秘阁一观」暂隐进主界面看《骸游图》
+  if (state.ending && !endingDismissed) {
+    return (
+      <EndingScreen
+        ending={state.ending}
+        state={state}
+        onEnterArchive={state.ending.unlockArchive ? () => setEndingDismissed(true) : undefined}
+        onReset={resetGame}
       />
     );
   }

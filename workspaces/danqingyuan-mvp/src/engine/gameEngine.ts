@@ -3,11 +3,11 @@ import { LOCATIONS } from '../content/locations';
 import { COURSES } from '../content/courses';
 import { ACTIVITY_BY_ID, ALL_ACTIVITIES } from '../content/activities';
 import type { ActivityCard } from '../content/activities';
-import { DAILY_SKILL_CAP, DAILY_KNOWLEDGE_CAP } from '../types/core';
+import { DAILY_SKILL_CAP, DAILY_KNOWLEDGE_CAP, RELATIONSHIP_STAGE_LABELS } from '../types/core';
 import { applyValidatedStatePatch } from './statePatches';
 import { buildDailySummary, isLlmScene } from './sceneEngine';
 import { commitMemoryPatch } from '../memory/writer';
-import type { ActionResult, GameAction, GameState, LocationId, SkillId, ValidatedStatePatch } from '../types';
+import type { ActionResult, EndingResult, EndingTier, GameAction, GameState, LocationId, Rank, SkillId, ValidatedStatePatch } from '../types';
 
 const skillNames: Record<SkillId, string> = {
   landscape: '山水',
@@ -222,6 +222,106 @@ export function buildQuickExamReward(
   const room = Math.max(0, DAILY_SKILL_CAP - state.time.skillGainedToday);
   const granted = Math.min(gain, room);
   return granted > 0 ? { skillDelta: { [target]: granted }, skillGainedTodayDelta: granted } : {};
+}
+
+/** 本科技能门槛（2026-06-28 丹青试 gating）：低于此值则丹青试封顶分（手生过不了） */
+export const EXAM_SKILL_GATE = 40;
+/** 本科技能不足时的封顶分（< 60 通过线，判不过） */
+export const EXAM_SKILL_CAP_SCORE = 59;
+
+/**
+ * 丹青试算分（2026-06-28）：LLM 评分均值（rawScore）+ 学识加分 floor(k/5)；
+ * **本科技能 < EXAM_SKILL_GATE 时封顶 EXAM_SKILL_CAP_SCORE**（手生则无论评分多高都判不过，技能是硬门槛）。
+ * 返回最终分 + 是否被技能封顶（供结局文案区分"手生落第"）。
+ */
+export function computeExamScore(state: GameState, rawScore: number): { finalScore: number; cappedBySkill: boolean } {
+  const knowledgeBonus = Math.floor(state.stats.knowledge / 5);
+  const withBonus = Math.max(0, Math.min(100, rawScore + knowledgeBonus));
+  const majorSkill = state.skills[state.player.styleOrigin];
+  if (majorSkill < EXAM_SKILL_GATE && withBonus > EXAM_SKILL_CAP_SCORE) {
+    return { finalScore: EXAM_SKILL_CAP_SCORE, cappedBySkill: true };
+  }
+  return { finalScore: withBonus, cappedBySkill: false };
+}
+
+const ENDING_TITLES: Record<EndingTier, string> = {
+  excellent: '画待诏·名动画院',
+  good: '画正·得入秘阁',
+  pass: '画正·勉登堂奥',
+  fail: '落第·留院再读',
+};
+
+/**
+ * 丹青试多维结局（2026-06-28）：分数定主轴档（tier/rank/解锁秘阁），好感与暗线只修饰文本（不改主轴）。
+ * - 优 ≥85：画待诏（画院提拔）；良 70~84：画正 + 解锁秘阁；中 60~69：画正勉过（不解锁秘阁）；落第 <60：留院再读。
+ * - 好感：希孟达知己(≥60)/莫逆(≥80) → ximengNote 提羁绊。
+ * - 暗线：觉察「粉饰太平」标记（haiyouDiscovered/noticedWaterEndCloudStrong/secondScrollTeased）→ themeNote 点破。
+ */
+export function determineEnding(state: GameState, exam: { finalScore: number; cappedBySkill: boolean }): EndingResult {
+  const { finalScore, cappedBySkill } = exam;
+  let tier: EndingTier;
+  let rankChange: Rank | undefined;
+  let unlockArchive: boolean;
+  if (finalScore >= 85) {
+    tier = 'excellent';
+    rankChange = 'painter_awaiting';
+    unlockArchive = true;
+  } else if (finalScore >= 70) {
+    tier = 'good';
+    rankChange = 'painter_regular';
+    unlockArchive = true;
+  } else if (finalScore >= 60) {
+    tier = 'pass';
+    rankChange = 'painter_regular';
+    unlockArchive = false;
+  } else {
+    tier = 'fail';
+    rankChange = undefined;
+    unlockArchive = false;
+  }
+
+  // 好感修饰（希孟唯一好感线）
+  const ximeng = state.relationships.ximeng;
+  let ximengNote: string | undefined;
+  if (ximeng.hiddenAffinity >= 80) {
+    ximengNote = '临别时希孟寻你而来，将一卷亲笔小景塞进你手里，只道"他日同游"。';
+  } else if (ximeng.hiddenAffinity >= 60) {
+    ximengNote = '希孟远远向你颔首——这位寡言的青年画师，到底把你当了同道。';
+  }
+
+  // 暗线修饰（粉饰太平觉察）
+  const flags = state.progress.flags;
+  const awareCount =
+    (flags.haiyouDiscovered ? 1 : 0) +
+    (flags.noticedWaterEndCloudStrong ? 1 : 0) +
+    (flags.secondScrollTeased ? 1 : 0);
+  let themeNote: string | undefined;
+  if (awareCount >= 2) {
+    themeNote = '你已看出这煌煌画院的太平景象之下，藏着没画进卷里的东西。骸游图的伏笔，在你心里挥之不去。';
+  } else if (awareCount === 1) {
+    themeNote = '盛世画卷的边角，你瞥见了一丝不对劲，却还说不清那是什么。';
+  }
+
+  // 七日养成回顾
+  const majorSkill = state.skills[state.player.styleOrigin];
+  const summaryLines = [
+    `本科画技：${skillNames[state.player.styleOrigin]} ${majorSkill}`,
+    `学识：${state.stats.knowledge}`,
+    `与希孟：${RELATIONSHIP_STAGE_LABELS[ximeng.stage]}`,
+    `丹青试评分：${finalScore}${cappedBySkill ? '（手生，未达画技门槛）' : ''}`,
+  ];
+
+  return {
+    tier,
+    title: ENDING_TITLES[tier],
+    score: finalScore,
+    cappedBySkill,
+    rankChange,
+    unlockArchive,
+    ximengNote,
+    themeNote,
+    summaryLines,
+  };
 }
 
 

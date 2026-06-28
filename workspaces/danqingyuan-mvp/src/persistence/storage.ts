@@ -3,7 +3,7 @@ import type { GameState } from '../types';
 const SAVE_KEY = 'danqingyuan-mvp:auto-save';
 
 /** schema 11（2026-06-26）：对话往来历史 chatHistory（per relationship） */
-const SCHEMA_VERSION = 13;
+const SCHEMA_VERSION = 14;
 
 export interface SaveFile {
   saveId: string;
@@ -95,6 +95,11 @@ function migrateV11(saveFile: SaveFile): SaveFile {
 /** v12→v13 旧档迁移（2026-06-28 学识封顶）：补当日学识涨幅 knowledgeGainedToday */
 function migrateV12(saveFile: SaveFile): SaveFile {
   saveFile.gameState.time.knowledgeGainedToday ??= 0;
+  return { ...saveFile, schemaVersion: 13 };
+}
+
+/** v13→v14 旧档迁移（2026-06-28 丹青试结局）：ending 为可选字段，旧档无（未走到结局）即 undefined，仅升版本 */
+function migrateV13(saveFile: SaveFile): SaveFile {
   return { ...saveFile, schemaVersion: SCHEMA_VERSION };
 }
 
@@ -140,6 +145,9 @@ export function loadSaveFile(): SaveFile | null {
     }
     if (parsed.schemaVersion === 12) {
       parsed = migrateV12(parsed);
+    }
+    if (parsed.schemaVersion === 13) {
+      parsed = migrateV13(parsed);
     }
     if (parsed.schemaVersion !== SCHEMA_VERSION) {
       return null;

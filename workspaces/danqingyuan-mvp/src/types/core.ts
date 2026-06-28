@@ -2,7 +2,7 @@ export type TimeSlot = 'morning_class' | 'forenoon' | 'noon' | 'afternoon' | 'ev
 
 export const TIME_SLOT_ORDER: TimeSlot[] = ['morning_class', 'forenoon', 'noon', 'afternoon', 'evening'];
 
-export type Rank = 'student' | 'painter_regular';
+export type Rank = 'student' | 'painter_regular' | 'painter_awaiting';
 
 export type SkillId = 'landscape' | 'figure' | 'architecture';
 
@@ -285,6 +285,32 @@ export interface GameState {
   pendingHooks?: PendingHook[];
   /** 即时推荐意图（2026-06-17）：当日 LLM 产出的"去某地接续剧情"意图。点推荐签或手动走到该地都触发 follow 接续场景；当日即时有效、消费即删、跨日清空（区别于 pendingHooks 跨日约定） */
   suggestedIntents?: Partial<Record<LocationId, string>>;
+  /** 丹青试结局（2026-06-28）：第7日丹青试结算后由 determineEnding 写入，驱动 EndingScreen */
+  ending?: EndingResult;
+}
+
+/** 丹青试结局档（2026-06-28）：分数定主轴，好感/暗线修饰文本 */
+export type EndingTier = 'excellent' | 'good' | 'pass' | 'fail';
+
+export interface EndingResult {
+  /** 结局档：优（画待诏）/良（画正解锁秘阁）/中（画正勉过）/落第 */
+  tier: EndingTier;
+  /** 结局标题（按 tier） */
+  title: string;
+  /** 最终分数（含技能 gating + 学识加分） */
+  score: number;
+  /** 是否因本科技能不足被封顶（手生落第，结局文案区分） */
+  cappedBySkill: boolean;
+  /** 晋升 rank（落第不变） */
+  rankChange?: Rank;
+  /** 是否解锁秘阁（良/优档） */
+  unlockArchive: boolean;
+  /** 希孟羁绊点缀（好感达知己/莫逆时非空） */
+  ximengNote?: string;
+  /** 暗线觉察点缀（看破粉饰太平/骸游图伏笔时非空） */
+  themeNote?: string;
+  /** 七日养成回顾（本科技能/学识/好感档/暗线觉察条目） */
+  summaryLines: string[];
 }
 
 /** 剧情约定（2026-06-16）：LLM resolve 产出 day/locationId/label/summary，引擎补 id/createdDay/status 入队 */

@@ -2009,6 +2009,22 @@ button {
   border-top: 1px solid rgba(180, 148, 80, 0.25);
 }
 
+/* 结局页七日养成回顾（2026-06-28） */
+.ed-recap {
+  margin: 16px 0 4px;
+  padding: 14px 16px;
+  background: rgba(180, 148, 80, 0.08);
+  border: 1px solid rgba(180, 148, 80, 0.22);
+  border-radius: 4px;
+}
+
+.ed-recap-line {
+  color: #3A332B;
+  font-size: 15px;
+  line-height: 1.95;
+  margin: 0;
+}
+
 .ex-begin-btn {
   border: none;
   background: url('/exam/exam-submit-button-bg.png') center / 100% 100% no-repeat;

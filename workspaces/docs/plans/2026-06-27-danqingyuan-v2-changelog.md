@@ -161,5 +161,29 @@
 
 **验证**：build ✅；node **14/0**（可见性：晚间宿舍未测出签/已测不出/第7日不出/非宿舍不出/午间不出/就寝签仍在；getActionTrack=mechanical+isLlmScene=false；buildQuickExamReward 心情6本科+1/心情8+2/技能封顶满空/学识封顶剩1给1/封顶满空/心情3抵消为0）。真 LLM 出题冒烟（123字题面+3选项+hiddenRubric）。**未改 painting prompt → 不重启 proxy**。存档无新字段（用 flags 动态键 quick_exam_d{day}，SCHEMA 不变）。
 
+---
+
+## 十一、丹青试目标线：技能 gating + 多维结局 + 独立结局页（2026-06-28，明明指定方向）
+
+**背景**：丹青试是七日养成终点却形同虚设——只有过/不过二元、不过也无后果（末日"再观一日"是空话）、本科技能几乎不进通过门槛、无结局收尾（技能/学识/好感/暗线七日积累零回响）。明明拍板：**技能 gating + 多维结局分档 + 独立结局页**。
+
+**决策（AskUserQuestion）**：①gating+结局分档都做；②**本科技能不足则封顶分**（手生过不了，技能硬门槛）；③**多维结局（分数+好感+暗线）**；④**独立结局页**。
+
+| 改动 | 位置 |
+|---|---|
+| `computeExamScore(state,rawScore)`：学识加分floor(k/5)+**本科技能<EXAM_SKILL_GATE(40)则封顶EXAM_SKILL_CAP_SCORE(59)**，返回{finalScore,cappedBySkill} | `engine/gameEngine.ts` |
+| `determineEnding(state,exam):EndingResult`：**分数定主轴档**（优≥85画待诏/良70-84画正+秘阁/中60-69画正勉过/落第<60），**好感(希孟stage≥知己60/莫逆80)+暗线(haiyouDiscovered/noticedWaterEndCloudStrong/secondScrollTeased觉察数)只修饰文本**(ximengNote/themeNote)；summaryLines七日回顾 | `engine/gameEngine.ts` |
+| Rank 加 `painter_awaiting`(画待诏)；EndingTier/EndingResult 类型 + GameState.ending 字段 | `types/core.ts` |
+| `EndingScreen.tsx` 新建：仿ExamScreen卷轴风，TIER_PROLOGUE各档结语(**固定模板不调LLM**)+七日养成回顾卡(.ed-recap)+希孟/暗线点缀+入秘阁/重新开始按钮 | `components/EndingScreen.tsx` |
+| submitExam final 分支：computeExamScore→determineEnding→存 state.ending+rank/archiveUnlocked按tier(不再无脑passed→画正)；App 渲染 state.ending&&!endingDismissed→EndingScreen(入秘阁=endingDismissed暂隐进主界面看《骸游图》) | `app/App.tsx` |
+| rankLabels/结算笺加 painter_awaiting；存档 SCHEMA 13→14+migrateV13(ending可选passthrough) | `MainGameScreen.tsx`/`persistence/storage.ts` |
+
+**关键约束**：技能 gating 在引擎纯函数（可 node 测）；**分数定主轴 rank、好感/暗线只修饰文本**（不让好感高免试通过，保持丹青试技艺考核本质）；结局页固定模板不调 LLM（稳定优先）；温书自测/秘阁路径不受影响。
+
+**验证**：build ✅；node **22/0**（computeExamScore 技能足/不足封顶/低分不封顶/学识加分；determineEnding 四档+边界60/70/84/85/59+好感空/知己/莫逆+暗线0/1/2+技能封顶落第标注）+回归 3/0。**未调 LLM → 不重启 proxy**。
+
+**待补（todo）**：结局页美术资产（各档结局卷轴/配图，与温书自测 UI 美术一起后补）；结局 LLM 散文增强（读玩家七日轨迹生成个性化收尾，现为固定模板）。
+
+
 
 
