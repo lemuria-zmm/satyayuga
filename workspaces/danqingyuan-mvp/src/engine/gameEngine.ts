@@ -156,6 +156,7 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
   const patch: ValidatedStatePatch = {
     staminaDelta: -card.staminaCost,
     timeAdvance: false, // 沙盒：不推进时段
+    moodDelta: -1, // 用功消耗心气（2026-06-28）：练习耗心情-1，靠饮食/娱乐回补，逼劳逸平衡
   };
   const target = card.practiceSkill;
   const mood = moodGrowthModifier(state);
@@ -473,6 +474,7 @@ function resolveMorningClass(state: GameState, action: GameAction): { patch: Val
   const patch: ValidatedStatePatch = {
     staminaDelta: -action.staminaCost,
     timeAdvance: true,
+    moodDelta: -1, // 用功消耗心气（2026-06-28）：晨课耗心情-1（与练习同），靠饮食/娱乐回补
   };
   let text = course?.narrative ?? '晨课如常。';
 

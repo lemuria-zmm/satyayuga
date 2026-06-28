@@ -43,7 +43,8 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 8. **数值带正反馈/免费补给必两端封顶+保底**（好感日涨封顶12、neutral保底+1、陌路quota6）。**凡"确定性给数值"的成长点都要每日封顶**——午/晚沙盒有免费回体力(讨茶+1)，无封顶=免费补给循环无限刷（技能 DAILY_SKILL_CAP=4、学识 DAILY_KNOWLEDGE_CAP=3，仅练习签计入，晨课不限）。新增同类资源默认就上封顶。
 9. **prompt 改动必重启 proxy**；scene/dialogue prompt 版本号前后端常量须一致。
 10. **沙盒练习（practice track）走独立轻量路径**：调 LLM 但**不进 isLlmScene→startScene 三件套**（isLlmScene 只认 growth/narrative）；runPractice 拿单段文即 setActiveScene(null) 结算，不写主线账本、不推时段。技能收益引擎确定性给（computePracticeGain，卡可 practiceAmount 覆盖），技能日封顶4/学识日封顶3。
-11. **心情有真作用（06-28，勿当死数值）**：moodGrowthModifier ≥8+1/≤3-1 作用练习+晨课成长收益（clamp≥1，封顶前）；isPracticeMoodLocked 心情≤3 锁练习签（dock 置灰「心绪不宁」+applyAction 防御 no-op），**晨课不锁**（morning_class 无调心情手段，靠收益-1 软惩罚）。
+11. **心情有真作用（06-28，勿当死数值）**：moodGrowthModifier ≥8+1/≤3-1 作用练习+晨课成长收益（clamp≥1，封顶前）；isPracticeMoodLocked 心情≤3 锁练习签（dock 置灰「心绪不宁」+applyAction 防御 no-op），**晨课不锁**（morning_class 无调心情手段，靠收益-1 软惩罚）。**下降通道（否则惩罚永不触发）**：晨课/练习每场 mood-1（叙事 wander/follow 不扣）、体力归零强制入夜额外 -2（正常就寝不扣）；饮食/娱乐回补。
+12. **练习生文用 PRACTICE_SEGMENT_MIN/MAX(60/150)**，非全局 SEGMENT(200/500)——练习是轻量单段沉浸，勿用长预算。
 
 ## 防返工纪律（每轮收尾自检）
 1. 临时调试 console.log 当轮清除（`grep -rn "console.log" src/ server/` 应只剩 proxy 启动横幅）。

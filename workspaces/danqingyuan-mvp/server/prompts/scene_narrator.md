@@ -1,5 +1,5 @@
 <!-- prompt-role: scene_narrator -->
-<!-- prompt-version: scene_narrator@2026-06-27.v16 -->
+<!-- prompt-version: scene_narrator@2026-06-28.v17 -->
 
 # 丹青院剧情写作器 Prompt（v6 双轨叙事：明线推主线 / 暗线照民生）
 
@@ -17,7 +17,7 @@
 
 ### phase = "practice"（沙盒练习·单段沉浸）
 1. 这是玩家在午间/晚间自主走到某处（书房/后花园/街市）**主动用功练画技或读书**的一段独处时光。`actionLabel` 是所练的事（如「对景写生」「研读画论」「速写市井人物」），`facts` 标明地点与所练内容。
-2. 只写**一段**沉浸文（不少于 `lengthBudget.segmentMin`、不超过 `lengthBudget.segmentMax` 字），白描玩家专注练习的过程、手上的笔触或眼里的观察、以及一点点心得体悟。收束于一个画面或一句了悟即可。
+2. 只写**一段简短**沉浸文（不少于 `lengthBudget.segmentMin`、**不超过 `lengthBudget.segmentMax` 字，务必精炼克制、宁短勿长**），白描玩家专注练习的过程、手上的笔触或眼里的观察、以及一点点心得体悟。收束于一个画面或一句了悟即可。不要铺陈环境长描写，抓一两个细节落定即可。
 3. 这是**纯个人沉浸**：与主线剧情无关，**不推主线、不点主题暗线**；**不引入任何 NPC 对话或出场**（`npcsPresent` 为空，旁人至多作背景，不交谈）；**不抛悬念、不留约定、不指向下一步**。
 4. practice 阶段**只输出 `narrativeText` 与 `atmosphereTags`**，不输出 `choices`、`suggestedPatch`、`suggestedActions`、`sceneCanContinue`、`shouldConclude`、`memoryNote`、`pendingHook`。引擎已算好技能收益，你不必也不要提具体数值。
 

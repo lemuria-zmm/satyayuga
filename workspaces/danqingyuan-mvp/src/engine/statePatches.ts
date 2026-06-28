@@ -84,12 +84,19 @@ export function applyValidatedStatePatch(state: GameState, patch: ValidatedState
   if (patch.timeAdvance) {
     advanceTime(next);
     // 体力归零强制入夜（v2 拍板）：跳过当日剩余时段，直接进入次日晨课
+    let collapsed = false;
     while (
       next.time.stamina === 0 &&
       next.time.timeSlot !== 'morning_class' &&
       !next.progress.flags.finalChapter
     ) {
+      collapsed = true;
       advanceTime(next);
+    }
+    // 累垮扣心情（2026-06-28）：透支体力强制入夜额外 mood-2（正常就寝不扣）。
+    // 在 advanceTime 跨日后扣——此时已是次日晨课、心情仍承上日基底（advanceTime 不重置心情）。
+    if (collapsed) {
+      next.stats.mood = clamp(next.stats.mood - 2, STAT_LIMITS.mood.min, STAT_LIMITS.mood.max);
     }
   }
 

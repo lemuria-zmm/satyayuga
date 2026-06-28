@@ -23,6 +23,10 @@ import type {
 /** 剧情段落预算 */
 export const SEGMENT_MIN = 200;
 export const SEGMENT_MAX = 500;
+
+/** 沙盒练习段（2026-06-28）：单段轻量沉浸文，比叙事场景短得多（≤150字），不冗长 */
+export const PRACTICE_SEGMENT_MIN = 60;
+export const PRACTICE_SEGMENT_MAX = 150;
 /**
  * 日终字数预算（2026-06-18 大幅放宽 4500→12000）：A+C 模型下一日叙事时段（晨课+上午+下午+可能赴约）
  * 各最多 3 场、每场 open+可多次「继续」，旧 4500 是按"一时段一场"的旧模型定的，新模型午后就会撞顶

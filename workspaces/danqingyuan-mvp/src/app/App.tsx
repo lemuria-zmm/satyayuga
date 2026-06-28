@@ -23,6 +23,8 @@ import {
   sanitizeMemoryNote,
   SEGMENT_MAX,
   SEGMENT_MIN,
+  PRACTICE_SEGMENT_MAX,
+  PRACTICE_SEGMENT_MIN,
 } from '../engine/sceneEngine';
 import { AdmissionTransition } from '../components/AdmissionTransition';
 import { DialogueScreen } from '../components/DialogueScreen';
@@ -67,7 +69,7 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-27.v16';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-28.v17';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
 /** 希孟首遇闲聊句数（2026-06-26）：独立于每日主动闲聊额度，首遇当场可说几句即自然收尾 */
 const FIRST_MEET_CHAT_TURNS = 4;
@@ -1047,8 +1049,8 @@ export function App() {
           // 练习纯个人沉浸：不插 NPC、不推主线
           npcsPresent: [],
           lengthBudget: {
-            segmentMin: SEGMENT_MIN,
-            segmentMax: SEGMENT_MAX,
+            segmentMin: PRACTICE_SEGMENT_MIN,
+            segmentMax: PRACTICE_SEGMENT_MAX,
             dayCharsUsed: base.time.narrativeCharsToday,
             dayCharsMax: DAY_CHARS_MAX,
           },

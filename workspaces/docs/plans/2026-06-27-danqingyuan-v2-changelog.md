@@ -111,3 +111,31 @@
 - `npm run build` ✅；node 单测 **22/0**（moodGrowthModifier 三档/学识封顶3到顶归零+部分裁剪+跨日清零/钻研旧档+2/心情8练习+晨课收益+1/心情≤3锁练习isPracticeMoodLocked+applyAction no-op/餐签不受锁/晨课不锁且收益clamp≥1）+ 回归 **5/0**（技能封顶仍4/心情6无修正/吃饭机械不推时段回体力）。
 - **未动 prompt/mock**（纯引擎+UI+存档），不重启 proxy。
 
+---
+
+## 九、心情下降通道 + 练习生文收窄（2026-06-28，明明试玩反馈）
+
+**反馈两点**：①一直没看到心情值减少的触发；②练习签生文太长，想约束每次 ≤150 字。
+
+### 9.1 心情曾只升不降 → 加两条确定性下降通道
+**病根**：所有活动卡 mood effect 全是正值（饮食/娱乐都涨心情），唯一能减的是 LLM 场景 resolve 的 suggestedPatch.moodDelta（极少给负值）。**心情基本只升到 10 封顶，第八节做的"心情≤3 锁练习/收益-1"惩罚永不触发**——正是明明"看不到心情减少"的原因。
+
+**拍板（AskUserQuestion 多选）**：成长行动消耗心情 + 体力归零扣心情。
+| 改动 | 值 | 位置 |
+|---|---|---|
+| 成长行动耗心情：晨课 + 练习签每场 `moodDelta -1`（叙事 wander/follow 不扣——逢偶非苦练） | -1/场 | `resolvePractice`/`resolveMorningClass` |
+| 体力归零强制入夜额外 `mood -2`（"累垮了"；**正常就寝不扣**，只在强制跳段路径触发一次） | -2 | `statePatches.advanceTime` while 循环后，collapsed 标记 |
+
+> **经济平衡**：心情初始6/上限10；一天成长行动约扣 2~4，饮食娱乐一天可回补 +3~5（蜜煎+2/听曲+3/投壶+2 等）。劳逸失衡→心情跌到≤3→练习被锁，逼玩家停下来调节。心情现在是真正流动的资源。
+
+### 9.2 练习生文收窄 ≤150 字
+- `PRACTICE_SEGMENT_MIN=60`/`PRACTICE_SEGMENT_MAX=150`（sceneEngine 导出），runPractice 用之替代全局 SEGMENT_MIN/MAX(200/500)。
+- prompt practice 段加"简短·精炼克制·宁短勿长·不铺陈环境长描写"；校验/sanitize 用传入 segmentMax 自然按 150 卡范围+截断。
+- SCENE_PROMPT_VERSION v16→**v17**，已重启 proxy。
+
+### 9.3 验证
+- `npm run build` ✅；node 单测 **12/0**（练习字数常量 60/150、练习扣心情-1、晨课扣心情-1、强制入夜额外-2、正常推进不扣、正常就寝不扣）。
+- 真 LLM 冒烟：研读画论生文 **127 字**（≤150），只含 narrativeText+atmosphereTags，简洁不注水。
+- **改了 prompt → 已重启 proxy**（v17 前后端一致）。
+
+
