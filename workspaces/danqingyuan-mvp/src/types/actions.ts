@@ -69,6 +69,8 @@ export interface ValidatedStatePatch {
   eventIdsCompleted?: string[];
   /** 当日技能涨幅累加（2026-06-27 沙盒练习封顶）：仅练习结算填，累加到 time.skillGainedToday */
   skillGainedTodayDelta?: number;
+  /** 当日学识涨幅累加（2026-06-28 学识封顶）：仅练习结算填，累加到 time.knowledgeGainedToday */
+  knowledgeGainedTodayDelta?: number;
 }
 
 export interface ActionResult {

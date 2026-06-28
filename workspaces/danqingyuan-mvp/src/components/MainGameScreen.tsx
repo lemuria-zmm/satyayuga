@@ -5,7 +5,7 @@ import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
 import { DAY_CHARS_MAX, SEGMENT_MIN } from '../engine/sceneEngine';
-import { MAX_SLOT_SCENES, isActionAffordable } from '../engine/gameEngine';
+import { MAX_SLOT_SCENES, isActionAffordable, isPracticeMoodLocked } from '../engine/gameEngine';
 import { dailyChatQuota } from '../types/core';
 import type { GameAction, GameState, LocationId, NpcId, SkillId, ValidatedStatePatch } from '../types';
 
@@ -529,6 +529,9 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
             const isMeal = action.type === 'activity' && (action.activityId ?? '').startsWith('meal');
             // 钱不足置灰（2026-06-25）：餐签/市井消费签买不起时显示但不可点，标「需X文」，治"餐签凭空消失疑似bug"
             const affordable = isActionAffordable(state, action);
+            // 心情过低锁练习（2026-06-28）：心情≤3 练习签置灰「心绪不宁」，逼玩家先用同时段饮食/娱乐调心情
+            const moodLocked = isPracticeMoodLocked(state, action);
+            const usable = affordable && !moodLocked;
             const tagClass = `${
               isChime
                 ? `gm-action-tag gm-action-tag-chime${chimeUrge ? ' gm-action-tag-chime-urge' : ''}`
@@ -537,23 +540,25 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
                   : isMeal
                     ? 'gm-action-tag gm-action-tag-meal'
                     : 'gm-action-tag'
-            }${affordable ? '' : ' gm-action-tag-unaffordable'}`;
+            }${usable ? '' : ' gm-action-tag-unaffordable'}`;
             return (
               <button
                 className={tagClass}
                 key={action.id}
-                onClick={() => affordable && onAction(action)}
+                onClick={() => usable && onAction(action)}
                 type="button"
-                disabled={!affordable}
+                disabled={!usable}
               >
                 {art && <img alt="" className="gm-action-tag-art" src={art} />}
                 <span className="gm-action-tag-title">{action.label}</span>
                 <span className="gm-action-tag-cost">
                   {isChime
                     ? '钟声已响'
-                    : !affordable
-                      ? `需${action.moneyCost}文`
-                      : <>{action.staminaCost > 0 ? `体力-${action.staminaCost}` : '不费体力'}{action.moneyCost ? ` · ${action.moneyCost}文` : ''}</>}
+                    : moodLocked
+                      ? '心绪不宁'
+                      : !affordable
+                        ? `需${action.moneyCost}文`
+                        : <>{action.staminaCost > 0 ? `体力-${action.staminaCost}` : '不费体力'}{action.moneyCost ? ` · ${action.moneyCost}文` : ''}</>}
                 </span>
               </button>
             );

@@ -48,6 +48,11 @@ export interface ActivityCard {
    * 实际涨量由引擎 computePracticeGain 按"是否本科"判定（本科 +2 / 副 +1 / 学识 +1），卡上不写死数值。
    */
   practiceSkill?: SkillId | 'knowledge';
+  /**
+   * 练习基础涨量覆盖（2026-06-28）：进阶练习卡（如钻研旧档 minKnowledge:10、体力-2）涨量更高时填此值，
+   * 覆盖 computePracticeGain 的默认（学识默认1/本科2/副1）。缺省走默认。
+   */
+  practiceAmount?: number;
   /** 模板文本池，引擎随机取一条（机械类用作正文；成长类仅作 LLM 失败兜底） */
   narratives: string[];
 }
@@ -378,6 +383,7 @@ export const PRACTICE_ACTIVITIES: ActivityCard[] = [
     locationId: 'library',
     staminaCost: 2,
     practiceSkill: 'knowledge',
+    practiceAmount: 2,
     minKnowledge: 10,
     narratives: [
       '见识够了，你才看得懂第四层旧档的门道。一函积尘的批注被你翻出来，字里行间另有乾坤。',

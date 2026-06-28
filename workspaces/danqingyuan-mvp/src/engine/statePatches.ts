@@ -70,6 +70,11 @@ export function applyValidatedStatePatch(state: GameState, patch: ValidatedState
     next.time.skillGainedToday += patch.skillGainedTodayDelta;
   }
 
+  // 沙盒练习每日学识涨幅累加（2026-06-28）：用于封顶 DAILY_KNOWLEDGE_CAP，跨日清零
+  if (patch.knowledgeGainedTodayDelta) {
+    next.time.knowledgeGainedToday += patch.knowledgeGainedTodayDelta;
+  }
+
   if (patch.eventIdsCompleted) {
     next.progress.completedEventIds = Array.from(
       new Set([...next.progress.completedEventIds, ...patch.eventIdsCompleted]),
@@ -119,6 +124,8 @@ function advanceTime(state: GameState) {
   state.time.narrativeCharsToday = 0;
   // 沙盒练习每日技能涨幅封顶跨日清零（2026-06-27）
   state.time.skillGainedToday = 0;
+  // 沙盒练习每日学识涨幅封顶跨日清零（2026-06-28）
+  state.time.knowledgeGainedToday = 0;
   // 即时推荐意图当日有效，跨日清空（2026-06-17）
   state.suggestedIntents = {};
   // 每日闲聊次数 + 当日好感涨幅跨日清零（2026-06-25/26）：次日恢复满额、涨幅封顶重置

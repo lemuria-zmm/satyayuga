@@ -3,7 +3,7 @@ import { LOCATIONS } from '../content/locations';
 import { COURSES } from '../content/courses';
 import { ACTIVITY_BY_ID, ALL_ACTIVITIES } from '../content/activities';
 import type { ActivityCard } from '../content/activities';
-import { DAILY_SKILL_CAP } from '../types/core';
+import { DAILY_SKILL_CAP, DAILY_KNOWLEDGE_CAP } from '../types/core';
 import { applyValidatedStatePatch } from './statePatches';
 import { buildDailySummary, isLlmScene } from './sceneEngine';
 import { commitMemoryPatch } from '../memory/writer';
@@ -113,15 +113,38 @@ export function practiceGain(state: GameState, skillId: SkillId): number {
  * 沙盒练习基础收益（2026-06-27）：本科（=玩家 styleOrigin）每次 +2，副技能 +1；学识固定 +1。
  * 出身持续优势 / 买画材 buff 由 applyGrowthBonuses 另行叠加；每日封顶在 resolvePractice 裁剪。
  */
-export function computePracticeGain(state: GameState, target: SkillId | 'knowledge'): number {
+export function computePracticeGain(state: GameState, target: SkillId | 'knowledge', baseOverride?: number): number {
+  if (baseOverride !== undefined) return baseOverride;
   if (target === 'knowledge') return 1;
   return target === state.player.styleOrigin ? 2 : 1;
 }
 
 /**
+ * 心情对成长效率的修正（2026-06-28）：心情≥8 → +1，≤3 → -1，其余 0。
+ * 作用于练习签与晨课的技能&学识正增长（让娱乐/饮食的心情收益真正反哺成长，低心情则拖慢）。
+ * 调用方负责 clamp（不把收益压到负数、不在 0 收益上倒扣）。
+ */
+export function moodGrowthModifier(state: GameState): number {
+  if (state.stats.mood >= 8) return 1;
+  if (state.stats.mood <= 3) return -1;
+  return 0;
+}
+
+/**
+ * 心情过低锁练习签（2026-06-28）：心情≤3 时练习类成长行动被锁（点不了，UI 置灰「心绪不宁」），
+ * 逼玩家先用同时段的饮食/娱乐调心情。**晨课不锁**（morning_class 时段无调心情手段，锁了卡死；晨课保留收益-1 软惩罚）。
+ */
+export function isPracticeMoodLocked(state: GameState, action: GameAction): boolean {
+  return action.type === 'activity'
+    && ACTIVITY_BY_ID[action.activityId ?? '']?.track === 'practice'
+    && state.stats.mood <= 3;
+}
+
+/**
  * 沙盒练习结算（2026-06-27）：track:'practice' 的活动卡。
  * 引擎确定性给技能/学识（不信 LLM 自报）+ 扣体力 + 不推进时段（沙盒）；LLM 只负责沉浸文（App.runPractice）。
- * 每日技能涨幅封顶 DAILY_SKILL_CAP：三画技正增长当日累计满 4 后裁剪为 0（学识不计入封顶、不受限）。
+ * 心情修正（2026-06-28）：≥8 收益+1 / ≤3 收益-1（clamp≥1，练了总有一点长进）。
+ * 每日封顶：技能 DAILY_SKILL_CAP=4、学识 DAILY_KNOWLEDGE_CAP=3，当日正增长累计满后裁剪为 0（仍出文）。
  */
 function resolvePractice(state: GameState, action: GameAction): { patch: ValidatedStatePatch; text: string } {
   const card = ACTIVITY_BY_ID[action.activityId ?? ''];
@@ -135,16 +158,19 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
     timeAdvance: false, // 沙盒：不推进时段
   };
   const target = card.practiceSkill;
+  const mood = moodGrowthModifier(state);
+  // 心情修正：基础收益 + mood，clamp ≥1（练了至少长一点，不因心情低彻底白练；锁练习已挡住心情≤3 的常态触发，此处仅兜底）
+  const gain = Math.max(1, computePracticeGain(state, target, card.practiceAmount) + mood);
   if (target === 'knowledge') {
-    patch.knowledgeDelta = computePracticeGain(state, target);
+    patch.knowledgeDelta = gain;
   } else {
-    patch.skillDelta = { [target]: computePracticeGain(state, target) };
+    patch.skillDelta = { [target]: gain };
   }
 
   // 出身持续优势（耕读学识+1 / 匠作界画+1）+ 买画材 buff：与晨课同样吃 growth 加成
   applyGrowthBonuses(state, patch, 'growth');
 
-  // 每日技能封顶：三画技正增长之和受 DAILY_SKILL_CAP - skillGainedToday 约束（学识不计入）
+  // 每日技能封顶：三画技正增长之和受 DAILY_SKILL_CAP - skillGainedToday 约束
   if (patch.skillDelta) {
     const remaining = Math.max(0, DAILY_SKILL_CAP - state.time.skillGainedToday);
     let applied = 0;
@@ -161,6 +187,14 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
     }
     patch.skillDelta = capped;
     if (applied > 0) patch.skillGainedTodayDelta = applied;
+  }
+
+  // 每日学识封顶（2026-06-28）：练习签学识正增长受 DAILY_KNOWLEDGE_CAP - knowledgeGainedToday 约束
+  if (patch.knowledgeDelta && patch.knowledgeDelta > 0) {
+    const room = Math.max(0, DAILY_KNOWLEDGE_CAP - state.time.knowledgeGainedToday);
+    const granted = Math.min(patch.knowledgeDelta, room);
+    patch.knowledgeDelta = granted;
+    if (granted > 0) patch.knowledgeGainedTodayDelta = granted;
   }
 
   return { patch, text: pickNarrative(card.narratives) };
@@ -456,6 +490,18 @@ function resolveMorningClass(state: GameState, action: GameAction): { patch: Val
     if (course.knowledgeBonus) patch.knowledgeDelta = course.knowledgeBonus;
   }
 
+  // 心情修正（2026-06-28）：心情≥8 收益+1 / ≤3 收益-1（clamp≥1，上课总有一点长进）。
+  // 晨课不受每日封顶约束（封顶仅练习签）；晨课不锁（morning_class 无调心情手段），低心情靠此软惩罚。
+  const moodMod = moodGrowthModifier(state);
+  if (moodMod !== 0) {
+    if (patch.skillDelta) {
+      patch.skillDelta = Object.fromEntries(
+        Object.entries(patch.skillDelta).map(([k, v]) => [k, v > 0 ? Math.max(1, v + moodMod) : v]),
+      ) as ValidatedStatePatch['skillDelta'];
+    }
+    if (patch.knowledgeDelta && patch.knowledgeDelta > 0) patch.knowledgeDelta = Math.max(1, patch.knowledgeDelta + moodMod);
+  }
+
   // 晨课恒为成长类：应用出身持续优势（耕读学识+1/匠作界画+1）+ 买画材 buff
   applyGrowthBonuses(state, patch, 'growth');
 
@@ -479,6 +525,16 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
   if (action.moneyCost && state.stats.money < action.moneyCost) {
     return {
       renderedText: '你摸了摸袖中钱袋，铜钱不够。只好作罢。',
+      nextState: state,
+      statePatch: {},
+      nextActions: getAvailableActions(state),
+    };
+  }
+
+  // 心情过低锁练习（2026-06-28）：防御性兜底（UI 已置灰，此处防绕过）。点了 no-op 出提示，不结算不扣体力。
+  if (isPracticeMoodLocked(state, action)) {
+    return {
+      renderedText: '你心绪不宁，对着纸笔半晌，一个字、一根线都落不下去。也许该先松快松快。',
       nextState: state,
       statePatch: {},
       nextActions: getAvailableActions(state),

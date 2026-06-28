@@ -72,3 +72,42 @@
 
 - 练习卡道具图：暂借现有 tool-*.png 占位（仿赁书/买画材先例），记入美术清单待出图。
 - e2e 真人试玩验证（待明明跑七日）：第二日午间走书房点练习→出文+学识结算笺·时段不推进；连点到封顶仍出文不涨；报时钟/歇晌/就寝收日不受影响。
+
+---
+
+## 八、试玩反馈修正：学识封顶 + 心情作用（2026-06-28，明明试完三日）
+
+**反馈两点**：①吃饭涨体力→点学识签刷数值，学识涨得比预估快；②心情值似乎没发挥作用。
+
+### 8.1 学识刷得快——根因是学识无封顶（不是吃饭值）
+上轮只给**技能**加了 `DAILY_SKILL_CAP=4`，学识当时判断"涨得慢+minKnowledge gate 自限"没加封顶。现书房有练习签后过时：午/晚沙盒不推时间，**免费「讨碗热茶」(+1体力) + 走书房(免费) + 研读画论(-1体力,学识+1) 循环 → 体力净零、不花钱、可无限刷学识**。调低吃饭体力治标不治本（免费讨茶照样刷）；**根治=给学识也加每日封顶**（与技能对称，封顶后点了仍出文但不涨）。
+
+| 改动 | 位置 |
+|---|---|
+| `DAILY_KNOWLEDGE_CAP=3`、`TimeState.knowledgeGainedToday`（跨日清零）、`ValidatedStatePatch.knowledgeGainedTodayDelta` | `types/core.ts`/`types/actions.ts` |
+| `resolvePractice` 加学识封顶裁剪（仿技能）；statePatches 累加+跨日清零；initialState 初始化 | `engine/gameEngine.ts`/`statePatches.ts`/`initialState.ts` |
+| 存档 `SCHEMA 12→13`+`migrateV12`（knowledgeGainedToday??=0；migrateV11 返回12） | `persistence/storage.ts` |
+| **顺手修上轮漏洞**：`practice_deep_study`（钻研旧档·体力-2·minKnowledge:10）原与画论同走 knowledge=1，性价比反更差→加卡字段 `practiceAmount` 覆盖默认涨量，钻研旧档=学识+2；`computePracticeGain` 加 baseOverride 第三参 | `content/activities.ts`/`engine/gameEngine.ts` |
+
+> **吃饭体力值未动**——根因是学识无封顶，封顶一加，免费讨茶/付费买饭刷学识全堵死。晨课画理课的学识**不受练习封顶约束**（封顶仅 track:'practice'）。
+
+### 8.2 心情曾是死数值 → 高低双向作用（明明：心情1+3，高低都发挥作用）
+**病根**：心情能涨（饮食蜜煎/共膳、娱乐投壶听琴）但**无任何数值后果**——唯一读它的 `practiceGain`（≥8+1）是旧 `practice_skill` 死路径，新 `computePracticeGain` 没读；其余只是喂 LLM 写"落笔更准/画歪"文案。
+
+**拍板（方向1+3，高低都要）**：
+- **方向1（高心情奖励/低心情软惩罚）**：新增 `moodGrowthModifier(state)`（≥8→+1 / ≤3→-1 / 中性0）；作用于**练习签 + 晨课**的技能&学识正增长，clamp≥1（练了总有一点长进）。让娱乐/饮食的心情收益真正反哺成长。心情修正在每日封顶裁剪**之前**应用。
+- **方向3（低心情硬闸）**：新增 `isPracticeMoodLocked(state,action)`——心情≤3 时**练习签被锁**（MainGameScreen dock 置灰「心绪不宁」disabled；applyAction 防御性 no-op 不扣体力不结算出提示文），逼玩家先用同时段饮食/娱乐调心情→当场解锁。**晨课不锁**（morning_class 时段无调心情手段，锁了卡死；晨课靠方向1的收益-1 软惩罚兜底）。
+
+| 改动 | 位置 |
+|---|---|
+| `moodGrowthModifier` + `isPracticeMoodLocked` 导出 | `engine/gameEngine.ts` |
+| resolvePractice / resolveMorningClass 应用心情修正（clamp≥1，封顶前） | `engine/gameEngine.ts` |
+| applyAction 加 isPracticeMoodLocked 防御 no-op（在 stamina/money 守卫后） | `engine/gameEngine.ts` |
+| dock 练习签心情≤3 置灰「心绪不宁」（仿钱不足 unaffordable 机制，usable=affordable&&!moodLocked） | `components/MainGameScreen.tsx` |
+
+> **范围权衡（AskUserQuestion）**：锁练习签不锁晨课——避免锁晨课卡死 morning_class（同时段无调心情手段）。练习签在午/晚沙盒、同时段就有饮食/娱乐，闭环顺。
+
+### 8.3 验证
+- `npm run build` ✅；node 单测 **22/0**（moodGrowthModifier 三档/学识封顶3到顶归零+部分裁剪+跨日清零/钻研旧档+2/心情8练习+晨课收益+1/心情≤3锁练习isPracticeMoodLocked+applyAction no-op/餐签不受锁/晨课不锁且收益clamp≥1）+ 回归 **5/0**（技能封顶仍4/心情6无修正/吃饭机械不推时段回体力）。
+- **未动 prompt/mock**（纯引擎+UI+存档），不重启 proxy。
+
