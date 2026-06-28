@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CHARACTERS } from '../content/characters';
-import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES } from '../engine/gameEngine';
+import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward } from '../engine/gameEngine';
 import { createInitialGameState } from '../engine/initialState';
 import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
@@ -118,6 +118,11 @@ function pickExamQuestionTypes() {
   return shuffled.slice(0, 2);
 }
 
+/** 温书自测（2026-06-28）：随机取一个题型（非秘阁 archive_observation），出 1 题 */
+function pickQuickExamQuestionType(): QuestionType {
+  return examQuestionTypes[Math.floor(Math.random() * examQuestionTypes.length)];
+}
+
 function mergeSkillDeltas(evaluations: PaintingIntentEvaluatorOutput[]) {
   return evaluations.reduce<SkillDelta>((merged, evaluation) => {
     for (const [skillId, delta] of Object.entries(evaluation.suggestedStatePatch.skillDelta ?? {})) {
@@ -160,6 +165,8 @@ export function App() {
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
   const [examQuestions, setExamQuestions] = useState<PaintingPromptGeneratorOutput[]>([]);
+  // 考试模式（2026-06-28）：final=第7日丹青试（解锁秘阁/晋画正）；quick=晚间宿舍温书自测（小额加成不罚、不推时段）
+  const [examMode, setExamMode] = useState<'final' | 'quick'>('final');
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
@@ -1078,7 +1085,20 @@ export function App() {
         const questions = await Promise.all(
           pickExamQuestionTypes().map((questionType) => generatePaintingPrompt(state, 'exam', questionType)),
         );
+        setExamMode('final');
         setExamQuestions(questions);
+        setIsExamOpen(true);
+      } catch (error) {
+        setLlmError(renderLlmError(error));
+      }
+      return;
+    }
+    if (action.type === 'quick_exam') {
+      // 温书自测（2026-06-28）：晚间宿舍夜读自省，出 1 题；复用 exam 出题/答题/评分基建
+      try {
+        const question = await generatePaintingPrompt(state, 'exam', pickQuickExamQuestionType());
+        setExamMode('quick');
+        setExamQuestions([question]);
         setIsExamOpen(true);
       } catch (error) {
         setLlmError(renderLlmError(error));
@@ -1143,7 +1163,8 @@ export function App() {
     if (!state) {
       return;
     }
-    const examAction = actions.find((action) => action.type === 'take_exam');
+    const examActionType = examMode === 'quick' ? 'quick_exam' : 'take_exam';
+    const examAction = actions.find((action) => action.type === examActionType);
     if (!examAction) {
       return;
     }
@@ -1187,28 +1208,51 @@ export function App() {
     const averageScore = Math.max(0, Math.min(100, rawScore + knowledgeBonus));
     const passed = averageScore >= 60;
     const feedback = evaluations.map((evaluation) => evaluation.visibleFeedback).join('；');
-    const renderedText = passed
-      ? `丹青试两题批毕：${feedback} 你晋为画正，秘阁入口由此开启。`
-      : `丹青试两题批毕：${feedback} 你未能晋升，但监试留你再观一日。`;
 
-    const patch: ValidatedStatePatch = {
-      skillDelta: mergeSkillDeltas(evaluations),
-      staminaDelta: -examAction.staminaCost,
-      timeAdvance: true,
-      flagsSet: {
-        firstExamTaken: true,
-        firstExamPassed: passed,
-        archiveUnlocked: passed,
-        ...collectSuggestedFlags(evaluations),
-      },
-      rankChange: passed ? 'painter_regular' : undefined,
-      unlockedLocations: passed ? ['secret_archive'] : undefined,
-    };
+    let patch: ValidatedStatePatch;
+    let renderedText: string;
+
+    if (examMode === 'quick') {
+      // 温书自测（2026-06-28）：夜读自省，答得好（≥60）给本科技能/学识小额加成（受心情修正+每日封顶）；答差不罚。
+      // 不推进时段（晚间沙盒）、扣体力、落 flag 当晚不再出；不碰丹青试硬编码（晋画正/解锁秘阁）。
+      const studied = getStudiedSkills(state.curriculum, state.player.styleOrigin);
+      // 本科技能与学识轮换给：本科未满封顶给本科，否则给学识（避免单点封顶后白测）
+      const rewardTarget = state.time.skillGainedToday < 4 ? studied[0] : 'knowledge';
+      const reward = passed ? buildQuickExamReward(state, rewardTarget, 1) : {};
+      patch = {
+        ...reward,
+        staminaDelta: -examAction.staminaCost,
+        timeAdvance: false,
+        flagsSet: { [`quick_exam_d${state.time.day}`]: true },
+      };
+      renderedText = passed
+        ? `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 灯花结了又落，心里渐渐有了底。`
+        : `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 有几处仍是夹生，你记下了，明日再看。`;
+    } else {
+      // 丹青试（第7日，维持现状）：通过→晋画正+解锁秘阁
+      renderedText = passed
+        ? `丹青试两题批毕：${feedback} 你晋为画正，秘阁入口由此开启。`
+        : `丹青试两题批毕：${feedback} 你未能晋升，但监试留你再观一日。`;
+      patch = {
+        skillDelta: mergeSkillDeltas(evaluations),
+        staminaDelta: -examAction.staminaCost,
+        timeAdvance: true,
+        flagsSet: {
+          firstExamTaken: true,
+          firstExamPassed: passed,
+          archiveUnlocked: passed,
+          ...collectSuggestedFlags(evaluations),
+        },
+        rankChange: passed ? 'painter_regular' : undefined,
+        unlockedLocations: passed ? ['secret_archive'] : undefined,
+      };
+    }
+
     const patchedState = applyValidatedStatePatch(state, patch);
     const nextState = {
       ...commitMemoryPatch({
         state: patchedState,
-        actionType: 'take_exam',
+        actionType: examMode === 'quick' ? 'quick_exam' : 'take_exam',
         renderedText,
         memoryPatch: {
           playerStyleTags: collectStyleTags(evaluations),
@@ -1227,7 +1271,7 @@ export function App() {
   }
 
   if (isExamOpen) {
-    return <ExamScreen questions={examQuestions} onCancel={() => setIsExamOpen(false)} onSubmit={submitExam} />;
+    return <ExamScreen questions={examQuestions} mode={examMode} onCancel={() => setIsExamOpen(false)} onSubmit={submitExam} />;
   }
 
   async function submitPuzzle(submission: PuzzleSubmission) {

@@ -201,6 +201,29 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
   return { patch, text: pickNarrative(card.narratives) };
 }
 
+/**
+ * 温书自测奖励（2026-06-28）：晚间宿舍小测答得好时给的小额加成。
+ * 与练习签同口径——心情修正 + 每日封顶（技能 DAILY_SKILL_CAP / 学识 DAILY_KNOWLEDGE_CAP），
+ * 防止小测成为绕过封顶的刷点后门。base 默认 1。target 为技能或 'knowledge'。
+ * 返回 patch 片段（skillDelta/knowledgeDelta + 对应 GainedTodayDelta），封顶满则返回空（不涨）。
+ */
+export function buildQuickExamReward(
+  state: GameState,
+  target: SkillId | 'knowledge',
+  base = 1,
+): ValidatedStatePatch {
+  const gain = Math.max(0, base + moodGrowthModifier(state));
+  if (gain <= 0) return {};
+  if (target === 'knowledge') {
+    const room = Math.max(0, DAILY_KNOWLEDGE_CAP - state.time.knowledgeGainedToday);
+    const granted = Math.min(gain, room);
+    return granted > 0 ? { knowledgeDelta: granted, knowledgeGainedTodayDelta: granted } : {};
+  }
+  const room = Math.max(0, DAILY_SKILL_CAP - state.time.skillGainedToday);
+  const granted = Math.min(gain, room);
+  return granted > 0 ? { skillDelta: { [target]: granted }, skillGainedTodayDelta: granted } : {};
+}
+
 
 function activityToAction(card: ActivityCard, origin: GameState['player']['origin']): GameAction {
   return {
@@ -337,8 +360,14 @@ function getSlotActions(state: GameState): GameAction[] {
       ];
     case 'evening':
       // 晚间沙盒·娱乐：不限次数（不推进时间）；「就寝」收尾签仅在宿舍出现，别处需走回宿舍（2026-06-11/06-15）
+      // 温书自测（2026-06-28）：晚间回宿舍可点「温书自测」（day<7、当晚未测），夜读自省 1 题；放就寝签之前
       return [
         ...getActivitySlotActions(state, 'evening'),
+        ...(state.currentLocation === 'dormitory' &&
+        state.time.day < state.time.maxDay &&
+        !state.progress.flags[`quick_exam_d${state.time.day}`]
+          ? [{ id: 'quick-exam', type: 'quick_exam' as const, label: '温书自测', locationId: 'dormitory' as const, staminaCost: 1 }]
+          : []),
         ...(state.currentLocation === 'dormitory'
           ? [{ id: 'sleep', type: 'sleep' as const, label: '就寝', locationId: 'dormitory' as const, staminaCost: 0 }]
           : []),

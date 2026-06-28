@@ -10,7 +10,33 @@ interface ExamScreenProps {
   questions: PaintingPromptGeneratorOutput[];
   onCancel: () => void;
   onSubmit: (answers: Record<string, ExamAnswer>) => Promise<void> | void;
+  /** 考试模式（2026-06-28）：final=月末丹青试（庄重）；quick=晚间宿舍温书自测（夜读自省口吻） */
+  mode?: 'final' | 'quick';
 }
+
+/** 按模式区分门头/开场/批阅文案（2026-06-28） */
+const examChrome = {
+  final: {
+    title: '月末丹青试',
+    beginBtn: '展开试帖',
+    cancelBtn: '暂不入场',
+    introText: ['月末试纸已置堂前。', '诸生入席，风止于竹帘之外。'],
+    introQuoteLead: '李唐只说了一句：',
+    introQuote: '"观其所取，便知其心。"',
+    reviewInfo: '批阅中',
+    reviewText: ['墨迹未干，试帖已送至案前。', '堂中无人出声，只听帘外风过。'],
+  },
+  quick: {
+    title: '夜读·温书自测',
+    beginBtn: '摊开课业',
+    cancelBtn: '今夜先歇',
+    introText: ['夜深，宿舍灯下。', '你摊开今日的课业，想再默上一遍。'],
+    introQuoteLead: '你对自己说：',
+    introQuote: '"白日所学，且看记下了几分。"',
+    reviewInfo: '自省中',
+    reviewText: ['你搁下笔，把方才的答处又看了一回。', '灯花轻爆，窗外夜色沉沉。'],
+  },
+} as const;
 
 const questionTypeLabels: Record<QuestionType, string> = {
   observe_detail: '观察细节',
@@ -23,7 +49,8 @@ const optionBadges = ['甲', '乙', '丙', '丁'];
 
 type ExamPhase = 'intro' | 'answering' | 'submitting';
 
-export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
+export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: ExamScreenProps) {
+  const chrome = examChrome[mode];
   const [answers, setAnswers] = useState<Record<string, ExamAnswer>>(
     Object.fromEntries(questions.map((q) => [q.id, { freeText: '' }])),
   );
@@ -71,7 +98,7 @@ export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
         <div className="ex-bg-overlay" />
 
         <div className="ex-plaque">
-          <span className="ex-plaque-title">月末丹青试</span>
+          <span className="ex-plaque-title">{chrome.title}</span>
           <span className="ex-plaque-sep">·</span>
           <span className="ex-plaque-info">共 {totalQuestions} 题</span>
         </div>
@@ -79,24 +106,24 @@ export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
         <section className="ex-intro-paper">
           <div className="ex-intro-paper-inner">
             <p className="ex-intro-text">
-              月末试纸已置堂前。
+              {chrome.introText[0]}
               <br />
-              诸生入席，风止于竹帘之外。
+              {chrome.introText[1]}
             </p>
             <p className="ex-intro-quote">
-              李唐只说了一句：
+              {chrome.introQuoteLead}
               <br />
-              "观其所取，便知其心。"
+              {chrome.introQuote}
             </p>
             <button
               className="ex-begin-btn"
               onClick={() => setPhase('answering')}
               type="button"
             >
-              展开试帖
+              {chrome.beginBtn}
             </button>
             <button className="ex-leave-btn" onClick={onCancel} type="button">
-              暂不入场
+              {chrome.cancelBtn}
             </button>
           </div>
         </section>
@@ -112,19 +139,19 @@ export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
         <div className="ex-bg-overlay" />
 
         <div className="ex-plaque">
-          <span className="ex-plaque-title">月末丹青试</span>
+          <span className="ex-plaque-title">{chrome.title}</span>
           <span className="ex-plaque-sep">·</span>
-          <span className="ex-plaque-info">批阅中</span>
+          <span className="ex-plaque-info">{chrome.reviewInfo}</span>
         </div>
 
         <section className="ex-intro-paper">
           <div className="ex-intro-paper-inner">
             <p className="ex-intro-text">
-              墨迹未干，试帖已送至案前。
+              {chrome.reviewText[0]}
               <br />
-              堂中无人出声，只听帘外风过。
+              {chrome.reviewText[1]}
             </p>
-            <p className="ex-reviewing-dots">批阅中 · · ·</p>
+            <p className="ex-reviewing-dots">{mode === 'quick' ? '自省中 · · ·' : '批阅中 · · ·'}</p>
           </div>
         </section>
       </main>
@@ -139,7 +166,7 @@ export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
 
       {/* Top plaque */}
       <div className="ex-plaque">
-        <span className="ex-plaque-title">月末丹青试</span>
+        <span className="ex-plaque-title">{chrome.title}</span>
         <span className="ex-plaque-sep">·</span>
         <span className="ex-plaque-progress">
           {Array.from({ length: totalQuestions }, (_, i) => (
@@ -223,7 +250,7 @@ export function ExamScreen({ questions, onCancel, onSubmit }: ExamScreenProps) {
           onClick={handleNext}
           type="button"
         >
-          {currentIndex < totalQuestions - 1 ? '落笔 · 下一题' : '落笔 · 交卷'}
+          {currentIndex < totalQuestions - 1 ? '落笔 · 下一题' : (mode === 'quick' ? '落笔 · 温书毕' : '落笔 · 交卷')}
         </button>
       </section>
     </main>

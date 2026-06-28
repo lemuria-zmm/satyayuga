@@ -9,6 +9,7 @@ export type ActionType =
   | 'observe_painting'
   | 'rest'
   | 'take_exam'
+  | 'quick_exam'
   | 'solve_puzzle'
   | 'move_to'
   | 'attend_class'

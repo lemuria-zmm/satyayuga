@@ -138,4 +138,28 @@
 - 真 LLM 冒烟：研读画论生文 **127 字**（≤150），只含 narrativeText+atmosphereTags，简洁不注水。
 - **改了 prompt → 已重启 proxy**（v17 前后端一致）。
 
+---
+
+## 十、晚间宿舍「温书自测」（周中小测系统）（2026-06-28，明明指定方向）
+
+**背景**：退役小测后（06-18）1~6 日只有晨课，**第7日才突然来唯一一次丹青试**——七天对考核零预期零反馈、丹青试突兀。明明拍板：**晚间回宿舍休息时段加「温书自测」签**，夜里灯下温书自省、自测当日所学，给七日养成补阶段性自检+反馈，为丹青试预热。**模板句要自然衔接夜读情境**。
+
+**决策（AskUserQuestion）**：①触发=晚间宿舍（就寝签旁）；②**独自温书自测、导师不在场**（夜里独处非课堂抽考）；③1~6 日每晚回宿舍可测一次（flag `quick_exam_d{day}` 当晚限一次），第7日终章不测；④答对小额加成、**答差不罚**；⑤小测 **1 题**（丹青试 2 题）。
+
+**复用**：出题 `generatePaintingPrompt(mode:'exam')`、答题 `ExamScreen`、评分 `evaluatePaintingIntent`、学识加分——整条 LLM 出卷→评分管道**一行未改**。
+
+| 改动 | 位置 |
+|---|---|
+| 新 ActionType `'quick_exam'`（getActionTrack 默认归 mechanical，不进 isLlmScene 三件套） | `types/actions.ts` |
+| 晚间宿舍注入「温书自测」签（`day<maxDay` 且 flag 未设，就寝签**之前**，staminaCost1）；locationId==='dormitory' 天然过滤 | `engine/gameEngine.ts` getSlotActions evening |
+| `buildQuickExamReward(state,target,base)`：答对加成走心情修正+每日封顶（技能DAILY_SKILL_CAP/学识DAILY_KNOWLEDGE_CAP），**防小测成绕过封顶的刷点后门**；封顶满返回空 patch | `engine/gameEngine.ts` |
+| handleAction 加 `quick_exam` 分支：出 1 题（pickQuickExamQuestionType 随机非archive）→setExamMode('quick')→ExamScreen | `app/App.tsx` |
+| `examMode: 'final'\|'quick'` state；submitExam 按 examMode 分流：**quick**=答好(≥60)给本科技能/学识+1(本科满封顶转学识)、扣体力1、**不推时段**、落flag、夜读自省renderedText、不碰丹青试硬编码；**final**=维持现状(晋画正/解锁秘阁) | `app/App.tsx` |
+| ExamScreen 加 `mode` prop：examChrome 按模式切门头/开场/批阅/按钮文案（小测="夜读·温书自测"/"摊开课业"/"温书毕"，夜读自省口吻） | `components/ExamScreen.tsx` |
+
+**自然衔接**：小测 renderedText="夜深，宿舍灯下，你把今日所学默了一遍。{批语} 灯花结了又落，心里渐渐有了底"（答差="有几处仍是夹生，明日再看"）；测后仍在宿舍，就寝签还在，直接就寝收日，衔接顺。
+
+**验证**：build ✅；node **14/0**（可见性：晚间宿舍未测出签/已测不出/第7日不出/非宿舍不出/午间不出/就寝签仍在；getActionTrack=mechanical+isLlmScene=false；buildQuickExamReward 心情6本科+1/心情8+2/技能封顶满空/学识封顶剩1给1/封顶满空/心情3抵消为0）。真 LLM 出题冒烟（123字题面+3选项+hiddenRubric）。**未改 painting prompt → 不重启 proxy**。存档无新字段（用 flags 动态键 quick_exam_d{day}，SCHEMA 不变）。
+
+
 
