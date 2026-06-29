@@ -53,6 +53,11 @@ export interface ActivityCard {
    * 覆盖 computePracticeGain 的默认（学识默认1/本科2/副1）。缺省走默认。
    */
   practiceAmount?: number;
+  /**
+   * 每日限一次（2026-06-29）：沙盒时段不推时间，免费且加属性的卡（如讨碗热茶 体力+1心情+1）否则可无限刷。
+   * true 时引擎按 flag `{id}_d{day}` 当日做过即过滤，结算时落 flag。
+   */
+  oncePerDay?: boolean;
   /** 模板文本池，引擎随机取一条（机械类用作正文；成长类仅作 LLM 失败兜底） */
   narratives: string[];
 }
@@ -263,6 +268,7 @@ export const IDLE_ACTIVITIES: ActivityCard[] = [
     locationId: 'dining_hall',
     staminaCost: 0,
     staminaGain: 1,
+    oncePerDay: true,
     effects: { mood: 1 },
     narratives: [
       '膳堂这会儿清闲。火头娘子给你舀了碗热茶，顺口数落了两句今早的柴价。',

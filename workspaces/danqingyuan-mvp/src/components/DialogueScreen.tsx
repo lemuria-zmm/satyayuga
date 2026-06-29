@@ -54,12 +54,6 @@ const OPENING_REPLIES: ChatReplyOption[] = [
   { text: '你这卷画，画的是什么？', tone: 'probing' },
 ];
 
-const toneLabels: Record<ChatReplyTone, string> = {
-  warm: '诚',
-  neutral: '平',
-  probing: '探',
-};
-
 interface DialogueScreenProps {
   npcId: NpcId;
   /** 当前好感（hiddenAffinity），用于梅花格显示与立绘差分 */
@@ -257,7 +251,6 @@ export function DialogueScreen({ npcId, affinity, maxTurns, countsTowardQuota, p
                   onClick={() => pickReply(opt.text, opt.tone)}
                   type="button"
                 >
-                  <span className="dlg-reply-tone">{toneLabels[opt.tone]}</span>
                   <span className="dlg-reply-text">{opt.text}</span>
                 </button>
               ))}

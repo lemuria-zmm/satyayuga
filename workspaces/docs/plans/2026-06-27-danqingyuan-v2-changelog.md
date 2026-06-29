@@ -184,6 +184,17 @@
 
 **待补（todo）**：结局页美术资产（各档结局卷轴/配图，与温书自测 UI 美术一起后补）；结局 LLM 散文增强（读玩家七日轨迹生成个性化收尾，现为固定模板）。
 
+---
+
+## 十二、试玩三修（2026-06-29，明明试玩反馈）
+
+1. **温书自测第2/3日晚消失**：根因=温书自测 `staminaCost:1`，被 `getAvailableActions` 的 `stamina>=cost` 过滤——白天体力耗尽（晨课/练习消耗）后晚上回宿舍体力≈0，温课签(cost1)被剔只剩就寝(cost0)。第1日教程流体力宽裕所以正常。**修：staminaCost 1→0**（夜读自省本不该耗体力，且与"答对加成不罚"精神一致）。submitExam quick 分支 staminaDelta 随 examAction.staminaCost 自动为 0。`engine/gameEngine.ts`。
+2. **讨碗热茶可无限刷体力+心情**：idle_tea 免费+体力+1+心情+1，午间食堂沙盒不推时间→可无限点。**修：ActivityCard 加 `oncePerDay` 字段**，getActivitySlotActions 按 flag `{id}_d{day}` 当日做过即过滤、resolveActivity 落 flag。idle_tea 标 oncePerDay（通用机制，将来别的免费加属性卡可复用）。`content/activities.ts`/`engine/gameEngine.ts`。
+3. **去掉闲聊选项 tone 角标**：DialogueScreen replyOptions 移除「诚/平/探」小角标（dlg-reply-tone span + toneLabels 定义），保留选项文本。`components/DialogueScreen.tsx`。
+
+**验证**：build ✅；node **9/0**（温书自测体力0/3 都出、已测不出；讨茶初次有/喝后体力+1心情+1落flag/当日再看消失/餐签不受影响）。纯引擎+UI，**不重启 proxy**。
+
+
 
 
 

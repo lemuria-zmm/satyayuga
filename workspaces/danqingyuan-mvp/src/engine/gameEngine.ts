@@ -399,8 +399,12 @@ function getMorningClassActions(state: GameState): GameAction[] {
 /** 当前时段的活动卡行动（2026-06-11 拍板：修习三签已去除，画技成长走晨课与活动附带收益） */
 function getActivitySlotActions(state: GameState, slot: GameState['time']['timeSlot']): GameAction[] {
   return ALL_ACTIVITIES.filter(
-    // 学识门槛（2026-06-12 Gate①）：学识不足的卡（如书房深查 ≥10）不出现
-    (card) => card.timeSlots.includes(slot) && state.stats.knowledge >= (card.minKnowledge ?? 0),
+    (card) =>
+      card.timeSlots.includes(slot) &&
+      // 学识门槛（2026-06-12 Gate①）：学识不足的卡（如书房深查 ≥10）不出现
+      state.stats.knowledge >= (card.minKnowledge ?? 0) &&
+      // 每日限一次（2026-06-29）：当日做过的 oncePerDay 卡不再出现（讨碗热茶防无限刷体力/心情）
+      !(card.oncePerDay && state.progress.flags[`${card.id}_d${state.time.day}`]),
   ).map((card) => activityToAction(card, state.player.origin));
 }
 
@@ -461,12 +465,13 @@ function getSlotActions(state: GameState): GameAction[] {
     case 'evening':
       // 晚间沙盒·娱乐：不限次数（不推进时间）；「就寝」收尾签仅在宿舍出现，别处需走回宿舍（2026-06-11/06-15）
       // 温书自测（2026-06-28）：晚间回宿舍可点「温书自测」（day<7、当晚未测），夜读自省 1 题；放就寝签之前
+      // 2026-06-29 修：staminaCost 0（夜读不耗体力——原 cost1 在白天体力耗尽时被 getAvailableActions 的 stamina>=cost 过滤掉，第2/3日晚只剩就寝）
       return [
         ...getActivitySlotActions(state, 'evening'),
         ...(state.currentLocation === 'dormitory' &&
         state.time.day < state.time.maxDay &&
         !state.progress.flags[`quick_exam_d${state.time.day}`]
-          ? [{ id: 'quick-exam', type: 'quick_exam' as const, label: '温书自测', locationId: 'dormitory' as const, staminaCost: 1 }]
+          ? [{ id: 'quick-exam', type: 'quick_exam' as const, label: '温书自测', locationId: 'dormitory' as const, staminaCost: 0 }]
           : []),
         ...(state.currentLocation === 'dormitory'
           ? [{ id: 'sleep', type: 'sleep' as const, label: '就寝', locationId: 'dormitory' as const, staminaCost: 0 }]
@@ -584,6 +589,8 @@ function resolveActivity(state: GameState, action: GameAction): { patch: Validat
   // 晚间娱乐旗标（就寝判早歇用）：仅晚间设；午间沙盒不需要
   if (isEvening) flagsSet[`evening_fun_d${state.time.day}`] = true;
   if (card.setsFlag) flagsSet[card.setsFlag] = true;
+  // 每日限一次（2026-06-29）：落 flag，当日不再出现
+  if (card.oncePerDay) flagsSet[`${card.id}_d${state.time.day}`] = true;
   if (Object.keys(flagsSet).length > 0) patch.flagsSet = flagsSet;
   // 扣款用 action.moneyCost（已含商贾 8 折）；card.moneyCost 为原价
   if (action.moneyCost) patch.moneyDelta = -action.moneyCost;
