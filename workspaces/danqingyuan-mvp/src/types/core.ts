@@ -2,7 +2,8 @@ export type TimeSlot = 'morning_class' | 'forenoon' | 'noon' | 'afternoon' | 'ev
 
 export const TIME_SLOT_ORDER: TimeSlot[] = ['morning_class', 'forenoon', 'noon', 'afternoon', 'evening'];
 
-export type Rank = 'student' | 'painter_regular' | 'painter_awaiting';
+/** 画院职称序列（史实：学生<祗候<艺学<待诏）。mvp：通过丹青试授最低阶祗候，后续篇章逐级晋升（艺学待加）。painter_awaiting=画待诏为最高阶，mvp 仅 NPC 择端持有 */
+export type Rank = 'student' | 'zhihou' | 'painter_regular' | 'painter_awaiting';
 
 export type SkillId = 'landscape' | 'figure' | 'architecture';
 
@@ -303,8 +304,10 @@ export interface EndingResult {
   cappedBySkill: boolean;
   /** 晋升 rank（落第不变） */
   rankChange?: Rank;
-  /** 是否解锁秘阁（良/优档） */
+  /** 是否解锁秘阁（2026-06-29：通过即解锁，含中档） */
   unlockArchive: boolean;
+  /** 是否解锁希孟画室（2026-06-29：通过 + 希孟好感≥知己60）。与 unlockArchive 同满足=双入口预热后续篇章 */
+  unlockStudio: boolean;
   /** 希孟羁绊点缀（好感达知己/莫逆时非空） */
   ximengNote?: string;
   /** 暗线觉察点缀（看破粉饰太平/骸游图伏笔时非空） */

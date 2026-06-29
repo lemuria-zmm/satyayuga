@@ -1250,7 +1250,11 @@ export function App() {
           ...collectSuggestedFlags(evaluations),
         },
         rankChange: endingResult.rankChange,
-        unlockedLocations: endingResult.unlockArchive ? ['secret_archive'] : undefined,
+        // 双入口（2026-06-29）：秘阁=通过即解锁；画室=通过+希孟好感知己。两者可同开预热后续篇章
+        unlockedLocations: [
+          ...(endingResult.unlockArchive ? ['secret_archive' as const] : []),
+          ...(endingResult.unlockStudio ? ['ximeng_studio' as const] : []),
+        ],
       };
     }
 
@@ -1608,13 +1612,14 @@ export function App() {
     );
   }
 
-  // 丹青试结局页（2026-06-28）：丹青试结算后出独立结局页；「入秘阁一观」暂隐进主界面看《骸游图》
+  // 丹青试结局页（2026-06-28；2026-06-29 双入口）：丹青试结算后出独立结局页；入口按钮暂隐进主界面看专属场景（秘阁《骸游图》/希孟画室）
   if (state.ending && !endingDismissed) {
     return (
       <EndingScreen
         ending={state.ending}
         state={state}
         onEnterArchive={state.ending.unlockArchive ? () => setEndingDismissed(true) : undefined}
+        onEnterStudio={state.ending.unlockStudio ? () => setEndingDismissed(true) : undefined}
         onReset={resetGame}
       />
     );

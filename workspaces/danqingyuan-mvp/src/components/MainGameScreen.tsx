@@ -44,6 +44,7 @@ const skillClasses: Record<SkillId, string> = {
 
 const rankLabels: Record<GameState['progress']['rank'], string> = {
   student: '学子',
+  zhihou: '祗候',
   painter_regular: '画正',
   painter_awaiting: '画待诏',
 };
@@ -61,6 +62,7 @@ function buildSettlementLines(patch: ValidatedStatePatch): string[] {
   if (patch.moneyDelta) lines.push(`钱文 ${signed(patch.moneyDelta)}`);
   if (patch.nextDayStaminaBonus) lines.push(`明日晨起体力 ${signed(patch.nextDayStaminaBonus)}`);
   if (patch.cluesGranted?.length) lines.push(`线索 +${patch.cluesGranted.length}`);
+  if (patch.rankChange === 'zhihou') lines.push('授祗候');
   if (patch.rankChange === 'painter_regular') lines.push('晋为画正');
   if (patch.rankChange === 'painter_awaiting') lines.push('擢为画待诏');
   return lines;

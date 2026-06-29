@@ -3,7 +3,7 @@ import type { GameState } from '../types';
 const SAVE_KEY = 'danqingyuan-mvp:auto-save';
 
 /** schema 11（2026-06-26）：对话往来历史 chatHistory（per relationship） */
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 15;
 
 export interface SaveFile {
   saveId: string;
@@ -100,6 +100,15 @@ function migrateV12(saveFile: SaveFile): SaveFile {
 
 /** v13→v14 旧档迁移（2026-06-28 丹青试结局）：ending 为可选字段，旧档无（未走到结局）即 undefined，仅升版本 */
 function migrateV13(saveFile: SaveFile): SaveFile {
+  return { ...saveFile, schemaVersion: 14 };
+}
+
+/** v14→v15 旧档迁移（2026-06-29 结局双入口）：旧 ending 补 unlockStudio（默认 false）；新 Rank 'zhihou' 无需迁移（仅结局时写入） */
+function migrateV14(saveFile: SaveFile): SaveFile {
+  const ending = saveFile.gameState.ending;
+  if (ending && typeof (ending as { unlockStudio?: boolean }).unlockStudio !== 'boolean') {
+    (ending as { unlockStudio: boolean }).unlockStudio = false;
+  }
   return { ...saveFile, schemaVersion: SCHEMA_VERSION };
 }
 
@@ -148,6 +157,9 @@ export function loadSaveFile(): SaveFile | null {
     }
     if (parsed.schemaVersion === 13) {
       parsed = migrateV13(parsed);
+    }
+    if (parsed.schemaVersion === 14) {
+      parsed = migrateV14(parsed);
     }
     if (parsed.schemaVersion !== SCHEMA_VERSION) {
       return null;

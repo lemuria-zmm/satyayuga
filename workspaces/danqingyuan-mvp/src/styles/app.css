@@ -2025,6 +2025,35 @@ button {
   margin: 0;
 }
 
+/* 结局页入口区（2026-06-29 双入口）：双开时两按钮并列+预热语 */
+.ed-gates {
+  margin-top: 16px;
+}
+
+.ed-gates-lead {
+  color: #6E675E;
+  font-size: 15px;
+  line-height: 1.9;
+  margin: 0 0 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(180, 148, 80, 0.25);
+}
+
+.ed-gates-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ed-gates-row-dual {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.ed-gates-row-dual .ex-begin-btn {
+  flex: 1;
+}
+
 .ex-begin-btn {
   border: none;
   background: url('/exam/exam-submit-button-bg.png') center / 100% 100% no-repeat;

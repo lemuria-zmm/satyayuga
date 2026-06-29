@@ -203,6 +203,30 @@
 
 **验证**：build ✅；node **10/0**（温书心情3/0 仍+1、高心情不再+2、封顶仍约束防刷；门槛技能29封顶59/30不封顶/技能30+学识25 rawScore55=60过线）。纯引擎，**不重启 proxy**。
 
+---
+
+## 十四、史实对齐 · 职称体系 + 结局双入口（2026-06-29，依据《宋代翰林图画院》史料）
+
+**背景**：明明提供史料（docs/历史背景资料.docx）。本轮做其中两层（第一+三层，纯引擎+UI）：职称体系 + 结局分支双入口。靖康暗线、小测以诗入画（均改 prompt）留后续轮。
+
+**史实抓手**：画院职称序列 学生<祗候<艺学<待诏（待诏最高）；三大师（希孟/择端/李唐）皆徽宗画学所出。
+
+**决策（AskUserQuestion）**：①通过考试**统一授最低阶「祗候」**（mvp，后续篇章逐级晋升）；②**择端改「画院待诏」**（最高阶，与玩家祗候成阶梯）；③秘阁入口=**通过即解锁**（含中档）；④画室入口=**通过+希孟好感≥知己(60)**，双开预热后续篇章；⑤结局页双入口=**两按钮并列+预热语**，点击**暂隐进主界面**看专属场景。
+
+| 改动 | 位置 |
+|---|---|
+| Rank 加 `'zhihou'`（祗候）：序列 student<zhihou<painter_regular<painter_awaiting；rankLabels 加祗候；结算笺加"授祗候" | `types/core.ts`/`MainGameScreen.tsx` |
+| 择端 role/persona 改"画院待诏"（院内最高职阶画师） | `content/characters.ts` |
+| determineEnding 重写：通过(tier≠fail)统一授 zhihou（不再优=画待诏，画待诏留 NPC 择端）；unlockArchive=通过即解锁；新增 unlockStudio=通过+好感≥60；EndingResult 加 unlockStudio 字段；ENDING_TITLES 改"入院·得授祗候"系 | `types/core.ts`/`engine/gameEngine.ts` |
+| EndingScreen 双入口：TIER_PROLOGUE 改祗候文案；ed-gates 入口区（双开并列+「两扇门同时为你敞开」预热语/仅秘阁/仅画室分支文案）；onEnterStudio prop | `components/EndingScreen.tsx`/`styles/app.css` |
+| App.tsx：EndingScreen 传 onEnterStudio（仿 onEnterArchive 暂隐）；submitExam 落 unlockedLocations（秘阁+画室按 unlock 标志） | `app/App.tsx` |
+| 存档 SCHEMA 14→15+migrateV14（旧 ending 补 unlockStudio=false） | `persistence/storage.ts` |
+
+**验证**：build ✅；node **15/0**（职称：通过授祗候/落第无rank；秘阁通过即解锁含中档；画室通过+知己60；双入口矩阵：通过+知己=双开、通过+好感低=仅秘阁、落第=都无）。纯引擎+UI，**不重启 proxy**。
+
+**待与明明对齐/后续**：①靖康暗线（第二层，改 ambience THEME_BEATS + scene prompt，结局 themeNote 引出历史前奏，半架空不用真名）；②小测以诗入画（第四层，改 painting_prompt_generator prompt）；③结局页/温书自测专属美术（与之前待补美术一起）。
+
+
 
 
 

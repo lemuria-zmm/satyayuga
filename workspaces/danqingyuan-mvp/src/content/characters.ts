@@ -20,9 +20,9 @@ export const CHARACTERS: Record<NpcId, CharacterContent> = {
   zeduan: {
     id: 'zeduan',
     name: '择端',
-    role: '界画与市井观察导师',
+    role: '画院待诏 / 界画与市井观察导师',
     shortVoice: '温和健谈，擅用街市生活讲画。',
-    persona: '中年男性导师，界画课先生，常往街市跑、桥梁屋宇过目不忘。为人随和健谈，爱从市井生活讲画。是先生，绝非少年。',
+    persona: '中年男性导师，画院待诏（院内最高职阶画师），界画课先生，常往街市跑、桥梁屋宇过目不忘。为人随和健谈不摆架子，爱从市井生活讲画。是先生、是院中前辈，绝非少年。',
   },
   litang: {
     id: 'litang',

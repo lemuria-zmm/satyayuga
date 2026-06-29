@@ -245,43 +245,36 @@ export function computeExamScore(state: GameState, rawScore: number): { finalSco
 }
 
 const ENDING_TITLES: Record<EndingTier, string> = {
-  excellent: '画待诏·名动画院',
-  good: '画正·得入秘阁',
-  pass: '画正·勉登堂奥',
+  excellent: '入院·名列前茅',
+  good: '入院·得授祗候',
+  pass: '入院·勉登堂奥',
   fail: '落第·留院再读',
 };
 
 /**
- * 丹青试多维结局（2026-06-28）：分数定主轴档（tier/rank/解锁秘阁），好感与暗线只修饰文本（不改主轴）。
- * - 优 ≥85：画待诏（画院提拔）；良 70~84：画正 + 解锁秘阁；中 60~69：画正勉过（不解锁秘阁）；落第 <60：留院再读。
- * - 好感：希孟达知己(≥60)/莫逆(≥80) → ximengNote 提羁绊。
- * - 暗线：觉察「粉饰太平」标记（haiyouDiscovered/noticedWaterEndCloudStrong/secondScrollTeased）→ themeNote 点破。
+ * 丹青试多维结局（2026-06-28；2026-06-29 史实对齐改造）：分数定主轴档（tier），好感/暗线修饰文本（不改主轴）。
+ * - 优 ≥85 / 良 70~84 / 中 60~69：通过，统一授**最低阶职称「祗候」**（zhihou，mvp 后续篇章再逐级晋升）；落第 <60 无 rank。
+ * - **秘阁入口（unlockArchive）：通过即解锁**（tier≠fail，含中档——通过才入院、入院即可探秘阁）。
+ * - **画室入口（unlockStudio）：通过 + 希孟好感≥知己(60)**。双入口同开=预热后续篇章。
+ * - 好感：希孟达知己(≥60)/莫逆(≥80) → ximengNote 提羁绊。暗线：觉察「粉饰太平」标记 → themeNote 点破。
  */
 export function determineEnding(state: GameState, exam: { finalScore: number; cappedBySkill: boolean }): EndingResult {
   const { finalScore, cappedBySkill } = exam;
   let tier: EndingTier;
-  let rankChange: Rank | undefined;
-  let unlockArchive: boolean;
-  if (finalScore >= 85) {
-    tier = 'excellent';
-    rankChange = 'painter_awaiting';
-    unlockArchive = true;
-  } else if (finalScore >= 70) {
-    tier = 'good';
-    rankChange = 'painter_regular';
-    unlockArchive = true;
-  } else if (finalScore >= 60) {
-    tier = 'pass';
-    rankChange = 'painter_regular';
-    unlockArchive = false;
-  } else {
-    tier = 'fail';
-    rankChange = undefined;
-    unlockArchive = false;
-  }
+  if (finalScore >= 85) tier = 'excellent';
+  else if (finalScore >= 70) tier = 'good';
+  else if (finalScore >= 60) tier = 'pass';
+  else tier = 'fail';
+
+  const passed = tier !== 'fail';
+  // mvp：通过统一授最低阶祗候（不再优=画待诏；画待诏留作 NPC 择端专属，后续篇章玩家逐级晋升）
+  const rankChange: Rank | undefined = passed ? 'zhihou' : undefined;
+  const ximeng = state.relationships.ximeng;
+  // 秘阁=通过即解锁；画室=通过+好感知己(60)以上
+  const unlockArchive = passed;
+  const unlockStudio = passed && ximeng.hiddenAffinity >= 60;
 
   // 好感修饰（希孟唯一好感线）
-  const ximeng = state.relationships.ximeng;
   let ximengNote: string | undefined;
   if (ximeng.hiddenAffinity >= 80) {
     ximengNote = '临别时希孟寻你而来，将一卷亲笔小景塞进你手里，只道"他日同游"。';
@@ -318,6 +311,7 @@ export function determineEnding(state: GameState, exam: { finalScore: number; ca
     cappedBySkill,
     rankChange,
     unlockArchive,
+    unlockStudio,
     ximengNote,
     themeNote,
     summaryLines,
