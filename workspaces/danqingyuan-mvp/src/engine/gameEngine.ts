@@ -203,16 +203,16 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
 
 /**
  * 温书自测奖励（2026-06-28）：晚间宿舍小测答得好时给的小额加成。
- * 与练习签同口径——心情修正 + 每日封顶（技能 DAILY_SKILL_CAP / 学识 DAILY_KNOWLEDGE_CAP），
- * 防止小测成为绕过封顶的刷点后门。base 默认 1。target 为技能或 'knowledge'。
- * 返回 patch 片段（skillDelta/knowledgeDelta + 对应 GainedTodayDelta），封顶满则返回空（不涨）。
+ * 受每日封顶约束（技能 DAILY_SKILL_CAP / 学识 DAILY_KNOWLEDGE_CAP），防止小测成为绕过封顶的刷点后门。base 默认 1。
+ * **不受心情修正**（2026-06-29 修）：原 base+moodGrowthModifier 在心情≤3 时抵消为 0 → 晚上回宿舍心情已被白天课业扣低，温书几乎总白测。
+ * 设计是"答对加成不罚"，夜里温书答对就该有收获，与白天心情无关。封顶满则返回空（不涨）。
  */
 export function buildQuickExamReward(
   state: GameState,
   target: SkillId | 'knowledge',
   base = 1,
 ): ValidatedStatePatch {
-  const gain = Math.max(0, base + moodGrowthModifier(state));
+  const gain = base;
   if (gain <= 0) return {};
   if (target === 'knowledge') {
     const room = Math.max(0, DAILY_KNOWLEDGE_CAP - state.time.knowledgeGainedToday);
@@ -224,8 +224,8 @@ export function buildQuickExamReward(
   return granted > 0 ? { skillDelta: { [target]: granted }, skillGainedTodayDelta: granted } : {};
 }
 
-/** 本科技能门槛（2026-06-28 丹青试 gating）：低于此值则丹青试封顶分（手生过不了） */
-export const EXAM_SKILL_GATE = 40;
+/** 本科技能门槛（2026-06-28 丹青试 gating；2026-06-29 40→30：起始18七日中等投入约达31，40需+22太严） */
+export const EXAM_SKILL_GATE = 30;
 /** 本科技能不足时的封顶分（< 60 通过线，判不过） */
 export const EXAM_SKILL_CAP_SCORE = 59;
 
