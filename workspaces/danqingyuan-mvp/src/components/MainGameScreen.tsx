@@ -22,6 +22,8 @@ interface MainGameScreenProps {
   onAction: (action: GameAction) => void;
   onReset: () => void;
   onDevSkip?: () => void;
+  /** 开发预览结局（2026-06-29，仅 DEV）：传入丹青试分数 + 希孟好感，直跳对应档结局页 */
+  onPreviewEnding?: (score: number, ximengAffinity: number) => void;
   /** 与希孟深谈（2026-06-25 重新接回）：好感≥同僚时便签卡可点 */
   onChat?: (npcId: NpcId) => void;
   /** 引导面板激活中（2026-06-15）：隐藏背景正文与行动签 dock，避免与小书童引导同屏 */
@@ -212,7 +214,7 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function MainGameScreen({ state, actions, llmError, settlement, scene, onContinue, onLeaveScene, onFollowSuggestion, onAction, onReset, onDevSkip, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
+export function MainGameScreen({ state, actions, llmError, settlement, scene, onContinue, onLeaveScene, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewEnding, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
@@ -358,6 +360,14 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
           )}
           {onDevSkip && (
             <button className="gm-np-btn" onClick={onDevSkip} type="button">开秘阁</button>
+          )}
+          {onPreviewEnding && (
+            <>
+              <button className="gm-np-btn" onClick={() => onPreviewEnding(90, 70)} type="button" title="优+知己=双入口">预览·优双开</button>
+              <button className="gm-np-btn" onClick={() => onPreviewEnding(75, 20)} type="button" title="良+低好感=仅秘阁">预览·良秘阁</button>
+              <button className="gm-np-btn" onClick={() => onPreviewEnding(63, 65)} type="button" title="中+知己=祗候双入口">预览·中双开</button>
+              <button className="gm-np-btn" onClick={() => onPreviewEnding(50, 80)} type="button" title="落第(好感无用)">预览·落第</button>
+            </>
           )}
           <button className="gm-np-btn" onClick={onReset} type="button">重开</button>
         </div>

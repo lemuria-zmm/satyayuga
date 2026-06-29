@@ -1668,6 +1668,20 @@ export function App() {
         setHasSave(true);
         setState(devState);
       } : undefined}
+      onPreviewEnding={import.meta.env.DEV ? (score, ximengAffinity) => {
+        // 开发预览（2026-06-29）：直接用引擎 determineEnding 生成对应档结局挂到 state→触发 EndingScreen，省得玩到第7日。
+        // 用真实引擎函数保证预览与实际逻辑一致；好感设到 ximengAffinity 以预览好感修饰/画室入口。
+        const previewState: GameState = {
+          ...state,
+          relationships: {
+            ...state.relationships,
+            ximeng: { ...state.relationships.ximeng, hiddenAffinity: ximengAffinity },
+          },
+        };
+        const ending = determineEnding(previewState, computeExamScore(previewState, score));
+        setEndingDismissed(false);
+        setState({ ...previewState, ending });
+      } : undefined}
     />
   );
 }
