@@ -365,8 +365,11 @@ button {
   position: absolute;
   left: 252px;
   right: 282px;
-  top: 84px;
-  bottom: 180px;
+  /* VN 式底部对话框（2026-06-30）：正文从占满中央改为底部一条，让出上方大片背景图 */
+  top: auto;
+  height: 30vh;
+  min-height: 220px;
+  bottom: 96px;
   z-index: 10;
   animation: fadeIn 500ms ease 200ms both;
 }
@@ -405,12 +408,12 @@ button {
 .gm-scroll-paper {
   position: absolute;
   inset: 0;
-  padding: 32px 42px 22px 48px;
+  padding: 18px 42px 14px 48px;
   background: url('/ui/scroll-paper-texture.png') center / 100% 100% no-repeat;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform-origin: top center;
+  transform-origin: bottom center;
   transition: transform 400ms ease, opacity 300ms ease;
 }
 
@@ -421,18 +424,18 @@ button {
 }
 
 .gm-scroll-title {
-  margin: 0 0 6px;
-  font-size: 28px;
+  margin: 0 0 4px;
+  font-size: 22px;
   font-weight: 700;
   color: #1e1914;
   letter-spacing: 0.08em;
 }
 
 .gm-scroll-title-line {
-  width: 48px;
+  width: 40px;
   height: 2px;
   background: linear-gradient(90deg, #9C3328, rgba(156, 51, 40, 0.15));
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .gm-scene-text {

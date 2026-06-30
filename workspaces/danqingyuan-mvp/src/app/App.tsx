@@ -130,6 +130,8 @@ export interface ActiveScene {
   prevEnding?: string;
   /** 已生成的累计正文（open + 各 continue 段） */
   openText?: string;
+  /** 当前段正文（VN 式分段显示，2026-06-30）：正文区只显示最新一段，不显累计 openText；账本/LLM context 仍用 openText */
+  latestSegment?: string;
   /** 延迟结算（2026-06-15）：runAction 已算好但未提交的引擎成品（含时段推进/体力/技能/例钱/location 跳转） */
   pendingSettledState?: GameState;
   /** 延迟结算的引擎数值签（resolve 时与 LLM 建议签合并 showSettlement） */
@@ -659,7 +661,7 @@ export function App() {
       );
       setActiveScene((current) =>
         current?.status === 'loading-open'
-          ? { ...current, status: 'reading', openText: narrativeText, sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
+          ? { ...current, status: 'reading', openText: narrativeText, latestSegment: narrativeText, sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
           : current,
       );
     } catch {
@@ -726,6 +728,7 @@ export function App() {
               ...current,
               status: 'reading',
               openText: accumulated,
+              latestSegment: narrativeText,
               segmentCount: current.segmentCount + 1,
               sceneCanContinue: canContinue,
               shouldConclude,

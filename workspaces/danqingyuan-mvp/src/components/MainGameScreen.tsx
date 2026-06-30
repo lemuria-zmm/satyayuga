@@ -427,8 +427,9 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
             <p className="gm-scene-atmosphere">
               {locationAtmosphere[currentLocation] ?? '院中风静，日光照进堂前。'}
             </p>
-            {!guideActive && state.lastRenderedText && (
-              <p className="gm-scene-narrative">{state.lastRenderedText}</p>
+            {/* VN 式分段（2026-06-30）：场景进行中只显当前段 latestSegment，不显累计全文；非场景态显 lastRenderedText（机械/练习单段） */}
+            {!guideActive && (scene?.latestSegment ?? state.lastRenderedText) && (
+              <p className="gm-scene-narrative">{scene?.latestSegment ?? state.lastRenderedText}</p>
             )}
           </div>
 

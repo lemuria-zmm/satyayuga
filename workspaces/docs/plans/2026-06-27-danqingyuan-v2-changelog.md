@@ -343,3 +343,12 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 - ③DialogueScreen OPENING_REPLIES 改委婉（"你在画什么？"不点名）+希孟 atmosphere/greeting 改首次接触陌生口吻（"……何事？"）；character_dialogue v8→**v9** 陌路档加"首次接触不主动报千里江山卷名，玩家问起才淡淡道青绿山水"。
 - ④scene v19→**v20** 希孟出场门槛段：ximengMet=false 时**可借旁观者视角**（同窗/小书童/街市闲话）聊起青年画师与他要进献的青绿山水（可点千里江山卷名作谈资），未见其人先闻其事；本人仍不出场。
 - 验证 build ✅；真 LLM proxy 重启 v9/v20/painting v4：温书自测题不含骸游图/希孟、首次闲聊希孟只说"青绿山水要进献宫里"不报画名、选项不点名。**改 3 prompt 已重启 proxy 前后端版本一致**。
+
+### 十八·补3 · 主界面正文区 VN 化（2026-06-30，明明：正文占屏太大遮背景）
+
+明明：主界面 LLM 正文块太大遮挡背景图。**拍板方案 b（对话框分段/视觉小说式）+ 缩高**。
+- **引擎按段显示**：ActiveScene 加 `latestSegment`（当前段）；startScene open / continueScene 各设 latestSegment=本段 narrativeText。**openText 仍累加**（供 LLM context 续写 + 画案手记账本全文），但正文区不再显累计。
+- **MainGameScreen**：正文显示改 `scene?.latestSegment ?? state.lastRenderedText`——场景进行中只显最新一段（点「继续」出下一段替换，不堆叠）；非场景态（机械/练习单段）仍显 lastRenderedText。
+- **CSS**：`.gm-main-scroll` 从 `top:84 bottom:180`（占满中央）改为底部一条 `height:30vh / bottom:96`，让出上方大片背景；scroll-paper transform-origin 改 bottom、padding/标题字号缩小。
+- 纯前端，不动 prompt/引擎逻辑、不重启 proxy。build ✅。**回看前文靠画案手记（visibleText 仍存累计全文）。**
+- 遗留下轮：画案手记升级为档案库（激活 clueGraph + LLM entitiesIntroduced 抽取人物/线索/道具/地点 + 新增提示）。
