@@ -1854,8 +1854,6 @@ export function App() {
         <TitleGrantOverlay
           ending={ending}
           rankLabel={RANK_LABELS.zhihou}
-          onEnterArchive={enterArchive}
-          onEnterStudio={enterStudio}
           onContinue={() => advanceEndingStage('title_grant')}
         />
       );
@@ -1875,7 +1873,7 @@ export function App() {
       );
     }
     if (endingStage === 'epilogue') {
-      return <EpilogueScreen onReset={resetGame} />;
+      return <EpilogueScreen ending={ending} onEnterArchive={enterArchive} onEnterStudio={enterStudio} onReset={resetGame} />;
     }
     // retake：补考出题中（isExamOpen 尚未开）的过渡，显点评页占位避免回落旧 EndingScreen
     if (endingStage === 'retake') {

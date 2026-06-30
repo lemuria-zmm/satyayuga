@@ -4178,6 +4178,48 @@ dd {
   50% { opacity: 0; }
 }
 
+/* 收尾页尾部区（打字完成后整体淡入）：解锁入口 + 重新开始 */
+.epi-tail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+}
+
+.epi-tail-in {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.epi-gates {
+  text-align: center;
+}
+
+.epi-gates .ed-gates-lead {
+  color: #c9b88f;
+}
+
+.epi-gate-btn {
+  border: 1px solid rgba(230, 214, 184, 0.45);
+  background: rgba(230, 214, 184, 0.06);
+  color: #e6d6b8;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  padding: 10px 26px;
+  border-radius: 3px;
+  transition: background 200ms ease, transform 160ms ease;
+}
+
+.epi-gate-btn:hover {
+  background: rgba(230, 214, 184, 0.16);
+  transform: translateY(-2px);
+}
+
 .epi-reset-btn {
   border: 1px solid rgba(230, 214, 184, 0.4);
   background: none;
@@ -4188,14 +4230,7 @@ dd {
   letter-spacing: 0.16em;
   padding: 10px 30px;
   border-radius: 3px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 900ms ease, background 200ms ease;
-}
-
-.epi-reset-btn-in {
-  opacity: 1;
-  pointer-events: auto;
+  transition: background 200ms ease;
 }
 
 .epi-reset-btn:hover {

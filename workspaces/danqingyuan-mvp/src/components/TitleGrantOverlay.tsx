@@ -4,24 +4,17 @@ interface TitleGrantOverlayProps {
   ending: EndingResult;
   /** 授予的职称中文（通过=祗候；落第补考过后也到这） */
   rankLabel: string;
-  /** 入秘阁一观（unlockArchive）：暂隐序列进主界面看《骸游图》 */
-  onEnterArchive?: () => void;
-  /** 赴希孟画室（unlockStudio）：暂隐序列进主界面看画室专属场景 */
-  onEnterStudio?: () => void;
-  /** 「继续」推进到收尾动画段 E */
+  /** 「继续」推进序列（→ 引希孟线/收尾） */
   onContinue: () => void;
 }
 
 /**
- * 授衔段 B（2026-06-30，批一）：放榜授职的仪式页。
- * 居中朱印「授 — 祗候」+ 七日养成回顾 + 好感/暗线点缀 + 解锁入口（秘阁/画室，并入本段）+ 「继续」进收尾。
+ * 授衔段 B（2026-06-30，批一；批二修：解锁入口移到收尾页）：放榜授职的仪式页。
+ * 居中朱印「授 — 祗候」+ 七日养成回顾 + 好感/暗线点缀 + 「继续」推进。
+ * **解锁入口（秘阁/画室）已移至收尾页 EpilogueScreen**——避免授衔页「赴希孟画室」与「继续」（→见希孟演出）两个希孟入口冲突误导。
  * CSS 朱印占位，授衔图后补。
  */
-export function TitleGrantOverlay({ ending, rankLabel, onEnterArchive, onEnterStudio, onContinue }: TitleGrantOverlayProps) {
-  const showArchive = ending.unlockArchive && !!onEnterArchive;
-  const showStudio = ending.unlockStudio && !!onEnterStudio;
-  const bothOpen = showArchive && showStudio;
-
+export function TitleGrantOverlay({ ending, rankLabel, onContinue }: TitleGrantOverlayProps) {
   return (
     <main className="tg-page">
       <div className="tg-bg" />
@@ -45,32 +38,7 @@ export function TitleGrantOverlay({ ending, rankLabel, onEnterArchive, onEnterSt
         {ending.ximengNote && <p className="tg-quote">{ending.ximengNote}</p>}
         {ending.themeNote && <p className="tg-quote">{ending.themeNote}</p>}
 
-        {/* 解锁入口（并入授衔段）：双开并列 + 预热语 */}
-        {(showArchive || showStudio) && (
-          <div className="ed-gates">
-            <p className="ed-gates-lead">
-              {bothOpen
-                ? '两扇门，自此同时为你敞开——'
-                : showArchive
-                  ? '秘阁的重门，向你敞开一线。'
-                  : '希孟的画室，为你留着一盏灯。'}
-            </p>
-            <div className={`ed-gates-row${bothOpen ? ' ed-gates-row-dual' : ''}`}>
-              {showArchive && (
-                <button className="ex-begin-btn" onClick={onEnterArchive} type="button">
-                  入秘阁一观
-                </button>
-              )}
-              {showStudio && (
-                <button className="ex-begin-btn" onClick={onEnterStudio} type="button">
-                  赴希孟画室
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        <button className="ex-leave-btn tg-continue" onClick={onContinue} type="button">
+        <button className="ex-begin-btn tg-continue" onClick={onContinue} type="button">
           继续
         </button>
       </section>
