@@ -74,6 +74,13 @@ export interface CharacterDialogueInput {
   isFinalExchange?: boolean;
   /** 续聊开场（2026-06-26）：true 时无 playerReply，NPC 应延续 recentDialogue 上次话题主动开口、给 replyOptions（不计好感） */
   isOpening?: boolean;
+  /** 结局导师点评（2026-06-30）：丹青试毕，本科导师按表现点评。含档位/分数/是否落第；落第时口吻给"补考机会" */
+  examReview?: {
+    tier: 'excellent' | 'good' | 'pass' | 'fail';
+    score: number;
+    failed: boolean;
+    majorSkillLabel: string;
+  };
   recentEvents: string[];
   relevantMemories: string[];
   availableClueIds: string[];
