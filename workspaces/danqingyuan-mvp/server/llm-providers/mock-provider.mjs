@@ -21,10 +21,10 @@ const promptByQuestionType = {
       coreSignals: ['注意水路断绝', '保留云气留白'],
       partialSignals: ['关注人物去处'],
       shallowSignals: ['只说好看'],
-      forbiddenInterpretations: ['云起时真实地点', '希孟未来消失'],
+      forbiddenInterpretations: ['坐实希孟消失原因', '骸游图四人共创'],
     },
     potentialClueIds: ['water_end_cloud_hint'],
-    canonWarnings: ['不得揭示云起时真实含义。'],
+    canonWarnings: ['不得坐实希孟消失原因。'],
   },
   observe_detail: {
     id: 'proxy-observe-detail-rain-courtyard',
@@ -75,10 +75,10 @@ const promptByQuestionType = {
       coreSignals: ['看见民生疾苦', '连接药瓶婴孩与旁观者', '注意被遮住的水路'],
       partialSignals: ['能指出热闹中的不安'],
       shallowSignals: ['只说市井热闹'],
-      forbiddenInterpretations: ['云起时真实地点', '希孟未来消失'],
+      forbiddenInterpretations: ['坐实希孟消失原因', '骸游图四人共创'],
     },
     potentialClueIds: ['clue_blocked_waterway'],
-    canonWarnings: ['只做伏笔，不揭示云起时真实地点。'],
+    canonWarnings: ['只做伏笔，秘阁揭开前不点破四人共创。'],
   },
 };
 

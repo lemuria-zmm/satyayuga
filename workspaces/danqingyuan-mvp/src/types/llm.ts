@@ -201,7 +201,7 @@ export interface SceneNarratorInput {
   actionLabel: string;
   /** 引擎事实清单，如 "晨课：山水课，李唐授课" "山水 +1" */
   facts: string[];
-  /** 当日主题暗线（"粉饰太平"递进节拍），如 "繁华底下：脚店伙计提到拖欠的工钱" */
+  /** 当日主题暗线（"繁华与黑暗的交织"递进节拍），如 "繁华底下：脚店伙计提到拖欠的工钱" */
   themeBeat: string;
   /** 当日主线节拍（七日主线规划器产出）：场景里轻轻落一笔，点到即止 */
   mainlineBeat?: string;

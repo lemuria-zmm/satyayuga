@@ -256,7 +256,7 @@ const ENDING_TITLES: Record<EndingTier, string> = {
  * - 优 ≥85 / 良 70~84 / 中 60~69：通过，统一授**最低阶职称「祗候」**（zhihou，mvp 后续篇章再逐级晋升）；落第 <60 无 rank。
  * - **秘阁入口（unlockArchive）：通过即解锁**（tier≠fail，含中档——通过才入院、入院即可探秘阁）。
  * - **画室入口（unlockStudio）：通过 + 希孟好感≥知己(60)**。双入口同开=预热后续篇章。
- * - 好感：希孟达知己(≥60)/莫逆(≥80) → ximengNote 提羁绊。暗线：觉察「粉饰太平」标记 → themeNote 点破。
+ * - 好感：希孟达知己(≥60)/莫逆(≥80) → ximengNote 提羁绊。暗线：觉察「繁华与黑暗的交织」标记 → themeNote 点破。
  */
 export function determineEnding(state: GameState, exam: { finalScore: number; cappedBySkill: boolean }): EndingResult {
   const { finalScore, cappedBySkill } = exam;
@@ -282,7 +282,7 @@ export function determineEnding(state: GameState, exam: { finalScore: number; ca
     ximengNote = '希孟远远向你颔首——这位寡言的青年画师，到底把你当了同道。';
   }
 
-  // 暗线修饰（粉饰太平觉察）
+  // 暗线修饰（繁华与黑暗的交织·觉察）
   const flags = state.progress.flags;
   const awareCount =
     (flags.haiyouDiscovered ? 1 : 0) +

@@ -6,7 +6,7 @@ export const HAIYOU_PAINTING: PaintingBible = {
   visibleSummary:
     '秘阁中封存的市井画卷。货郎、药瓶、婴孩、摊位和旁观者挤在一处，热闹里透着不安。',
   hiddenSummary:
-    '四个主要角色都以不同方式参与过的共同画卷。表层主题是操控与被操控，深层伏笔是被遮住的水路与不合时令的云气。',
+    '希孟、择端、李唐、嵩四人共创、分工不同（有人执笔、有人只定立意）的画卷，画盛世底下的疮痍，本意欲进献以警戒当朝危局。表层主题是繁华与黑暗的交织，深层是这群画师以画进谏的隐秘担当。',
   requiredElements: ['药瓶', '婴孩', '摊位朝向', '旁观者视线', '被遮住的水路'],
   anomalies: [
     {
@@ -29,9 +29,9 @@ export const HAIYOU_PAINTING: PaintingBible = {
     },
   ],
   clueIds: ['clue_medicine_bottle', 'clue_child_posture', 'clue_blocked_waterway'],
-  coreThemes: ['操控与被操控', '民生疾苦', '被遮住的去处'],
+  coreThemes: ['繁华与黑暗的交织', '民生疾苦', '以画进谏'],
   partialInterpretations: ['罪证', '交易', '监视', '逃离'],
   forbiddenInterpretations: ['现代医学', '超自然诅咒', '单纯药案'],
-  spoilerBoundaries: ['不得透露云起时真实地点', '不得透露希孟未来消失'],
+  spoilerBoundaries: ['秘阁揭开前不点明四人共创', '不得坐实希孟未来消失的原因'],
 };
 

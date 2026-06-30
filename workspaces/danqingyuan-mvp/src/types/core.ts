@@ -311,7 +311,7 @@ export interface EndingResult {
   unlockStudio: boolean;
   /** 希孟羁绊点缀（好感达知己/莫逆时非空） */
   ximengNote?: string;
-  /** 暗线觉察点缀（看破粉饰太平/骸游图伏笔时非空） */
+  /** 暗线觉察点缀（看破繁华与黑暗的交织/骸游图伏笔时非空） */
   themeNote?: string;
   /** 七日养成回顾（本科技能/学识/好感档/暗线觉察条目） */
   summaryLines: string[];

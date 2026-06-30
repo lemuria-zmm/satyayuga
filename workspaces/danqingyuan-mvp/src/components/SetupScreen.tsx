@@ -211,6 +211,13 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
       {/* Center scroll form */}
       <div className="adm-scroll">
         <div className="adm-scroll-content">
+          {/* 穿越 framing（2026-06-30）：一行点明身份与那个带进画院的疑问；详述留给入院引文 */}
+          <div className="adm-prologue">
+            <p className="adm-prologue-text">
+              千年之后的你，一梦成了宣和年间的画学生——心底揣着一个谜：那位少年画师画完《千里江山卷》后，为何就此消失？
+            </p>
+          </div>
+
           {/* Name */}
           <div className="adm-form-row">
             <label className="adm-form-label">姓名</label>

@@ -80,10 +80,10 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v18';
-const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v19';
+const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v7';
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v8';
 
 /** 画科中文名（结局点评喂 LLM examReview.majorSkillLabel） */
 const SKILL_LABELS: Record<SkillId, string> = {
@@ -974,7 +974,7 @@ export function App() {
           questionType === 'archive_observation'
             ? ['《骸游图》', '药瓶', '婴孩', '被遮住的水路']
             : ['三选项', '自由输入', '趣味考查'],
-        forbiddenElements: ['云起时真实地点', '希孟未来消失'],
+        forbiddenElements: ['坐实希孟消失原因', '骸游图四人共创', '进献警戒目的'],
         tone: mode === 'exam' ? 'plain' : 'restrained',
       },
       context: buildMemoryContext(currentState, 'painting_prompt_generator'),

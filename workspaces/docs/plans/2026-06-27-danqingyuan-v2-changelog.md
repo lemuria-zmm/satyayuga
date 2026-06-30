@@ -303,3 +303,27 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 **验证**：build ✅；node **23/0**（七日 themeBeat 非空+无真实名号+6/7 日含前奏意象+day1 不超前；poem_intent mock 题面含诗句/3选项/rubric/透传+observe_detail 回归）；真 LLM proxy **重启加载 v18+painting v2**——poem_intent 探针出「竹锁桥边卖酒家」考"锁"三档巧思+rubric 到位，day7 街市写生场景轻点粮价涨/北边不太平且无禁词。**改 scene+painting prompt 已重启 proxy，scene 前后端 v18 一致**。
 
 **后续**：丹青试题型改法（明明另定）；秘阁三幕重做+8张线索；扩充择端/嵩/李唐好感线；结局/温书美术。
+
+---
+
+## 十八、世界观/解谜线重构：废云起时 + 骸游图四导师共创 + 希孟千里江山卷暗线 + 穿越 framing（2026-06-30，明明拍板）
+
+明明重构七日 MVP 的解谜线与世界观。**单一真相源**见 `2026-06-30-worldview-rework-canon.md`。**决策（AskUserQuestion）**：穿越=入院页明说 / 希孟消失只埋钩不给答案 / 书房线索克制。
+
+**真相层级**：L0 玩家穿越疑问「希孟画完千里江山卷为何消失」→ L1 千里江山卷（明面进献盛世）→ L2 繁华与黑暗的交织（社会暗线，原粉饰太平改名）→ L3 骸游图（希孟/择端/李唐/嵩四人共创、分工不同[含只定立意者]、欲进献警戒危局，秘阁揭开才点四人共创）→ L4 希孟消失（与骸游图有关，只埋钩不坐实）。
+
+| 改动 | 位置 |
+|---|---|
+| **主题改名**「粉饰太平」→「繁华与黑暗的交织」全索引 | ambience.ts/scene_narrator/mainline_planner/painting_prompt/types(llm,core)/gameEngine |
+| **废云起时**：删 motif_water_end_cloud_rise；coreCanon anchor cloud_rise_time→haiyou_collab（穿越疑问入 worldPremise）；各 prompt 叙事边界删云起时改骸游图导向；guardrail/validation/mock 的云起时 spoiler 模式改为「坐实希孟消失/四人共创/进献警戒」 | worldbook/initialState/5 prompts/validateLlmOutput/llm-validation/mock-provider/mockAdapter/App.tsx |
+| **骸游图升级**：worldbook+paintings hiddenSummary 改「四人共创、分工不同、进献警戒危局」，coreThemes 含繁华与黑暗，spoilerBoundaries 改「秘阁揭开前不点四人共创/不坐实消失」；新增 worldbook 千里江山卷条目 | worldbook.ts/paintings.ts |
+| **希孟千里江山卷+消失钩**：character_dialogue 叙事边界重写+新增「希孟谈话分档」（陌路同僚只谈千里江山卷→同道松口"画了不能进献"→知己吐露另一幅画+"若有一日我不在了"钩→莫逆近交底不点破）；画室 facts 改千里江山卷+墙根另一卷 | character_dialogue.md/sceneEngine.ts |
+| **书房线索（克制3条）**：①library_research 模板=四导师名旧档同现；②library_deep_research 模板=题记涂改+流民草图（与青绿盛世相反）；③sceneEngine wander：好感≥同道40 进书房瞥见希孟案上另一卷被掩 | activities.ts/sceneEngine.ts |
+| **穿越 framing**：SetupScreen 顶部加 .adm-prologue 一行（千年后穿越+带着"希孟为何消失"之谜）；aspiration 保留作世俗志向；穿越疑问标注玩家私有、NPC 不知情（prompt 已约束） | SetupScreen.tsx/app.css |
+| prompt 版本统一升：scene v18→v19、character_dialogue v7→v8、painting_prompt v2→v3、painting_intent→@2026-06-30、mainline v1→v2（前后端常量同步） | server/prompts/*/App.tsx |
+
+**关键设计**：①穿越疑问是全游戏固定前提（入院页+canon worldPremise），不塞 aspiration、不喂 NPC（防泄露）；②希孟一人同画千里江山卷（明·盛世）+骸游图（暗·黑暗）="繁华与黑暗交织"主题的化身；③秘阁线索（药瓶/婴孩/被遮水路=民生疾苦）原样复用，只升级来历叙事为"四导师以画进谏"；④消失之谜 MVP 只埋钩，秘阁见骸游图后仍开放。
+
+**验证**：build ✅；node **10/0**（云起时/粉饰太平 从 canon 数据清除、千里江山卷条目、骸游图四人共创、anchor=haiyou_collab、worldPremise 含穿越疑问、themeBeat 仍工作）；grep 全量确认两词无残留；真 LLM proxy **重启加载 v8/v19 等**——希孟知己档谈千里江山卷"交上去便是天下该有的样子"（弦外有音不点破）、书房同道档场景瞥见"另一卷被掩"且无禁词。**改 5 prompt 已重启 proxy，前后端版本一致**。
+
+**后续**：丹青试题型改法（明明另定）；秘阁三幕重做+8线索（届时收束骸游图四人共创）；扩充择端/嵩/李唐好感线（可各自埋骸游图分工线索）。

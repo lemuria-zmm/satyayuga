@@ -1,6 +1,6 @@
 import type { GuardrailCheckResult } from './types';
 
-const spoilerPatterns = ['希孟未来会消失', '云起时是真实地点', '拯救苍生之秘', '终局真相'];
+const spoilerPatterns = ['希孟未来会消失', '希孟是被', '四人共创', '四位先生共同', '进献警戒', '终局真相'];
 
 export function validateLlmOutput(output: unknown): GuardrailCheckResult {
   const serialized = JSON.stringify(output);

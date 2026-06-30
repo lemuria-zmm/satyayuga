@@ -1217,6 +1217,21 @@ button {
   overflow: hidden;
 }
 
+/* 穿越 framing 引语（2026-06-30）：入院名录顶部一段小字交代身份与谜题 */
+.adm-prologue {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(110, 90, 60, 0.22);
+}
+
+.adm-prologue-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #6b5538;
+  letter-spacing: 0.02em;
+}
+
 /* ---- Form rows ---- */
 .adm-form-row {
   display: grid;

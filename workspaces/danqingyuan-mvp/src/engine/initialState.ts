@@ -131,18 +131,18 @@ export function createInitialGameState(options: CreateGameStateOptions = {}): Ga
     },
     memory: {
       coreCanon: {
-        version: 'mvp-0.1',
-        worldPremise: '丹青院是架空宫廷画院，玩家在此修习、应试、读画。',
+        version: 'mvp-0.2',
+        worldPremise: '丹青院是架空宫廷画院，玩家是带着"希孟为何在画完千里江山卷后消失"之谜入院的过客（此为玩家私有，NPC 不知情）。',
         hiddenAnchors: [
           {
-            id: 'cloud_rise_time',
-            codename: '云起时',
-            privateTruth: '希孟未来消失与画中反复出现的隐藏地点有关。',
-            allowedForeshadowing: ['水路断绝', '云气升起', '留白遮蔽', '路径不合逻辑'],
-            forbiddenReveals: ['希孟未来会消失', '云起时是真实地点', '云起时可拯救苍生'],
+            id: 'haiyou_collab',
+            codename: '骸游图',
+            privateTruth: '《骸游图》是希孟、择端、李唐、嵩四人共创、分工不同，画盛世底下疮痍、欲进献警戒当朝危局；希孟明面画千里江山卷、暗里参与此图，他的消失与此图有关。',
+            allowedForeshadowing: ['四位先生的名字在旧档同时出现', '有些景画了不能进献', '题记年月被涂改', '希孟案上不止一卷', '若有一日我不在了'],
+            forbiddenReveals: ['秘阁揭开前点明四人共创', '坐实希孟消失的原因', '点明进献警戒的目的'],
           },
         ],
-        spoilerBoundaries: ['不得透露希孟未来消失', '不得透露云起时真实含义'],
+        spoilerBoundaries: ['秘阁揭开前不点明四人共创', '不得坐实希孟未来消失的原因'],
         forbiddenCanonDrifts: ['现代医学解释', '超自然诅咒', '单一宫斗阴谋'],
       },
       storyLedger: [],
