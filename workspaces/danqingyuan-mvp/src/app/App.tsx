@@ -6,6 +6,11 @@ import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
 import { getThemeBeat, getWeather, SEASON } from '../engine/ambience';
 import {
+  type EndingStage,
+  nextEndingStage,
+  mentorForStyle,
+} from '../engine/endingSequence';
+import {
   buildEnding,
   buildPrevSceneEnding,
   buildSceneFacts,
@@ -33,6 +38,9 @@ import { GuideDialogue } from '../components/GuideDialogue';
 import type { ExamAnswer } from '../components/ExamScreen';
 import { ExamScreen } from '../components/ExamScreen';
 import { EndingScreen } from '../components/EndingScreen';
+import { EndingDialogue } from '../components/EndingDialogue';
+import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
+import { EpilogueScreen } from '../components/EpilogueScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
@@ -73,6 +81,23 @@ const llmAdapter = createLlmAdapter();
 
 const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-28.v17';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
+/** 角色对白 prompt 版本（前后端须一致，2026-06-30 升 v6 加结局导师点评指引） */
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v6';
+
+/** 画科中文名（结局点评喂 LLM examReview.majorSkillLabel） */
+const SKILL_LABELS: Record<SkillId, string> = {
+  landscape: '山水',
+  figure: '人物',
+  architecture: '界画',
+};
+
+/** 职称中文名（授衔段显示） */
+const RANK_LABELS: Record<GameState['progress']['rank'], string> = {
+  student: '学子',
+  zhihou: '祗候',
+  painter_regular: '画正',
+  painter_awaiting: '画待诏',
+};
 /** 希孟首遇闲聊句数（2026-06-26）：独立于每日主动闲聊额度，首遇当场可说几句即自然收尾 */
 const FIRST_MEET_CHAT_TURNS = 4;
 
@@ -165,6 +190,10 @@ export function App() {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   // 结局页临时关闭（2026-06-28）：玩家点「入秘阁一观」后暂隐结局页，进主界面看《骸游图》；可再唤回 */
   const [endingDismissed, setEndingDismissed] = useState(false);
+  // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出（导师点评→授衔→收尾）。null=不在序列中。UI 临时态不入存档。
+  const [endingStage, setEndingStage] = useState<EndingStage | null>(null);
+  // 导师点评 LLM 文（批一）：null=生成中
+  const [mentorReview, setMentorReview] = useState<{ dialogue: string; actionText: string } | null>(null);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
@@ -1154,6 +1183,8 @@ export function App() {
     setIsExamOpen(false);
     setIsPuzzleOpen(false);
     setEndingDismissed(false);
+    setEndingStage(null);
+    setMentorReview(null);
     setDialogueNpcId(null);
     setExamQuestions([]);
     setPuzzleAssessmentPrompt(null);
@@ -1235,7 +1266,9 @@ export function App() {
         ? `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 灯花结了又落，心里渐渐有了底。`
         : `夜深，宿舍灯下，你把今日所学默了一遍。${feedback} 有几处仍是夹生，你记下了，明日再看。`;
     } else {
-      // 丹青试（第7日，2026-06-28 多维结局）：本科技能 gating + 分数定主轴档（优/良/中/落第）→ EndingScreen
+      // 丹青试（第7日，2026-06-28 多维结局；2026-06-30 改走结局序列）：本科技能 gating + 分数定主轴档 → 结局序列演出。
+      // 注意：rank 授予 / 秘阁画室解锁 / firstExamPassed 旗标全部**推迟到授衔段（title_grant）提交**——
+      //   落第须先走导师点评→补考保底过才授衔，故交卷时只结算考试本身（技能/体力/已应试旗标），不提前给名分。
       const exam = computeExamScore(state, rawScore);
       endingResult = determineEnding(state, exam);
       renderedText = `丹青试两题批毕：${feedback}`;
@@ -1245,16 +1278,8 @@ export function App() {
         timeAdvance: true,
         flagsSet: {
           firstExamTaken: true,
-          firstExamPassed: endingResult.tier !== 'fail',
-          archiveUnlocked: endingResult.unlockArchive,
           ...collectSuggestedFlags(evaluations),
         },
-        rankChange: endingResult.rankChange,
-        // 双入口（2026-06-29）：秘阁=通过即解锁；画室=通过+希孟好感知己。两者可同开预热后续篇章
-        unlockedLocations: [
-          ...(endingResult.unlockArchive ? ['secret_archive' as const] : []),
-          ...(endingResult.unlockStudio ? ['ximeng_studio' as const] : []),
-        ],
       };
     }
 
@@ -1279,10 +1304,105 @@ export function App() {
     setExamQuestions([]);
     showSettlement(patch);
     setState(nextState);
+
+    // 丹青试 → 启动结局序列（2026-06-30 批一）：导师点评 → 授衔 → 收尾
+    if (endingResult) {
+      setMentorReview(null);
+      setEndingStage('mentor_review');
+      void fetchMentorReview(nextState, endingResult);
+    }
   }
 
   if (isExamOpen) {
     return <ExamScreen questions={examQuestions} mode={examMode} onCancel={() => setIsExamOpen(false)} onSubmit={submitExam} />;
+  }
+
+  /**
+   * 结局导师点评（2026-06-30 批一）：丹青试放榜后，本科导师按表现点评（LLM，复用 character_dialogue + examReview）。
+   * 失败走兜底点评句（结局不可卡死）。
+   */
+  async function fetchMentorReview(reviewState: GameState, ending: EndingResult) {
+    const mentorId = mentorForStyle(reviewState.player.styleOrigin);
+    const mentorRel = reviewState.relationships[mentorId];
+    const majorSkillLabel = SKILL_LABELS[reviewState.player.styleOrigin];
+    const failed = ending.tier === 'fail';
+    try {
+      const response = await llmAdapter.generateCharacterDialogue({
+        traceId: `ending-review-${Date.now()}`,
+        role: 'character_dialogue',
+        promptVersion: DIALOGUE_PROMPT_VERSION,
+        input: {
+          npcId: mentorId,
+          day: reviewState.time.day,
+          timeSlot: reviewState.time.timeSlot,
+          locationId: reviewState.currentLocation,
+          relationshipStage: mentorRel.stage,
+          emotionState: mentorRel.emotionState,
+          topicCard: '丹青试点评',
+          examReview: { tier: ending.tier, score: ending.score, failed, majorSkillLabel },
+          recentEvents: reviewState.memory.storyLedger.slice(-2).map((entry) => entry.summary),
+          relevantMemories: reviewState.memory.playerStyle.tags,
+          availableClueIds: reviewState.puzzle.collectedClueIds,
+          canonWarnings: reviewState.memory.coreCanon.spoilerBoundaries,
+        },
+        context: buildMemoryContext(reviewState, 'character_dialogue', mentorId),
+      });
+      setMentorReview({ dialogue: response.output.dialogue, actionText: response.output.actionText });
+    } catch {
+      // 兜底：LLM 失败也要有点评，序列不卡死
+      setMentorReview({
+        dialogue: failed
+          ? `${majorSkillLabel}的火候还差一层。画院惜才，准你补试一场，莫负了这身手。`
+          : `${majorSkillLabel}上见了功夫，往后还须精进。`,
+        actionText: '导师端详着你的卷子，缓缓开口。',
+      });
+    }
+  }
+
+  /**
+   * 结局序列推进（2026-06-30 批一）：按当前段算下一段，落第补考桩=直接保底过，见希孟段批一先跳过。
+   * 授衔段（title_grant）提交时正式授 rank / 解锁秘阁画室 / 落 firstExamPassed（推迟到此，落第补考过后才给名分）。
+   */
+  function advanceEndingStage(from: EndingStage) {
+    if (!state || !state.ending) return;
+    let next = nextEndingStage(from, state.ending, state);
+    // 批一桩：retake 暂不做真补考（ExamScreen retake 批二补），直接到授衔保底过
+    if (next === 'retake') {
+      next = 'title_grant';
+    }
+    // 批一桩：见希孟 C/D 暂跳过，ximeng_bridge / ximeng_meet → epilogue
+    if (next === 'ximeng_bridge' || next === 'ximeng_meet') {
+      next = 'epilogue';
+    }
+
+    // 进入授衔段：正式提交名分（落第补考保底过也到这）
+    if (next === 'title_grant') {
+      commitTitleGrant();
+    }
+    setEndingStage(next);
+  }
+
+  /** 授衔提交（2026-06-30）：授 rank=zhihou（落第补考保底过同授）+ 解锁秘阁/画室 + 落 firstExamPassed/archiveUnlocked 旗标 */
+  function commitTitleGrant() {
+    if (!state || !state.ending) return;
+    const ending = state.ending;
+    // 落第补考保底过：rank 至少授祗候、解锁秘阁（通过即解锁）
+    const grantedRank = ending.rankChange ?? ('zhihou' as const);
+    const grantArchive = ending.tier !== 'fail' ? ending.unlockArchive : true; // 落第补考过=通过=解锁秘阁
+    const grantStudio = ending.unlockStudio; // 画室仍需好感知己，落第补考不补给
+    const granted = applyValidatedStatePatch(state, {
+      rankChange: grantedRank,
+      flagsSet: {
+        firstExamPassed: true,
+        archiveUnlocked: grantArchive,
+      },
+      unlockedLocations: [
+        ...(grantArchive ? ['secret_archive' as const] : []),
+        ...(grantStudio ? ['ximeng_studio' as const] : []),
+      ],
+    });
+    saveGameState(granted);
+    setState(granted);
   }
 
   async function submitPuzzle(submission: PuzzleSubmission) {
@@ -1409,7 +1529,7 @@ export function App() {
       const response = await llmAdapter.generateCharacterDialogue({
         traceId: `dialogue-open-${Date.now()}`,
         role: 'character_dialogue',
-        promptVersion: 'character_dialogue@2026-06-26.v5',
+        promptVersion: DIALOGUE_PROMPT_VERSION,
         input: {
           npcId: dialogueNpcId,
           day: state.time.day,
@@ -1462,7 +1582,7 @@ export function App() {
       response = await llmAdapter.generateCharacterDialogue({
         traceId: `dialogue-${Date.now()}`,
         role: 'character_dialogue',
-        promptVersion: 'character_dialogue@2026-06-26.v5',
+        promptVersion: DIALOGUE_PROMPT_VERSION,
         input: {
           npcId: dialogueNpcId,
           day: state.time.day,
@@ -1612,7 +1732,45 @@ export function App() {
     );
   }
 
-  // 丹青试结局页（2026-06-28；2026-06-29 双入口）：丹青试结算后出独立结局页；入口按钮暂隐进主界面看专属场景（秘阁《骸游图》/希孟画室）
+  // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出，优先于旧 EndingScreen。
+  // 导师点评(A) → 授衔(B) → 收尾(E)；落第补考桩/见希孟桩在 advanceEndingStage 内处理。
+  if (state.ending && endingStage && !endingDismissed) {
+    const ending = state.ending;
+    const enterArchive = ending.unlockArchive
+      ? () => { setEndingStage(null); setEndingDismissed(true); }
+      : undefined;
+    const enterStudio = ending.unlockStudio
+      ? () => { setEndingStage(null); setEndingDismissed(true); }
+      : undefined;
+
+    if (endingStage === 'mentor_review') {
+      return (
+        <EndingDialogue
+          npcId={mentorForStyle(state.player.styleOrigin)}
+          dialogue={mentorReview ? mentorReview.dialogue : null}
+          actionText={mentorReview ? mentorReview.actionText : null}
+          caption="丹青试 · 放榜点评"
+          onContinue={() => advanceEndingStage('mentor_review')}
+        />
+      );
+    }
+    if (endingStage === 'title_grant') {
+      return (
+        <TitleGrantOverlay
+          ending={ending}
+          rankLabel={RANK_LABELS.zhihou}
+          onEnterArchive={enterArchive}
+          onEnterStudio={enterStudio}
+          onContinue={() => advanceEndingStage('title_grant')}
+        />
+      );
+    }
+    if (endingStage === 'epilogue') {
+      return <EpilogueScreen onReset={resetGame} />;
+    }
+  }
+
+  // 丹青试结局页（2026-06-28；2026-06-29 双入口）：旧静态结局页，保留作回退/参考（2026-06-30 起主流程走上方结局序列）
   if (state.ending && !endingDismissed) {
     return (
       <EndingScreen
@@ -1669,7 +1827,7 @@ export function App() {
         setState(devState);
       } : undefined}
       onPreviewEnding={import.meta.env.DEV ? (score, ximengAffinity) => {
-        // 开发预览（2026-06-29）：直接用引擎 determineEnding 生成对应档结局挂到 state→触发 EndingScreen，省得玩到第7日。
+        // 开发预览（2026-06-29；2026-06-30 改走结局序列）：引擎 determineEnding 生成对应档结局，启动结局序列逐段预览。
         // 用真实引擎函数保证预览与实际逻辑一致；好感设到 ximengAffinity 以预览好感修饰/画室入口。
         const previewState: GameState = {
           ...state,
@@ -1679,8 +1837,12 @@ export function App() {
           },
         };
         const ending = determineEnding(previewState, computeExamScore(previewState, score));
+        const nextState = { ...previewState, ending };
         setEndingDismissed(false);
-        setState({ ...previewState, ending });
+        setMentorReview(null);
+        setEndingStage('mentor_review');
+        setState(nextState);
+        void fetchMentorReview(nextState, ending);
       } : undefined}
     />
   );

@@ -232,3 +232,27 @@
 
 
 
+
+---
+
+## 十五、结局序列重设计（批一）：多段立绘演出（导师点评→授衔→收尾）（2026-06-30）
+
+明明预览旧单张静态卷轴 EndingScreen 觉不够，要改成**多段角色立绘+对话框演出序列**，落第改**补考保底过**（不重走七日）。完整计划 `~/.claude/plans/temporal-leaping-firefly.md`（已批）。**分两批**：批一=骨架编排+导师点评(A)+授衔(B)+收尾(E)，落第补考(retake)/见希孟(C/D) 先留桩；批二补全。
+
+**目标序列**：交卷→【A 导师点评(LLM)】→（落第?补考保底过）→【B 授衔】→（好感≥知己?C/D 见希孟[批二]）→【E 收尾动画】。
+
+| 改动 | 位置 |
+|---|---|
+| **结局序列状态机**（纯函数）：`EndingStage` 类型（mentor_review/retake/title_grant/ximeng_bridge/ximeng_meet/epilogue）+ `nextEndingStage(current,ending,state)` 推进（落第→retake、通过+好感≥60→见希孟、否则→收尾）+ `mentorForStyle`（复用 TEACHER_BY_STYLE）+ `XIMENG_MEET_AFFINITY=60` | **新建** `engine/endingSequence.ts` |
+| **导师点评轻量对白页**（不复用 DialogueScreen，去好感梅花格/句数噪音）：立绘（litang-serious/song-normal/zeduan-normal，批二见希孟复用 ximeng-smile）+ 对话框 + 「继续」单向推进；loading 显省略号 | **新建** `components/EndingDialogue.tsx` |
+| **授衔段 B**：CSS 朱印「授—祗候」仪式（tgSealStamp 盖章动画）+ 七日养成回顾 + 好感/暗线点缀 + 解锁入口（秘阁/画室并入本段，双开并列）+「继续」进收尾 | **新建** `components/TitleGrantOverlay.tsx` |
+| **收尾动画段 E**：CSS 黑场 + JS 打字机渐显「画院之路，才刚刚开始……」+ 淡入「重新开始」（序列终点） | **新建** `components/EpilogueScreen.tsx` |
+| **mock examReview 分支**：按 tier 给点评文案、replyOptions=[]、delta=0（落第含"补试"转机） | `llm/mockAdapter.ts` |
+| **App 编排**：`endingStage`/`mentorReview` state；submitExam final **不再提前授名分**（rank/解锁/firstExamPassed 推迟到授衔段）只结算考试本身→`setEndingStage('mentor_review')`+`fetchMentorReview`（LLM 复用 character_dialogue+examReview，失败兜底）；`advanceEndingStage`（批一桩：retake/ximeng_bridge/ximeng_meet→折叠）；`commitTitleGrant`（授 zhihou+解锁，落第补考保底过同授+解锁秘阁）；渲染分支优先于旧 EndingScreen（保留作回退）；DEV 预览入口改启动序列；DIALOGUE_PROMPT_VERSION 常量统一（前后端 v6 一致） | `app/App.tsx` |
+| 结局序列 CSS（tg-*/epi-*/dlg-reply-row） | `styles/app.css` |
+
+**关键设计**：①rank/解锁**推迟到授衔段提交**——落第须先点评→补考保底过才授名分，交卷时只结算考试本身；②序列状态机纯函数可测；③导师点评 LLM 失败有兜底（结局不卡死）；④批一落第桩=retake 直接折叠到 title_grant 保底过+解锁秘阁；⑤见希孟桩=ximeng_bridge/meet 折叠到 epilogue。`endingStage` 是 UI 临时态不入存档，`state.ending` 已存。
+
+**验证**：build ✅；node **19/0**（mentorForStyle 映射；nextEndingStage 四矩阵：通过+好感低→跳见希孟、通过+知己→见希孟、落第→补考、epilogue→null；mock examReview 通过/落第分支 replyOptions=[]+delta=0+含画科/补试）；真 LLM proxy 探针确认 v6 已加载——李唐点评山水（皴法/水口专业画评）、择端落第点评（界画线不稳）replyOptions=[]/delta=0、普通闲聊不受影响（warm→+1）。**prompt v6 上轮已提交+proxy 已加载，无需重启**。
+
+**批二待做**：补考完整（ExamScreen examMode='retake' 保底过 finalScore≥60）+ 引出希孟线 C 过场 + 见希孟 D（EndingDialogue npcId=ximeng，结局语境预热后续篇章）。**待补美术**：授衔朱印图、收尾背景图、导师点评宿舍夜读区别美术（现 CSS 占位）。

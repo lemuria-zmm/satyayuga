@@ -46,6 +46,31 @@ export class MockLlmAdapter implements LlmAdapter {
       };
       return { traceId: request.traceId, role: request.role, promptVersion: request.promptVersion, output, validation };
     }
+    // mock 结局导师点评（2026-06-30）：examReview 非空 → 按档位点评、单向（replyOptions=[]、delta=0）
+    if (request.input.examReview) {
+      const { tier, score, failed, majorSkillLabel } = request.input.examReview;
+      const dialogue = failed
+        ? `${majorSkillLabel}的火候还差着一层，笔意未到，章法也散。不过——画院惜才，准你补试一场，莫要再辜负。`
+        : tier === 'excellent'
+          ? `好。这一笔下去，意在笔先，是可造之材。${majorSkillLabel}能画到这般地步，院里多年未见。`
+          : tier === 'good'
+            ? `${majorSkillLabel}上见了功夫，意境也立住了。再沉住气磨上些时日，必有大成。`
+            : `${score}分，勉强过关。${majorSkillLabel}的根骨还浅，章法尚可意趣不足，往后须多下苦功。`;
+      const output: CharacterDialogueOutput = {
+        dialogue,
+        actionText: failed
+          ? '他搁下朱笔，神色凝重，话锋却又松了一寸。'
+          : '他端详着你的卷子，捻须微微颔首。',
+        emotionState: failed ? 'distant' : tier === 'excellent' ? 'trusting' : 'noticing',
+        topicUnlocked: [],
+        cluesGranted: [],
+        relationshipDelta: 0,
+        replyOptions: [],
+        memoryPatch: { characterImpression: '', playerStyleTags: [], storyLedgerNote: '' },
+        safetyFlags: safeFlags,
+      };
+      return { traceId: request.traceId, role: request.role, promptVersion: request.promptVersion, output, validation };
+    }
     // mock 越界检测（2026-06-26）：playerReply 命中元游戏/AI 词 → boundaryViolation
     const reply = request.input.playerReply ?? '';
     const isBoundary = /AI|人工智能|大模型|模型|prompt|提示词|游戏|gpt|deepseek/i.test(reply);
