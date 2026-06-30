@@ -93,7 +93,8 @@ export type QuestionType =
   | 'observe_detail'
   | 'express_intent'
   | 'character_dispute'
-  | 'archive_observation';
+  | 'archive_observation'
+  | 'poem_intent';
 
 export type InterpretationTier = 'core' | 'partial' | 'shallow';
 

@@ -80,7 +80,7 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-28.v17';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v18';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
 const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v7';
@@ -135,7 +135,7 @@ export interface ActiveScene {
   pendingSettlePatch?: ValidatedStatePatch;
 }
 
-const examQuestionTypes: QuestionType[] = ['observe_detail', 'express_intent', 'character_dispute'];
+const examQuestionTypes: QuestionType[] = ['observe_detail', 'express_intent', 'character_dispute', 'poem_intent'];
 
 function pickExamQuestionTypes() {
   const shuffled = [...examQuestionTypes];

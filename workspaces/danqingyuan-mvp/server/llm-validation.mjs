@@ -19,6 +19,7 @@ const allowedQuestionTypes = new Set([
   'express_intent',
   'character_dispute',
   'archive_observation',
+  'poem_intent',
 ]);
 const allowedSkillIds = new Set(['landscape', 'figure', 'architecture']);
 const allowedInterpretationTiers = new Set(['core', 'partial', 'shallow']);

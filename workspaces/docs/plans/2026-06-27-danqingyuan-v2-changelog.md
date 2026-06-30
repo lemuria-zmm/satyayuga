@@ -284,3 +284,22 @@
 2. **解锁入口移到收尾页（commit 14a577d，明明：授衔后「赴希孟画室」与「继续」两个希孟入口误导）**：授衔页原同时摆「入秘阁/赴希孟画室」（=通关探索入口，点了跳出序列进主界面）+「继续」（=推进演出→见希孟），两个"希孟"撞一起误导玩家。**拍板（AskUserQuestion）挪到收尾页**：TitleGrantOverlay 去掉入口区只留「继续」；EpilogueScreen 加 `ending`+enter 回调，打字机播完后淡入「入秘阁/赴希孟画室/重新开始」（`.epi-tail` 整体淡入，gates 复用 ed-gates 文案 + 新 .epi-gate-btn 暗色描边样式）。**演出走完（含见希孟）才给探索入口**，线性不误导。纯组件+CSS，不动 prompt/引擎，不重启 proxy。
 
 **流程已确认（明明 2026-06-30 试玩）。文字（各段文案/点评/见希孟语气）+ 美术（朱印/过场/收尾背景/夜读区别图 + 结局 LLM 散文）后续统一打磨。**
+
+---
+
+## 十七、主线增强：靖康暗线前奏 + 以诗入画题型（2026-06-30，依据史料 docs/历史背景资料.docx）
+
+memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：以诗入画=新题型 poem_intent / 丹青试+温书自测都用 / 靖康=七日节拍加前奏+结局点 / poem_intent 复用现有 hiddenRubric 评分 / 诗句 LLM 自选。
+
+| 改动 | 位置 |
+|---|---|
+| **靖康暗线前奏**：THEME_BEATS_BY_DAY 第 6~7 日改写加亡国前奏（花石纲式搜刮民夫舟船/南边乡间乱子风声/北边边关不安/粮价悄涨，**半架空不用金辽徽宗靖康方腊真名**）；scene_narrator prompt「粉饰太平」段加「亡国前奏」指引（仅 6~7 日、只作市井风声远处阴云、绝不说破将亡国、不用真名、一场一笔）；prompt v17→**v18** | `engine/ambience.ts`/`server/prompts/scene_narrator.md`/`app/App.tsx`(SCENE_PROMPT_VERSION) |
+| 结局 themeNote 加亡国前奏一层（awareCount≥2「南边花石船/北边风声/裂缝在走」、=1「这太平怕是长不了」） | `engine/gameEngine.ts` determineEnding |
+| **以诗入画 poem_intent**：QuestionType 加 `poem_intent`；painting_prompt_generator prompt 加「以诗入画」段（取古诗句考"虚"字藏/锁/香，三选项=不同"怎么画出虚字"巧思有高下、含蓄写意/照实/画偏，hiddenRubric coreSignals=抓虚字言外之意/partial=照实不含蓄/shallow=画错重点，LLM 自选诗句可用史料经典题），prompt v1→**v2** | `types/core.ts`/`server/prompts/painting_prompt_generator.md` |
+| examQuestionTypes 池加 poem_intent（丹青试+温书自测共用此池=两者都可能出诗题；archive_observation 仍秘阁专用不入池）；ExamScreen questionTypeLabels 加「以诗入画」；llm-validation allowedQuestionTypes 加 poem_intent；mock generatePaintingPrompt 加 poem_intent 分支（竹锁桥边卖酒家·考"锁"） | `app/App.tsx`/`components/ExamScreen.tsx`/`server/llm-validation.mjs`/`llm/mockAdapter.ts` |
+
+**关键设计**：①靖康半架空——只透市井风声/远处阴云，**不说破亡国、不用真实名号**，保留游戏架空设定不变成历史课；②poem_intent 复用整条出题→评分管道（hiddenRubric 三档信号不变），只是题面换成诗句考虚字；③诗句 LLM 自选（可用史料经典题如竹锁桥边卖酒家=李唐真实夺魁案例），灵活不写死。
+
+**验证**：build ✅；node **23/0**（七日 themeBeat 非空+无真实名号+6/7 日含前奏意象+day1 不超前；poem_intent mock 题面含诗句/3选项/rubric/透传+observe_detail 回归）；真 LLM proxy **重启加载 v18+painting v2**——poem_intent 探针出「竹锁桥边卖酒家」考"锁"三档巧思+rubric 到位，day7 街市写生场景轻点粮价涨/北边不太平且无禁词。**改 scene+painting prompt 已重启 proxy，scene 前后端 v18 一致**。
+
+**后续**：丹青试题型改法（明明另定）；秘阁三幕重做+8张线索；扩充择端/嵩/李唐好感线；结局/温书美术。

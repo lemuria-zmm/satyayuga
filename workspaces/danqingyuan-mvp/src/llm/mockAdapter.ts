@@ -208,6 +208,24 @@ export class MockLlmAdapter implements LlmAdapter {
         potentialClueIds: ['clue_blocked_waterway'],
         canonWarnings: ['只做伏笔，不揭示云起时真实地点。'],
       },
+      poem_intent: {
+        id: 'mock-poem-intent-zhu-suo',
+        promptText: '试帖以一句古诗为题——「竹锁桥边卖酒家」。监试问：这个"锁"字，你怎么画？',
+        options: [
+          { id: 'A', text: '只在竹林深处斜挑一面酒帘，酒家不见。', leansTo: ['landscape'] },
+          { id: 'B', text: '把桥边酒家、竹丛、客人都端端正正画出。', leansTo: ['architecture'] },
+          { id: 'C', text: '画一把大锁挂在酒家门上，扣题。', leansTo: ['figure'] },
+        ],
+        freeInputHint: '也可以写下你会怎么藏这个"锁"字。',
+        hiddenRubric: {
+          coreSignals: ['以竹掩家见"锁"意', '以景写意不照实', '以少胜多'],
+          partialSignals: ['画对了景却失于照实', '不够含蓄'],
+          shallowSignals: ['照字面画实物', '画错了重点'],
+          forbiddenInterpretations: ['云起时真实地点', '希孟未来消失'],
+        },
+        potentialClueIds: [],
+        canonWarnings: ['以诗入画雅题，不揭示主线秘密。'],
+      },
     };
     const selectedPrompt = prompts[request.input.questionType];
     const output: PaintingPromptGeneratorOutput = {

@@ -53,6 +53,7 @@ const questionTypeLabels: Record<QuestionType, string> = {
   express_intent: '表达立意',
   character_dispute: '人物交锋',
   archive_observation: '秘阁观画',
+  poem_intent: '以诗入画',
 };
 
 const optionBadges = ['甲', '乙', '丙', '丁'];

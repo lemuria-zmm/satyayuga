@@ -290,9 +290,9 @@ export function determineEnding(state: GameState, exam: { finalScore: number; ca
     (flags.secondScrollTeased ? 1 : 0);
   let themeNote: string | undefined;
   if (awareCount >= 2) {
-    themeNote = '你已看出这煌煌画院的太平景象之下，藏着没画进卷里的东西。骸游图的伏笔，在你心里挥之不去。';
+    themeNote = '你已看出这煌煌画院的太平景象之下，藏着没画进卷里的东西。骸游图的伏笔，在你心里挥之不去——而南边运花石的船、北边边关的风声，都像在说：这看似最盛的一年，底下的裂缝已经在走。';
   } else if (awareCount === 1) {
-    themeNote = '盛世画卷的边角，你瞥见了一丝不对劲，却还说不清那是什么。';
+    themeNote = '盛世画卷的边角，你瞥见了一丝不对劲，却还说不清那是什么。只隐隐觉得，这太平，怕是长不了。';
   }
 
   // 七日养成回顾
