@@ -80,6 +80,17 @@ const timeSlotLabels: Record<GameState['time']['timeSlot'], string> = {
 
 const TIME_SLOTS: GameState['time']['timeSlot'][] = ['morning_class', 'forenoon', 'noon', 'afternoon', 'evening'];
 
+/**
+ * 场景立绘（2026-06-30）：正文含对话时放出在场 NPC 立绘（参照闲聊形式）。
+ * 现用 4 位 NPC 现成立绘；后续美术补通用图（青年男/女/老年男/儿童等）按需扩。
+ */
+const sceneNpcSprite: Record<NpcId, string> = {
+  ximeng: '/char/char-ximeng-normal.png',
+  zeduan: '/char/char-zeduan-normal.png',
+  litang: '/char/char-litang-serious.png',
+  song: '/char/char-song-normal.png',
+};
+
 /** 五时段图标（美术 B1：更鼓/砚台/食盒/画卷/灯笼） */
 const timeSlotIcons: Record<GameState['time']['timeSlot'], string> = {
   morning_class: '/ui/icon-slot-morning.png',
@@ -280,6 +291,15 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
               ? '/dormitory-day-bg.png'
               : locationBackgrounds[bgLocation]);
 
+  // 场景立绘（2026-06-30）：正文段含对话（中文引号台词）时，放出在场 NPC 立绘（参照闲聊形式）。
+  // 取在场首位有立绘的 NPC；希孟未相识(metXimeng=false)时不出立绘（与正文里他不出场一致）。
+  const sceneText = scene?.latestSegment ?? '';
+  const hasDialogue = /[“"].+?[”"]/.test(sceneText);
+  const scenePortraitNpc =
+    scene && scene.status === 'reading' && hasDialogue
+      ? scene.npcsPresent.find((id) => sceneNpcSprite[id] && (id !== 'ximeng' || state.progress.flags.metXimeng))
+      : undefined;
+
   // 好感梅花格：无数字，hiddenAffinity 每 20 点亮一瓣（>0 即亮第一瓣）
   const ximengAffinity = state.relationships.ximeng.hiddenAffinity;
   const ximengPlumsLit = ximengAffinity <= 0 ? 0 : Math.min(5, 1 + Math.floor(ximengAffinity / 20));
@@ -297,6 +317,13 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
         style={{ backgroundImage: `url('${backgroundUrl}')` }}
       />
       <div className="gm-scene-overlay" />
+
+      {/* 场景立绘（2026-06-30）：正文含对话时放出在场 NPC 立绘，置于对话框左上方 */}
+      {scenePortraitNpc && (
+        <div className="gm-scene-portrait" key={scenePortraitNpc}>
+          <img className="gm-scene-portrait-img" src={sceneNpcSprite[scenePortraitNpc]} alt="" />
+        </div>
+      )}
 
       {/* Top nameplate */}
       <header className="gm-nameplate">

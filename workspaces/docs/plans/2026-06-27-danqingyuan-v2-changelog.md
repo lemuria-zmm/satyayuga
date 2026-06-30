@@ -352,3 +352,9 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 - **CSS**：`.gm-main-scroll` 从 `top:84 bottom:180`（占满中央）改为底部一条 `height:30vh / bottom:96`，让出上方大片背景；scroll-paper transform-origin 改 bottom、padding/标题字号缩小。
 - 纯前端，不动 prompt/引擎逻辑、不重启 proxy。build ✅。**回看前文靠画案手记（visibleText 仍存累计全文）。**
 - 遗留下轮：画案手记升级为档案库（激活 clueGraph + LLM entitiesIntroduced 抽取人物/线索/道具/地点 + 新增提示）。
+
+### 十八·补4 · VN 化两修：横版选项签 + 对话立绘（2026-06-30，明明试玩）
+
+①**选项签与对话框重叠 + 竖排**：VN band 下移后，64×140 竖排木牌签顶到对话框。改横版紧凑签（min-width 96 / height 52 / inline-grid：道具图左列、标题+cost 右列两行），gm-action-tag-title 改 horizontal-tb；去掉 action-tag-bg.png 竖牌底改米黄圆角描边。两个 dock（场景三件套/地点行动）共用，均不再与 band(bottom:96) 重叠。
+②**正文含对话时放 NPC 立绘**：MainGameScreen 算 `scenePortraitNpc`（scene.reading + latestSegment 含中文引号台词 + 在场有立绘的 NPC，希孟须 metXimeng）→ 渲 `.gm-scene-portrait`（左下 56vh，z-index:9 从对话框后探出，仿闲聊 dlgCharIn）。现用 4 位 NPC 现成立绘 `sceneNpcSprite`；后续美术补通用图（青年男/女/老年男/儿童）按需扩。
+- 纯前端，不重启 proxy。build ✅。
