@@ -47,6 +47,7 @@ import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
+import { ProloguePage } from '../components/ProloguePage';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { buildFallbackBeats, getMotifHint, rollMainlineSeed } from '../content/mainlineSeeds';
@@ -186,6 +187,8 @@ function renderLlmError(error: unknown) {
 export function App() {
   const [state, setState] = useState<GameState | null>(null);
   const [hasSave, setHasSave] = useState(() => loadSaveFile() !== null);
+  // 穿越引语页（2026-06-30）：入院名录前的打字机引语，每次进程只放一次（有存档可续则跳过）
+  const [prologueSeen, setPrologueSeen] = useState(() => loadSaveFile() !== null);
   const [isExamOpen, setIsExamOpen] = useState(false);
   const [isPuzzleOpen, setIsPuzzleOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -869,6 +872,9 @@ export function App() {
   }, [actions, activeScene, dialogueNpcId, examQuestions, isExamOpen, isPuzzleOpen, llmError, puzzleAssessmentPrompt, state]);
 
   if (state === null) {
+    if (!prologueSeen) {
+      return <ProloguePage onContinue={() => setPrologueSeen(true)} />;
+    }
     return (
       <SetupScreen
         hasSave={hasSave}
@@ -1183,6 +1189,7 @@ export function App() {
   function resetGame() {
     clearSaveFile();
     setHasSave(false);
+    setPrologueSeen(false);
     setIsExamOpen(false);
     setIsPuzzleOpen(false);
     setEndingDismissed(false);

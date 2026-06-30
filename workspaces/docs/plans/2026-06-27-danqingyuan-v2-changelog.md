@@ -327,3 +327,10 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 **验证**：build ✅；node **10/0**（云起时/粉饰太平 从 canon 数据清除、千里江山卷条目、骸游图四人共创、anchor=haiyou_collab、worldPremise 含穿越疑问、themeBeat 仍工作）；grep 全量确认两词无残留；真 LLM proxy **重启加载 v8/v19 等**——希孟知己档谈千里江山卷"交上去便是天下该有的样子"（弦外有音不点破）、书房同道档场景瞥见"另一卷被掩"且无禁词。**改 5 prompt 已重启 proxy，前后端版本一致**。
 
 **后续**：丹青试题型改法（明明另定）；秘阁三幕重做+8线索（届时收束骸游图四人共创）；扩充择端/嵩/李唐好感线（可各自埋骸游图分工线索）。
+
+### 十八·补 · 穿越引语页（2026-06-30，先简单做）
+
+明明：入院页没有穿越引语，单做一页打字机引语放在入院页之前（后续会详细设计这一页）。
+- 新建 `components/ProloguePage.tsx`：黑场 + 6 行穿越缘起逐字打字（CHAR_MS=80/行末停顿 600ms），点击跳过/继续；放完显"点击继续·填写入院名录"。
+- App 加 `prologueSeen` state（初值=有存档则跳过），`state===null && !prologueSeen` 时先渲引语页；resetGame 重置 prologueSeen（重新开始会重放）。
+- CSS `.prologue-*`（仿 epi- 黑场风），hint 柔和脉冲。纯前端，不动 prompt/引擎，不重启 proxy。build ✅。**这一页后续详细设计（配乐/分镜/美术）。**
