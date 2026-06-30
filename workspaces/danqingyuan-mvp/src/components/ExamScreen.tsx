@@ -10,8 +10,8 @@ interface ExamScreenProps {
   questions: PaintingPromptGeneratorOutput[];
   onCancel: () => void;
   onSubmit: (answers: Record<string, ExamAnswer>) => Promise<void> | void;
-  /** 考试模式（2026-06-28）：final=月末丹青试（庄重）；quick=晚间宿舍温书自测（夜读自省口吻） */
-  mode?: 'final' | 'quick';
+  /** 考试模式（2026-06-28；2026-06-30 加 retake）：final=月末丹青试（庄重）；quick=温书自测（夜读）；retake=落第补考（再给一次） */
+  mode?: 'final' | 'quick' | 'retake';
 }
 
 /** 按模式区分门头/开场/批阅文案（2026-06-28） */
@@ -35,6 +35,16 @@ const examChrome = {
     introQuote: '"白日所学，且看记下了几分。"',
     reviewInfo: '自省中',
     reviewText: ['你搁下笔，把方才的答处又看了一回。', '灯花轻爆，窗外夜色沉沉。'],
+  },
+  retake: {
+    title: '丹青补试',
+    beginBtn: '重展试帖',
+    cancelBtn: '',
+    introText: ['一卷新纸重新铺开。', '画院惜才，准你补试一场——这一回，沉住气。'],
+    introQuoteLead: '李唐立在案侧，只道：',
+    introQuote: '"前番火候未到，这回，画给我看。"',
+    reviewInfo: '复阅中',
+    reviewText: ['你搁下笔，长长舒了口气。', '这一回，下笔比方才稳了许多。'],
   },
 } as const;
 
@@ -122,9 +132,11 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
             >
               {chrome.beginBtn}
             </button>
-            <button className="ex-leave-btn" onClick={onCancel} type="button">
-              {chrome.cancelBtn}
-            </button>
+            {chrome.cancelBtn && (
+              <button className="ex-leave-btn" onClick={onCancel} type="button">
+                {chrome.cancelBtn}
+              </button>
+            )}
           </div>
         </section>
       </main>
@@ -151,7 +163,7 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
               <br />
               {chrome.reviewText[1]}
             </p>
-            <p className="ex-reviewing-dots">{mode === 'quick' ? '自省中 · · ·' : '批阅中 · · ·'}</p>
+            <p className="ex-reviewing-dots">{chrome.reviewInfo} · · ·</p>
           </div>
         </section>
       </main>
@@ -179,9 +191,11 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
         <span className="ex-plaque-type">
           {questionTypeLabels[currentQuestion.questionType]}
         </span>
-        <button className="ex-plaque-back" onClick={onCancel} type="button">
-          返回
-        </button>
+        {chrome.cancelBtn && (
+          <button className="ex-plaque-back" onClick={onCancel} type="button">
+            返回
+          </button>
+        )}
       </div>
 
       {/* Center exam paper */}

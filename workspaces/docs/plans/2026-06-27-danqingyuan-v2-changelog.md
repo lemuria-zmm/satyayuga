@@ -256,3 +256,24 @@
 **验证**：build ✅；node **19/0**（mentorForStyle 映射；nextEndingStage 四矩阵：通过+好感低→跳见希孟、通过+知己→见希孟、落第→补考、epilogue→null；mock examReview 通过/落第分支 replyOptions=[]+delta=0+含画科/补试）；真 LLM proxy 探针确认 v6 已加载——李唐点评山水（皴法/水口专业画评）、择端落第点评（界画线不稳）replyOptions=[]/delta=0、普通闲聊不受影响（warm→+1）。**prompt v6 上轮已提交+proxy 已加载，无需重启**。
 
 **批二待做**：补考完整（ExamScreen examMode='retake' 保底过 finalScore≥60）+ 引出希孟线 C 过场 + 见希孟 D（EndingDialogue npcId=ximeng，结局语境预热后续篇章）。**待补美术**：授衔朱印图、收尾背景图、导师点评宿舍夜读区别美术（现 CSS 占位）。
+
+---
+
+## 十六、结局序列重设计（批二）：补考完整 + 引希孟线 C + 见希孟 D（2026-06-30）
+
+接批一（第十五节），补全批一留的两个桩：**落第补考(retake)** + **见希孟(C 过场 + D 对白)**。
+
+| 改动 | 位置 |
+|---|---|
+| `character_dialogue` input 加 `endingMeet?:boolean`；prompt v6→**v7** 加「结局见希孟」段（好感≥知己、希孟说"画院之路同行"预热话+水路钩子、不重述外貌/不揭终局、单段 delta=0/replyOptions=[]/emotion=trusting） | `types/llm.ts`/`server/prompts/character_dialogue.md` |
+| mock 加 endingMeet 分支（话别预热语、单向） | `llm/mockAdapter.ts` |
+| **引希孟线 C 过场**：黑场水墨 + 一句独白「放榜既毕…未曾好好道一句话别」+「去寻他」 | **新建** `components/XimengBridge.tsx` |
+| ExamScreen mode 加 `'retake'`：补试门头/开场/复阅文案（"丹青补试"/"画给我看"）；cancelBtn 空 → 补试无取消/返回出口（不可中途逃出序列）；reviewing dots 用 chrome.reviewInfo | `components/ExamScreen.tsx` |
+| App.tsx：examMode 加 retake；`ximengMeet` state；**advanceEndingStage 去批一折叠桩**——retake→launchRetake 真出题、ximeng_meet→fetchXimengMeet 拉希孟话别；`launchRetake`（复用 final 出题）；`fetchXimengMeet`（LLM+兜底）；**submitExam retake 分支**（finalScore=max(实际,60) 保底过→重算通过档 ending→commitTitleGrant 授名分→title_grant，不重启序列/不扣体力/不推时段，技能加成照给）；commitTitleGrant 改收 (baseState,ending) 参数避 stale state；渲染加 ximeng_bridge/ximeng_meet/retake-loading 分支；DIALOGUE_PROMPT_VERSION v7 | `app/App.tsx` |
+| XimengBridge CSS（xb-*） | `styles/app.css` |
+
+**关键设计**：①补考在结局序列中进行（第7日丹青试已应过、无 take_exam 行动、不再扣体力）——submitExam retake 分支独立早 return；②保底过=`max(finalScore,60)` 重算 ending 必为通过档，commitTitleGrant 据此授祗候+解锁秘阁（画室仍需好感知己，补考不补）；③见希孟 D 复用 EndingDialogue（npcId=ximeng）；④补试无取消出口防中途逃出序列卡死；⑤commitTitleGrant 收显式 baseState/ending 参数（不读 stale state）。
+
+**验证**：build ✅；node **15/0**（序列不再折叠/补考保底过 finalScore≥60+tier≠fail+授祗候+解锁秘阁+好感0不解锁画室+不压高分/mock endingMeet 单向+examReview/普通闲聊回归）；真 LLM proxy **重启加载 v7**，见希孟探针出文符合预热语境（希孟在场认可+水路钩子、replyOptions=[]/delta=0/trusting、无终局剧透）。**改 prompt 已重启 proxy，前后端 v7 一致**。
+
+**至此结局序列完整**：交卷→导师点评(A)→（落第→补考保底过）→授衔(B)→（好感≥知己→引希孟线 C→见希孟 D）→收尾(E)。**待补美术**：授衔朱印图、收尾/过场背景图、导师点评宿舍夜读区别美术（现 CSS 占位）；结局 LLM 散文增强（个性化收尾，现 TIER_PROLOGUE 固定模板）。

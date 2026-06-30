@@ -40,6 +40,7 @@ import { ExamScreen } from '../components/ExamScreen';
 import { EndingScreen } from '../components/EndingScreen';
 import { EndingDialogue } from '../components/EndingDialogue';
 import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
+import { XimengBridge } from '../components/XimengBridge';
 import { EpilogueScreen } from '../components/EpilogueScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
@@ -81,8 +82,8 @@ const llmAdapter = createLlmAdapter();
 
 const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-28.v17';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-10.v1';
-/** 角色对白 prompt 版本（前后端须一致，2026-06-30 升 v6 加结局导师点评指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v6';
+/** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v7';
 
 /** 画科中文名（结局点评喂 LLM examReview.majorSkillLabel） */
 const SKILL_LABELS: Record<SkillId, string> = {
@@ -194,12 +195,14 @@ export function App() {
   const [endingStage, setEndingStage] = useState<EndingStage | null>(null);
   // 导师点评 LLM 文（批一）：null=生成中
   const [mentorReview, setMentorReview] = useState<{ dialogue: string; actionText: string } | null>(null);
+  // 见希孟 LLM 文（批二）：null=生成中
+  const [ximengMeet, setXimengMeet] = useState<{ dialogue: string; actionText: string } | null>(null);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
   const [examQuestions, setExamQuestions] = useState<PaintingPromptGeneratorOutput[]>([]);
-  // 考试模式（2026-06-28）：final=第7日丹青试（解锁秘阁/晋画正）；quick=晚间宿舍温书自测（小额加成不罚、不推时段）
-  const [examMode, setExamMode] = useState<'final' | 'quick'>('final');
+  // 考试模式（2026-06-28；2026-06-30 批二加 retake）：final=第7日丹青试；quick=晚间温书自测；retake=落第补考（保底过）
+  const [examMode, setExamMode] = useState<'final' | 'quick' | 'retake'>('final');
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
@@ -1185,6 +1188,7 @@ export function App() {
     setEndingDismissed(false);
     setEndingStage(null);
     setMentorReview(null);
+    setXimengMeet(null);
     setDialogueNpcId(null);
     setExamQuestions([]);
     setPuzzleAssessmentPrompt(null);
@@ -1199,9 +1203,11 @@ export function App() {
     if (!state) {
       return;
     }
+    // 补考（2026-06-30 批二）在结局序列中进行，第7日丹青试已应过、无 take_exam 行动也不再扣体力；
+    // final/quick 仍需对应行动（取其 staminaCost）。
     const examActionType = examMode === 'quick' ? 'quick_exam' : 'take_exam';
-    const examAction = actions.find((action) => action.type === examActionType);
-    if (!examAction) {
+    const examAction = examMode === 'retake' ? undefined : actions.find((action) => action.type === examActionType);
+    if (examMode !== 'retake' && !examAction) {
       return;
     }
 
@@ -1245,9 +1251,45 @@ export function App() {
     const passed = quickScore >= 60;
     const feedback = evaluations.map((evaluation) => evaluation.visibleFeedback).join('；');
 
+    // 补考（2026-06-30 批二）：落第后保底过——finalScore 至少 60（保底过线），重算 ending 为通过档，直接进授衔段。
+    // 不重启序列、不扣体力、不推时段；技能加成照给（补考也是真画了一场）。
+    if (examMode === 'retake') {
+      const exam = computeExamScore(state, rawScore);
+      const guaranteedScore = Math.max(exam.finalScore, 60); // 保底到通过线
+      const retakeEnding = determineEnding(state, { finalScore: guaranteedScore, cappedBySkill: false });
+      const renderedRetake = `补试既毕：${feedback}`;
+      const retakeState: GameState = {
+        ...commitMemoryPatch({
+          state: applyValidatedStatePatch(state, {
+            skillDelta: mergeSkillDeltas(evaluations),
+            timeAdvance: false,
+          }),
+          actionType: 'take_exam',
+          renderedText: renderedRetake,
+          memoryPatch: {
+            playerStyleTags: collectStyleTags(evaluations),
+            storyLedgerNote: renderedRetake,
+          },
+        }),
+        lastRenderedText: renderedRetake,
+        ending: retakeEnding,
+      };
+      setIsExamOpen(false);
+      setExamQuestions([]);
+      // 补考过 → 授衔段（commitTitleGrant 用重算后的通过档 ending 授名分）
+      commitTitleGrant(retakeState, retakeEnding);
+      setEndingStage('title_grant');
+      return;
+    }
+
     let patch: ValidatedStatePatch;
     let renderedText: string;
     let endingResult: EndingResult | undefined;
+
+    // 至此 examMode 为 final/quick，examAction 必定存在（retake 已提前 return）
+    if (!examAction) {
+      return;
+    }
 
     if (examMode === 'quick') {
       // 温书自测（2026-06-28）：夜读自省，答得好（≥60）给本科技能/学识小额加成（受心情修正+每日封顶）；答差不罚。
@@ -1360,45 +1402,98 @@ export function App() {
   }
 
   /**
-   * 结局序列推进（2026-06-30 批一）：按当前段算下一段，落第补考桩=直接保底过，见希孟段批一先跳过。
+   * 结局序列推进（2026-06-30 批一骨架 + 批二补全）：按当前段算下一段。
+   * - retake：落第→点评后启动真补考（ExamScreen examMode='retake' 保底过），不在此折叠。
+   * - ximeng_meet：好感≥知己→拉希孟话别 LLM。
    * 授衔段（title_grant）提交时正式授 rank / 解锁秘阁画室 / 落 firstExamPassed（推迟到此，落第补考过后才给名分）。
    */
   function advanceEndingStage(from: EndingStage) {
     if (!state || !state.ending) return;
-    let next = nextEndingStage(from, state.ending, state);
-    // 批一桩：retake 暂不做真补考（ExamScreen retake 批二补），直接到授衔保底过
-    if (next === 'retake') {
-      next = 'title_grant';
-    }
-    // 批一桩：见希孟 C/D 暂跳过，ximeng_bridge / ximeng_meet → epilogue
-    if (next === 'ximeng_bridge' || next === 'ximeng_meet') {
-      next = 'epilogue';
-    }
+    const next = nextEndingStage(from, state.ending, state);
 
-    // 进入授衔段：正式提交名分（落第补考保底过也到这）
+    if (next === 'retake') {
+      // 批二：落第补考——点评后真走一场 ExamScreen（examMode='retake' 保底过）
+      void launchRetake(state);
+      setEndingStage('retake');
+      return;
+    }
     if (next === 'title_grant') {
-      commitTitleGrant();
+      commitTitleGrant(state, state.ending);
+      setEndingStage('title_grant');
+      return;
+    }
+    if (next === 'ximeng_meet') {
+      // 批二：见希孟——拉希孟话别预热语
+      setXimengMeet(null);
+      void fetchXimengMeet(state);
+      setEndingStage('ximeng_meet');
+      return;
     }
     setEndingStage(next);
   }
 
-  /** 授衔提交（2026-06-30）：授 rank=zhihou（落第补考保底过同授）+ 解锁秘阁/画室 + 落 firstExamPassed/archiveUnlocked 旗标 */
-  function commitTitleGrant() {
-    if (!state || !state.ending) return;
-    const ending = state.ending;
-    // 落第补考保底过：rank 至少授祗候、解锁秘阁（通过即解锁）
+  /** 落第补考（2026-06-30 批二）：复用 final 出题，examMode='retake'；submitExam retake 分支保底过 */
+  async function launchRetake(baseState: GameState) {
+    try {
+      const questions = await Promise.all(
+        pickExamQuestionTypes().map((questionType) => generatePaintingPrompt(baseState, 'exam', questionType)),
+      );
+      setExamMode('retake');
+      setExamQuestions(questions);
+      setIsExamOpen(true);
+    } catch (error) {
+      setLlmError(renderLlmError(error));
+    }
+  }
+
+  /** 见希孟话别（2026-06-30 批二）：复用 character_dialogue + endingMeet，希孟说预热话。失败走兜底句（序列不卡死）。 */
+  async function fetchXimengMeet(meetState: GameState) {
+    const rel = meetState.relationships.ximeng;
+    try {
+      const response = await llmAdapter.generateCharacterDialogue({
+        traceId: `ending-ximeng-${Date.now()}`,
+        role: 'character_dialogue',
+        promptVersion: DIALOGUE_PROMPT_VERSION,
+        input: {
+          npcId: 'ximeng',
+          day: meetState.time.day,
+          timeSlot: meetState.time.timeSlot,
+          locationId: meetState.currentLocation,
+          relationshipStage: rel.stage,
+          emotionState: rel.emotionState,
+          topicCard: '画院之路同行',
+          endingMeet: true,
+          recentDialogue: (rel.chatHistory ?? []).slice(-6),
+          recentEvents: meetState.memory.storyLedger.slice(-2).map((entry) => entry.summary),
+          relevantMemories: meetState.memory.playerStyle.tags,
+          availableClueIds: meetState.puzzle.collectedClueIds,
+          canonWarnings: meetState.memory.coreCanon.spoilerBoundaries,
+        },
+        context: buildMemoryContext(meetState, 'character_dialogue', 'ximeng'),
+      });
+      setXimengMeet({ dialogue: response.output.dialogue, actionText: response.output.actionText });
+    } catch {
+      setXimengMeet({
+        dialogue: '你既留下了，那条没画完的水路，迟早要一起去走一趟。',
+        actionText: '希孟看了你许久，将手中半卷青绿轻轻按了按。',
+      });
+    }
+  }
+
+  /** 授衔提交（2026-06-30）：授 rank=zhihou（落第补考保底过同授）+ 解锁秘阁/画室 + 落 firstExamPassed/archiveUnlocked 旗标。
+   * 以传入 baseState/ending 为准（避免 setState 异步后读 stale state）。 */
+  function commitTitleGrant(baseState: GameState, ending: EndingResult) {
+    // 落第补考保底过后 ending 已被重算为通过档（见 submitExam retake 分支），此处统一按 ending 授名分
     const grantedRank = ending.rankChange ?? ('zhihou' as const);
-    const grantArchive = ending.tier !== 'fail' ? ending.unlockArchive : true; // 落第补考过=通过=解锁秘阁
-    const grantStudio = ending.unlockStudio; // 画室仍需好感知己，落第补考不补给
-    const granted = applyValidatedStatePatch(state, {
+    const granted = applyValidatedStatePatch(baseState, {
       rankChange: grantedRank,
       flagsSet: {
         firstExamPassed: true,
-        archiveUnlocked: grantArchive,
+        archiveUnlocked: ending.unlockArchive,
       },
       unlockedLocations: [
-        ...(grantArchive ? ['secret_archive' as const] : []),
-        ...(grantStudio ? ['ximeng_studio' as const] : []),
+        ...(ending.unlockArchive ? ['secret_archive' as const] : []),
+        ...(ending.unlockStudio ? ['ximeng_studio' as const] : []),
       ],
     });
     saveGameState(granted);
@@ -1765,8 +1860,33 @@ export function App() {
         />
       );
     }
+    if (endingStage === 'ximeng_bridge') {
+      return <XimengBridge onContinue={() => advanceEndingStage('ximeng_bridge')} />;
+    }
+    if (endingStage === 'ximeng_meet') {
+      return (
+        <EndingDialogue
+          npcId="ximeng"
+          dialogue={ximengMeet ? ximengMeet.dialogue : null}
+          actionText={ximengMeet ? ximengMeet.actionText : null}
+          caption="放榜既毕 · 寻希孟"
+          onContinue={() => advanceEndingStage('ximeng_meet')}
+        />
+      );
+    }
     if (endingStage === 'epilogue') {
       return <EpilogueScreen onReset={resetGame} />;
+    }
+    // retake：补考出题中（isExamOpen 尚未开）的过渡，显点评页占位避免回落旧 EndingScreen
+    if (endingStage === 'retake') {
+      return (
+        <EndingDialogue
+          npcId={mentorForStyle(state.player.styleOrigin)}
+          dialogue={null}
+          caption="补试 · 准备中"
+          onContinue={() => {}}
+        />
+      );
     }
   }
 

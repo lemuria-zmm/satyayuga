@@ -71,6 +71,21 @@ export class MockLlmAdapter implements LlmAdapter {
       };
       return { traceId: request.traceId, role: request.role, promptVersion: request.promptVersion, output, validation };
     }
+    // mock 结局见希孟（2026-06-30 批二）：endingMeet 非空 → 希孟话别预热语、单向（replyOptions=[]、delta=0）
+    if (request.input.endingMeet) {
+      const output: CharacterDialogueOutput = {
+        dialogue: '你既留下了，那条没画完的水路，迟早要一起去走一趟。',
+        actionText: '希孟难得地看了你许久，将手中半卷青绿轻轻按了按，像是把一句没说尽的话压在了画里。',
+        emotionState: 'trusting',
+        topicUnlocked: [],
+        cluesGranted: [],
+        relationshipDelta: 0,
+        replyOptions: [],
+        memoryPatch: { characterImpression: '', playerStyleTags: [], storyLedgerNote: '' },
+        safetyFlags: safeFlags,
+      };
+      return { traceId: request.traceId, role: request.role, promptVersion: request.promptVersion, output, validation };
+    }
     // mock 越界检测（2026-06-26）：playerReply 命中元游戏/AI 词 → boundaryViolation
     const reply = request.input.playerReply ?? '';
     const isBoundary = /AI|人工智能|大模型|模型|prompt|提示词|游戏|gpt|deepseek/i.test(reply);
