@@ -303,6 +303,15 @@ export class MockLlmAdapter implements LlmAdapter {
             // 三件套 mock（2026-06-17）：open 段还可续；continue 段模拟"这场已尽"→ 收束信号
             sceneCanContinue: phase !== 'continue',
             shouldConclude: phase === 'continue',
+            // VN 逐句 mock（2026-06-30）：切两段，一旁白一对白（speaker 取在场首位 NPC，无则全旁白）
+            segments: (() => {
+              const firstNpc = request.input.npcsPresent?.[0]?.id ?? null;
+              const half = Math.ceil(narrativeText.length / 2);
+              return [
+                { text: narrativeText.slice(0, half), speaker: null },
+                { text: narrativeText.slice(half), speaker: firstNpc },
+              ];
+            })() as SceneNarratorOutput['segments'],
             suggestedActions: [
               { label: '去街市看看', locationId: 'market', summary: '循着方才的念头去街市走走' },
             ],

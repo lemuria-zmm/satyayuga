@@ -358,3 +358,11 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 ①**选项签与对话框重叠 + 竖排**：VN band 下移后，64×140 竖排木牌签顶到对话框。改横版紧凑签（min-width 96 / height 52 / inline-grid：道具图左列、标题+cost 右列两行），gm-action-tag-title 改 horizontal-tb；去掉 action-tag-bg.png 竖牌底改米黄圆角描边。两个 dock（场景三件套/地点行动）共用，均不再与 band(bottom:96) 重叠。
 ②**正文含对话时放 NPC 立绘**：MainGameScreen 算 `scenePortraitNpc`（scene.reading + latestSegment 含中文引号台词 + 在场有立绘的 NPC，希孟须 metXimeng）→ 渲 `.gm-scene-portrait`（左下 56vh，z-index:9 从对话框后探出，仿闲聊 dlgCharIn）。现用 4 位 NPC 现成立绘 `sceneNpcSprite`；后续美术补通用图（青年男/女/老年男/儿童）按需扩。
 - 纯前端，不重启 proxy。build ✅。
+
+### 十八·补5 · VN 逐句呈现 + 多角色立绘 + 横版签（2026-06-30，明明）
+
+承接 VN 化：①两角色同台立绘顾不过来→逐句呈现、立绘随说话人切换；②小箭头/自动与「继续」签作用不同。**方案 B 结构化输出 + 小箭头/自动 + 居中立绘 + 显说话人名 + 去标题纯净对话框**（AskUserQuestion 拍板）。
+- **契约**：SceneNarratorOutput 加 `segments:[{text,speaker:npcId|null}]`；scene prompt open/continue 要求把 narrativeText 切成对白/旁白单元（对白单独成句标 speaker、旁白 null），加「分段输出」段+输出示例，v20→**v21**。llm-validation sanitize 剔空 text/非法 speaker 归 null/空数组删字段。mock narrateScene 切两单元（旁白+在场首位 NPC）。
+- **引擎**：ActiveScene 加 `segments`+`segIndex`；startScene open / continueScene 存 buildSegments(output)（无则整段当一旁白单元兜底）+segIndex=0；App.advanceSegment 推进 segIndex（纯前端不调 LLM）。
+- **UI**：场景中=纯净 VN 对话框（去地点标题/氛围句），显说话人名(CHARACTERS)+当前单元 curSeg.text；`segHasNext` 时右下显小箭头▶（切下一句）+自动▶▶开关（2.2s 连播、本批播完自动关）；**三件套「继续/去别处/推荐」dock 仅 batchDone（本批逐句播完）才出**——与小箭头明确区分（小箭头切当前批、继续调 LLM 出下一批）。立绘 `speakerNpc`（当前单元说话人）居中站立 88vh 从对话框后探出，随 speaker 逐句切换（修复①两角色立绘+②与课业面板重叠：改居中）。
+- 纯前端+prompt+mock，改 scene prompt 已重启 proxy(v21)。build ✅；真 LLM 冒烟：晨课纯叙事切 5 旁白单元、人物课嵩 2 句标 speaker=song 旁白 null（多角色立绘可逐句切换）。

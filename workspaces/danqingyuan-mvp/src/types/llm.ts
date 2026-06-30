@@ -265,6 +265,14 @@ export interface SceneSuggestedAction {
   npcId?: NpcId;
 }
 
+/** 剧情显示单元（2026-06-30 VN 逐句）：一句对白或一段旁白，前端逐单元播放、立绘随 speaker 切换 */
+export interface SceneSegment {
+  /** 这一单元的正文（一句对白或一小段旁白） */
+  text: string;
+  /** 说话人：在场 NPC 的 id；旁白/无人说话为 null */
+  speaker: NpcId | null;
+}
+
 export interface SceneSuggestedPatch {
   /** 心情建议 -1~+1，引擎裁决 */
   moodDelta?: number;
@@ -285,6 +293,8 @@ export interface SceneSuggestedPatch {
 export interface SceneNarratorOutput {
   /** 每段 ≥segmentMin 字的剧情正文 */
   narrativeText: string;
+  /** VN 逐句显示单元（2026-06-30）：open/continue 把 narrativeText 切成对白/旁白单元，前端逐个播、立绘随 speaker 切换。缺省时前端把整段当一个旁白单元兜底 */
+  segments?: SceneSegment[];
   /** （旧）open/mid 分支选项；2026-06-17 三件套模型下 open/continue 不再产出 */
   choices?: SceneChoice[];
   /** open/continue 阶段（2026-06-17）：本场是否还有剧情张力；false 则「继续」消失。缺省按 true */

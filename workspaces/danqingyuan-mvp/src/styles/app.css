@@ -4378,17 +4378,100 @@ dd {
 /* 场景立绘（2026-06-30）：正文含对话时显在场 NPC 立绘，立于底部对话框左侧、从其后探出 */
 .gm-scene-portrait {
   position: absolute;
-  left: 140px;
-  bottom: 96px;
-  z-index: 9; /* 低于对话框 band(z-index:10)，立绘从对话框后方探出上半身 */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0; /* 居中站立，立绘下缘贴屏底，上半身从对话框后探出 */
+  z-index: 9; /* 低于对话框 band(z-index:10) */
   pointer-events: none;
   animation: dlgCharIn 460ms ease both;
 }
 
 .gm-scene-portrait-img {
-  height: 56vh;
-  max-height: 560px;
+  height: 88vh;
+  max-height: 880px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
+}
+
+/* ============================================================
+   VN 逐句对话框（2026-06-30）：场景中纯净对话框，显说话人名+当前单元+小箭头/自动
+   ============================================================ */
+.gm-vn-box {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding: 4px 8px;
+}
+
+.gm-vn-speaker {
+  font-size: 19px;
+  font-weight: 700;
+  color: #9C3328;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.gm-vn-text {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.95;
+  color: #2a1f16;
+  white-space: pre-wrap;
+}
+
+/* 小箭头 + 自动：右下角，纯前端切句（区别于底部「继续」签调 LLM） */
+.gm-vn-controls {
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gm-vn-auto {
+  border: 1px solid rgba(156, 51, 40, 0.4);
+  background: rgba(244, 238, 226, 0.7);
+  color: #9C3328;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+.gm-vn-auto.on {
+  background: rgba(156, 51, 40, 0.85);
+  color: #f0e6d2;
+}
+.gm-vn-auto:hover {
+  background: rgba(156, 51, 40, 0.25);
+}
+.gm-vn-auto.on:hover {
+  background: rgba(156, 51, 40, 0.95);
+}
+
+.gm-vn-next {
+  border: none;
+  background: rgba(156, 51, 40, 0.9);
+  color: #f3ead4;
+  font-size: 16px;
+  line-height: 1;
+  width: 34px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  animation: vnNextPulse 1.6s ease-in-out infinite;
+  transition: transform 140ms ease;
+}
+.gm-vn-next:hover {
+  transform: scale(1.12);
+}
+@keyframes vnNextPulse {
+  50% { opacity: 0.55; }
 }

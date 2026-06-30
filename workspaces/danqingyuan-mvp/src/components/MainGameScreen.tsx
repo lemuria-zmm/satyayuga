@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LOCATIONS } from '../content/locations';
+import { CHARACTERS } from '../content/characters';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
@@ -18,6 +19,8 @@ interface MainGameScreenProps {
   /** 剧情驱动三件套（2026-06-17）：继续/去别处/推荐行动 */
   onContinue: (playerInput?: string) => void;
   onLeaveScene: () => void;
+  /** VN 逐句推进（2026-06-30）：小箭头/自动播放下一显示单元（不调 LLM，与「继续」签不同） */
+  onAdvanceSegment: () => void;
   onFollowSuggestion: (next: ValidatedSuggestedAction) => void;
   onAction: (action: GameAction) => void;
   onReset: () => void;
@@ -225,13 +228,15 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function MainGameScreen({ state, actions, llmError, settlement, scene, onContinue, onLeaveScene, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewEnding, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
+export function MainGameScreen({ state, actions, llmError, settlement, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewEnding, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
   const [scrollCollapsed, setScrollCollapsed] = useState(false);
   const [slipVisible, setSlipVisible] = useState(false);
   const [freeInput, setFreeInput] = useState('');
+  // VN 自动播放（2026-06-30）：开启后定时推进 segIndex，到本批末或场景结束自动关
+  const [autoPlay, setAutoPlay] = useState(false);
 
   // 场景结束后清空自由输入
   useEffect(() => {
@@ -291,14 +296,32 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
               ? '/dormitory-day-bg.png'
               : locationBackgrounds[bgLocation]);
 
-  // 场景立绘（2026-06-30）：正文段含对话（中文引号台词）时，放出在场 NPC 立绘（参照闲聊形式）。
-  // 取在场首位有立绘的 NPC；希孟未相识(metXimeng=false)时不出立绘（与正文里他不出场一致）。
-  const sceneText = scene?.latestSegment ?? '';
-  const hasDialogue = /[“"].+?[”"]/.test(sceneText);
-  const scenePortraitNpc =
-    scene && scene.status === 'reading' && hasDialogue
-      ? scene.npcsPresent.find((id) => sceneNpcSprite[id] && (id !== 'ximeng' || state.progress.flags.metXimeng))
+  // VN 逐句呈现（2026-06-30）：当前显示单元 = segments[segIndex]；speaker 驱动立绘+说话人名。
+  // 兜底：场景无 segments（旧数据/失败）时退回整段 latestSegment 当一个旁白单元。
+  const sceneReading = scene?.status === 'reading';
+  const segs = scene?.segments ?? (scene?.latestSegment ? [{ text: scene.latestSegment, speaker: null as NpcId | null }] : []);
+  const segIndex = Math.min(scene?.segIndex ?? 0, Math.max(0, segs.length - 1));
+  const curSeg = sceneReading ? segs[segIndex] : undefined;
+  const segHasNext = sceneReading && segIndex < segs.length - 1; // 本批还有下一单元→显小箭头
+  const batchDone = sceneReading && !segHasNext; // 本批播完→才出三件套「继续」签
+  // 说话人立绘（希孟未相识不出，与正文不出场一致）
+  const speakerNpc =
+    curSeg?.speaker && sceneNpcSprite[curSeg.speaker] && (curSeg.speaker !== 'ximeng' || state.progress.flags.metXimeng)
+      ? curSeg.speaker
       : undefined;
+
+  // VN 自动播放：开启时每 ~2.2s 推进一单元；本批播完(无下一单元)即自动关，交回玩家点「继续」
+  useEffect(() => {
+    if (!autoPlay) return;
+    if (!segHasNext) { setAutoPlay(false); return; }
+    const timer = setTimeout(() => onAdvanceSegment(), 2200);
+    return () => clearTimeout(timer);
+  }, [autoPlay, segHasNext, segIndex, onAdvanceSegment]);
+
+  // 场景切换/结束时关掉自动播放
+  useEffect(() => {
+    if (!sceneReading) setAutoPlay(false);
+  }, [sceneReading, scene?.segmentCount]);
 
   // 好感梅花格：无数字，hiddenAffinity 每 20 点亮一瓣（>0 即亮第一瓣）
   const ximengAffinity = state.relationships.ximeng.hiddenAffinity;
@@ -318,10 +341,10 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
       />
       <div className="gm-scene-overlay" />
 
-      {/* 场景立绘（2026-06-30）：正文含对话时放出在场 NPC 立绘，置于对话框左上方 */}
-      {scenePortraitNpc && (
-        <div className="gm-scene-portrait" key={scenePortraitNpc}>
-          <img className="gm-scene-portrait-img" src={sceneNpcSprite[scenePortraitNpc]} alt="" />
+      {/* 场景立绘（2026-06-30 VN 逐句）：当前单元说话人立绘，居中站立、随 speaker 切换 */}
+      {speakerNpc && (
+        <div className="gm-scene-portrait" key={speakerNpc}>
+          <img className="gm-scene-portrait-img" src={sceneNpcSprite[speakerNpc]} alt="" />
         </div>
       )}
 
@@ -447,18 +470,40 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
           {scrollCollapsed ? '展' : '✕'}
         </button>
         <div className={`gm-scroll-paper ${scrollCollapsed ? 'collapsed' : ''}`}>
-          <h1 className="gm-scroll-title">{LOCATIONS[currentLocation]?.name ?? '院堂'}</h1>
-          <div className="gm-scroll-title-line" />
-
-          <div className="gm-scene-text">
-            <p className="gm-scene-atmosphere">
-              {locationAtmosphere[currentLocation] ?? '院中风静，日光照进堂前。'}
-            </p>
-            {/* VN 式分段（2026-06-30）：场景进行中只显当前段 latestSegment，不显累计全文；非场景态显 lastRenderedText（机械/练习单段） */}
-            {!guideActive && (scene?.latestSegment ?? state.lastRenderedText) && (
-              <p className="gm-scene-narrative">{scene?.latestSegment ?? state.lastRenderedText}</p>
-            )}
-          </div>
+          {/* 场景进行中=纯净 VN 对话框（去地点标题/氛围句，显说话人名+当前单元）；非场景态=地点标题+机械/练习单段文 */}
+          {sceneReading && curSeg ? (
+            <div className="gm-vn-box">
+              {speakerNpc && <span className="gm-vn-speaker">{CHARACTERS[speakerNpc]?.name ?? ''}</span>}
+              <p className="gm-vn-text">{curSeg.text}</p>
+              {/* 小箭头（本批还有下一单元时）：纯前端切下一句，与「继续」签不同；旁边自动播放开关 */}
+              {segHasNext && (
+                <div className="gm-vn-controls">
+                  <button
+                    className={`gm-vn-auto ${autoPlay ? 'on' : ''}`}
+                    onClick={() => setAutoPlay((v) => !v)}
+                    type="button"
+                    title="自动播放"
+                  >
+                    {autoPlay ? '⏸ 自动' : '▶▶ 自动'}
+                  </button>
+                  <button className="gm-vn-next" onClick={onAdvanceSegment} type="button" title="下一句">▶</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <h1 className="gm-scroll-title">{LOCATIONS[currentLocation]?.name ?? '院堂'}</h1>
+              <div className="gm-scroll-title-line" />
+              <div className="gm-scene-text">
+                <p className="gm-scene-atmosphere">
+                  {locationAtmosphere[currentLocation] ?? '院中风静，日光照进堂前。'}
+                </p>
+                {!guideActive && state.lastRenderedText && (
+                  <p className="gm-scene-narrative">{state.lastRenderedText}</p>
+                )}
+              </div>
+            </>
+          )}
 
           {/* 场景 loading 文案（三件套按钮在底部 dock，2026-06-17 移出正文区） */}
           {scene && (
@@ -474,11 +519,13 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
 
           {llmError && <p className="gm-scroll-error">{llmError}</p>}
 
-          <div className="gm-action-count">
-            {isFinalChapter
-              ? '七日已尽。时间在秘阁门前停了下来。'
-              : <>现在是第{state.time.day}日·{timeSlotLabels[state.time.timeSlot]}。{daysUntilExam > 0 && ` 距丹青试还有 ${daysUntilExam} 日。`}</>}
-          </div>
+          {!sceneReading && (
+            <div className="gm-action-count">
+              {isFinalChapter
+                ? '七日已尽。时间在秘阁门前停了下来。'
+                : <>现在是第{state.time.day}日·{timeSlotLabels[state.time.timeSlot]}。{daysUntilExam > 0 && ` 距丹青试还有 ${daysUntilExam} 日。`}</>}
+            </div>
+          )}
         </div>
       </section>
 
@@ -494,8 +541,8 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
         </div>
       )}
 
-      {/* Bottom: 剧情驱动三件套 dock（2026-06-17：与行动签同样式同位置；LLM 信号驱动显隐） */}
-      {scene && scene.status === 'reading' && !guideActive && (() => {
+      {/* Bottom: 剧情驱动三件套 dock（2026-06-17；2026-06-30 VN：仅本批逐句播完 batchDone 才出，与小箭头区分） */}
+      {scene && scene.status === 'reading' && batchDone && !guideActive && (() => {
         // 日终字数预算将满：续/推荐都开不出新段，隐藏它们只留「去别处」收束（2026-06-17）
         const budgetFull = state.time.narrativeCharsToday + SEGMENT_MIN > DAY_CHARS_MAX;
         const showContinue = !budgetFull && scene.sceneCanContinue && scene.segmentCount < scene.maxSegments;

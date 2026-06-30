@@ -72,6 +72,7 @@ import type {
   PaintingPromptGeneratorOutput,
   QuestionType,
   SceneChoice,
+  SceneSegment,
   SkillDelta,
   SkillId,
   TimeSlot,
@@ -81,10 +82,16 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v20';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v21';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
 const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v9';
+
+/** VN 逐句（2026-06-30）：取 LLM segments，无则把整段正文当一个旁白单元兜底 */
+function buildSegments(output: { segments?: SceneSegment[]; narrativeText: string }): SceneSegment[] {
+  if (Array.isArray(output.segments) && output.segments.length > 0) return output.segments;
+  return [{ text: output.narrativeText, speaker: null }];
+}
 
 /** 画科中文名（结局点评喂 LLM examReview.majorSkillLabel） */
 const SKILL_LABELS: Record<SkillId, string> = {
@@ -132,6 +139,10 @@ export interface ActiveScene {
   openText?: string;
   /** 当前段正文（VN 式分段显示，2026-06-30）：正文区只显示最新一段，不显累计 openText；账本/LLM context 仍用 openText */
   latestSegment?: string;
+  /** VN 逐句显示单元（2026-06-30）：当前批 LLM 正文切成的句/段单元，前端逐个播、立绘随 speaker 切换 */
+  segments?: SceneSegment[];
+  /** 当前正在显示到的 segment 下标（小箭头/自动推进；到 segments.length-1 即本批播完，才出「继续」签） */
+  segIndex?: number;
   /** 延迟结算（2026-06-15）：runAction 已算好但未提交的引擎成品（含时段推进/体力/技能/例钱/location 跳转） */
   pendingSettledState?: GameState;
   /** 延迟结算的引擎数值签（resolve 时与 LLM 建议签合并 showSettlement） */
@@ -661,7 +672,7 @@ export function App() {
       );
       setActiveScene((current) =>
         current?.status === 'loading-open'
-          ? { ...current, status: 'reading', openText: narrativeText, latestSegment: narrativeText, sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
+          ? { ...current, status: 'reading', openText: narrativeText, latestSegment: narrativeText, segments: buildSegments(response.output), segIndex: 0, sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
           : current,
       );
     } catch {
@@ -729,6 +740,8 @@ export function App() {
               status: 'reading',
               openText: accumulated,
               latestSegment: narrativeText,
+              segments: buildSegments(response.output),
+              segIndex: 0,
               segmentCount: current.segmentCount + 1,
               sceneCanContinue: canContinue,
               shouldConclude,
@@ -740,6 +753,16 @@ export function App() {
       // 续写失败：回到 reading，本段不计；「继续」仍在（除非已到上限）
       setActiveScene((current) => (current?.status === 'loading-continue' ? { ...current, status: 'reading' } : current));
     }
+  }
+
+  /** VN 逐句推进（2026-06-30）：小箭头/自动播放——把当前 segIndex 往后挪一个单元（不调 LLM，纯前端切换）。到末尾不再前进（UI 改显「继续」签）。 */
+  function advanceSegment() {
+    setActiveScene((current) => {
+      if (!current || current.status !== 'reading' || !current.segments) return current;
+      const next = (current.segIndex ?? 0) + 1;
+      if (next >= current.segments.length) return current;
+      return { ...current, segIndex: next };
+    });
   }
 
   /**
@@ -924,6 +947,7 @@ export function App() {
           scene={activeScene}
           onContinue={continueScene}
           onLeaveScene={concludeScene}
+          onAdvanceSegment={advanceSegment}
           onFollowSuggestion={(next) => endScene({ reason: 'follow', next })}
           onAction={handleAction}
           onReset={resetGame}
@@ -1922,6 +1946,7 @@ export function App() {
       scene={activeScene}
       onContinue={continueScene}
       onLeaveScene={concludeScene}
+      onAdvanceSegment={advanceSegment}
       onFollowSuggestion={(next) => endScene({ reason: 'follow', next })}
       onAction={handleAction}
       onReset={resetGame}

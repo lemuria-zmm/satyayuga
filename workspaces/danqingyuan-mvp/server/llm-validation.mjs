@@ -116,6 +116,16 @@ export function sanitizeLlmOutputForRole(role, output, input = undefined) {
         return locOk && npcOk;
       });
     }
+    // segments（2026-06-30 VN 逐句）：剔除空 text 单元，非法 speaker 归 null（旁白）。空数组则删字段，前端整段兜底
+    if (Array.isArray(output.segments)) {
+      output.segments = output.segments
+        .filter((s) => isPlainObject(s) && typeof s.text === 'string' && s.text.trim().length > 0)
+        .map((s) => ({
+          text: s.text.trim(),
+          speaker: allowedSceneNpcIds.has(s.speaker) ? s.speaker : null,
+        }));
+      if (output.segments.length === 0) delete output.segments;
+    }
   }
   return output;
 }
