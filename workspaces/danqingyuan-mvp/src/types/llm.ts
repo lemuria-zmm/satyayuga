@@ -114,6 +114,8 @@ export interface PaintingPromptGeneratorInput {
   requiredElements: string[];
   forbiddenElements: string[];
   tone: 'plain' | 'restrained' | 'literary';
+  /** 温书自测（2026-06-30）：true 时为晚间宿舍日常温习，出纯画意题，不触碰《骸游图》/主线伏笔 */
+  quickReview?: boolean;
 }
 
 export interface PaintingPromptGeneratorOutput {

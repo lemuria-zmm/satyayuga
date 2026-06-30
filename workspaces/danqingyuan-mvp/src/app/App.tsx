@@ -81,10 +81,10 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v19';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v20';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v8';
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v9';
 
 /** 画科中文名（结局点评喂 LLM examReview.majorSkillLabel） */
 const SKILL_LABELS: Record<SkillId, string> = {
@@ -959,6 +959,7 @@ export function App() {
     currentState: GameState,
     mode: 'exam' | 'puzzle',
     questionType: QuestionType,
+    quickReview = false,
   ) {
     const response = await llmAdapter.generatePaintingPrompt({
       traceId: `${mode}-prompt-${questionType}-${Date.now()}`,
@@ -982,6 +983,7 @@ export function App() {
             : ['三选项', '自由输入', '趣味考查'],
         forbiddenElements: ['坐实希孟消失原因', '骸游图四人共创', '进献警戒目的'],
         tone: mode === 'exam' ? 'plain' : 'restrained',
+        quickReview,
       },
       context: buildMemoryContext(currentState, 'painting_prompt_generator'),
     });
@@ -1138,7 +1140,7 @@ export function App() {
     if (action.type === 'quick_exam') {
       // 温书自测（2026-06-28）：晚间宿舍夜读自省，出 1 题；复用 exam 出题/答题/评分基建
       try {
-        const question = await generatePaintingPrompt(state, 'exam', pickQuickExamQuestionType());
+        const question = await generatePaintingPrompt(state, 'exam', pickQuickExamQuestionType(), true);
         setExamMode('quick');
         setExamQuestions([question]);
         setIsExamOpen(true);

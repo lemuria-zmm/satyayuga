@@ -334,3 +334,12 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 - 新建 `components/ProloguePage.tsx`：黑场 + 6 行穿越缘起逐字打字（CHAR_MS=80/行末停顿 600ms），点击跳过/继续；放完显"点击继续·填写入院名录"。
 - App 加 `prologueSeen` state（初值=有存档则跳过），`state===null && !prologueSeen` 时先渲引语页；resetGame 重置 prologueSeen（重新开始会重放）。
 - CSS `.prologue-*`（仿 epi- 黑场风），hint 柔和脉冲。纯前端，不动 prompt/引擎，不重启 proxy。build ✅。**这一页后续详细设计（配乐/分镜/美术）。**
+
+### 十八·补2 · 首遇/对话自然过渡四改（2026-06-30，明明）
+
+为首遇希孟与首次对话的自然过渡：①温书小测不提骸游图；②首遇环境+背影+现代视角心理描写；③首次闲聊不主动报千里江山卷名；④允许旁观者视角铺垫希孟。
+- ①`PaintingPromptGeneratorInput` 加 `quickReview?`，generatePaintingPrompt 加参，quick_exam 传 true；painting_prompt v3→**v4** 加 quickReview 段（纯画意题、不碰骸游图/主线/希孟）。
+- ②`XIMENG_FIRST_MEET` 脚本重写：青衣背影对着青绿长卷出神→日光/笔悬未落→玩家现代视角心跳漏拍（知他是谁、知此画名声、知他画成后消失）→带千年疑问上前攀谈（去掉旧"云从山背升起"motif）。
+- ③DialogueScreen OPENING_REPLIES 改委婉（"你在画什么？"不点名）+希孟 atmosphere/greeting 改首次接触陌生口吻（"……何事？"）；character_dialogue v8→**v9** 陌路档加"首次接触不主动报千里江山卷名，玩家问起才淡淡道青绿山水"。
+- ④scene v19→**v20** 希孟出场门槛段：ximengMet=false 时**可借旁观者视角**（同窗/小书童/街市闲话）聊起青年画师与他要进献的青绿山水（可点千里江山卷名作谈资），未见其人先闻其事；本人仍不出场。
+- 验证 build ✅；真 LLM proxy 重启 v9/v20/painting v4：温书自测题不含骸游图/希孟、首次闲聊希孟只说"青绿山水要进献宫里"不报画名、选项不点名。**改 3 prompt 已重启 proxy 前后端版本一致**。

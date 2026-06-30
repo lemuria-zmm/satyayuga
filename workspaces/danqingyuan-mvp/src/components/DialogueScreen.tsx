@@ -34,24 +34,24 @@ const npcColors: Record<NpcId, string> = {
 };
 
 const npcAtmosphere: Record<NpcId, string> = {
-  ximeng: '廊下风轻，竹帘半卷。希孟立在案旁，手中画卷尚未收起。',
+  ximeng: '你走近几步。少年似是察觉身后有人，执笔的手顿了顿，正侧过脸来。',
   zeduan: '择端正对着一幅长卷出神，听见脚步声才抬起头。',
   litang: '李唐端坐案前，笔搁一侧，像在等什么人。',
   song: '嵩正在翻看一卷旧画，指尖停在画中人物的眉眼处。',
 };
 
 const npcGreeting: Record<NpcId, string> = {
-  ximeng: '"你来了。"他搁下笔，并未多问。',
+  ximeng: '"……何事？"他偏过头看你一眼，目光淡淡的，并不多问。',
   zeduan: '"来了？正好，你看看这段桥下——"',
   litang: '"坐。有话便说。"',
   song: '"你来得正好。我正想问你一件事。"',
 };
 
-/** 默认开场可选回复（首轮，LLM 尚未给 replyOptions 时用） */
+/** 默认开场可选回复（首轮，LLM 尚未给 replyOptions 时用）。首次接触：委婉问"在画什么"，不主动点画名 */
 const OPENING_REPLIES: ChatReplyOption[] = [
-  { text: '想与你说说画。', tone: 'warm' },
-  { text: '只是路过，随便看看。', tone: 'neutral' },
-  { text: '你这卷画，画的是什么？', tone: 'probing' },
+  { text: '你在画什么？', tone: 'warm' },
+  { text: '打扰了，我只是随意看看。', tone: 'neutral' },
+  { text: '这画……我好像在哪儿见过。', tone: 'probing' },
 ];
 
 interface DialogueScreenProps {
