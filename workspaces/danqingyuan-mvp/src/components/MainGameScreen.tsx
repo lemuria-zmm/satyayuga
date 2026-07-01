@@ -9,12 +9,15 @@ import { DAY_CHARS_MAX, SEGMENT_MIN } from '../engine/sceneEngine';
 import { MAX_SLOT_SCENES, isActionAffordable, isPracticeMoodLocked } from '../engine/gameEngine';
 import { dailyChatQuota } from '../types/core';
 import type { GameAction, GameState, LocationId, NpcId, SkillId, ValidatedStatePatch } from '../types';
+import type { ClueGraphNode } from '../types/memory';
 
 interface MainGameScreenProps {
   state: GameState;
   actions: GameAction[];
   llmError: string | null;
   settlement?: { patch: ValidatedStatePatch; seq: number } | null;
+  /** 档案库新增实体飘条（2026-07-01） */
+  newEntities?: { items: ClueGraphNode[]; seq: number } | null;
   scene?: ActiveScene | null;
   /** 剧情驱动三件套（2026-06-17）：继续/去别处/推荐行动 */
   onContinue: (playerInput?: string) => void;
@@ -92,6 +95,16 @@ const sceneNpcSprite: Record<NpcId, string> = {
   zeduan: '/char/char-zeduan-normal.png',
   litang: '/char/char-litang-serious.png',
   song: '/char/char-song-normal.png',
+};
+
+/** 档案实体类别中文（2026-07-01，档案库+新增飘条共用）；含 clueGraph 全 6 类 */
+const entityKindLabels: Record<ClueGraphNode['kind'], string> = {
+  npc: '人物',
+  clue: '线索',
+  item: '道具',
+  place: '地点',
+  painting: '画作',
+  motif: '母题',
 };
 
 /** 五时段图标（美术 B1：更鼓/砚台/食盒/画卷/灯笼） */
@@ -228,7 +241,7 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function MainGameScreen({ state, actions, llmError, settlement, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewEnding, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
+export function MainGameScreen({ state, actions, llmError, settlement, newEntities, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewEnding, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
@@ -253,6 +266,15 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
     const timer = setTimeout(() => setSlipVisible(false), 5000);
     return () => clearTimeout(timer);
   }, [settlement]);
+
+  // 档案库新增实体飘条（2026-07-01）：浮现后数秒淡出
+  const [entityToastVisible, setEntityToastVisible] = useState(false);
+  useEffect(() => {
+    if (!newEntities) { setEntityToastVisible(false); return; }
+    setEntityToastVisible(true);
+    const timer = setTimeout(() => setEntityToastVisible(false), 4500);
+    return () => clearTimeout(timer);
+  }, [newEntities]);
 
   const settlementLines = settlement ? buildSettlementLines(settlement.patch) : [];
 
@@ -543,6 +565,19 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
           {settlementLines.map((line) => (
             <span key={line} className={`gm-settlement-line ${line.includes('-') ? 'neg' : 'pos'}`}>
               {line}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 档案库新增飘条（2026-07-01）：LLM 报的新人物/线索/道具/地点入档时提示，引导态隐藏 */}
+      {!guideActive && entityToastVisible && newEntities && newEntities.items.length > 0 && (
+        <div className="gm-entity-toast" key={newEntities.seq}>
+          <span className="gm-entity-toast-head">画案手记 · 新增</span>
+          {newEntities.items.map((e) => (
+            <span className="gm-entity-toast-line" key={e.id}>
+              <em className={`gm-entity-kind gm-entity-kind-${e.kind}`}>{entityKindLabels[e.kind]}</em>
+              {e.label}
             </span>
           ))}
         </div>

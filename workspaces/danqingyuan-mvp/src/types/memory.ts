@@ -71,6 +71,8 @@ export interface ClueGraphNode {
   kind: 'painting' | 'clue' | 'npc' | 'place' | 'motif' | 'item';
   discovered: boolean;
   hidden: boolean;
+  /** ≤40 字一句话说明（档案库展示，2026-07-01） */
+  note?: string;
 }
 
 export interface ClueGraphEdge {

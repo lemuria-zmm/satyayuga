@@ -1,5 +1,5 @@
 <!-- prompt-role: character_dialogue -->
-<!-- prompt-version: character_dialogue@2026-06-30.v9 -->
+<!-- prompt-version: character_dialogue@2026-06-30.v10 -->
 
 # 丹青院角色对白 Prompt
 
@@ -75,6 +75,9 @@
   "replyOptions": [
     { "text": "玩家可选的回复（≤30字）", "tone": "warm | neutral | probing" }
   ],
+  "entitiesIntroduced": [
+    { "name": "千里江山卷", "kind": "item", "note": "希孟正画的青绿长卷，要进献宫里" }
+  ],
   "memoryPatch": {
     "characterImpression": "角色对玩家印象",
     "playerStyleTags": ["玩家风格标签"],
@@ -90,3 +93,5 @@
   }
 }
 ```
+
+> `entitiesIntroduced`（2026-07-01）：本轮对话里**新提到、值得记进画案手记档案库**的具名人物/线索(clue)/道具(item)/地点(place)。宁缺毋滥、已记过的不重复、无则 `[]`。受剧透边界约束（可记「希孟的另一卷画」这类可疑之物，不可记会剧透终局的条目）。

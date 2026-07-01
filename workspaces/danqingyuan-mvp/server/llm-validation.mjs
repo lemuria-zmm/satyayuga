@@ -126,8 +126,33 @@ export function sanitizeLlmOutputForRole(role, output, input = undefined) {
         }));
       if (output.segments.length === 0) delete output.segments;
     }
+    sanitizeEntities(output);
+  } else if (role === 'character_dialogue') {
+    sanitizeEntities(output);
   }
   return output;
+}
+
+const allowedEntityKinds = new Set(['npc', 'clue', 'item', 'place']);
+
+/** 档案实体（2026-07-01）：kind 白名单、name 非空且截断、去重、上限 6 个。非法则删字段 */
+function sanitizeEntities(output) {
+  if (!Array.isArray(output.entitiesIntroduced)) return;
+  const seen = new Set();
+  const cleaned = [];
+  for (const e of output.entitiesIntroduced) {
+    if (!isPlainObject(e)) continue;
+    if (!allowedEntityKinds.has(e.kind)) continue;
+    if (typeof e.name !== 'string' || e.name.trim().length === 0) continue;
+    const name = e.name.trim().slice(0, 20);
+    const key = `${e.kind}:${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cleaned.push({ name, kind: e.kind, note: typeof e.note === 'string' ? e.note.trim().slice(0, 40) : '' });
+    if (cleaned.length >= 6) break;
+  }
+  if (cleaned.length === 0) delete output.entitiesIntroduced;
+  else output.entitiesIntroduced = cleaned;
 }
 
 export function validateLlmOutputForRole(role, output, retryCount = 0, input = undefined) {

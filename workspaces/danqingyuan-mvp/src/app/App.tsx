@@ -56,7 +56,7 @@ import type { GuideStep } from '../content/tutorialScripts';
 import { LOCATIONS } from '../content/locations';
 import { createLlmAdapter } from '../llm/createLlmAdapter';
 import { buildMemoryContext } from '../memory/retriever';
-import { commitMemoryPatch } from '../memory/writer';
+import { commitMemoryPatch, mergeDiscoveredEntities } from '../memory/writer';
 import { clearSaveFile, loadSaveFile, saveGameState } from '../persistence/storage';
 import type {
   CharacterDialogueOutput,
@@ -73,19 +73,21 @@ import type {
   QuestionType,
   SceneChoice,
   SceneSegment,
+  SceneEntity,
   SkillDelta,
   SkillId,
   TimeSlot,
   ValidatedStatePatch,
 } from '../types';
+import type { ClueGraphNode } from '../types/memory';
 import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v21';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v22';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v9';
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v10';
 
 /** VN 逐句（2026-06-30）：取 LLM segments，无则把整段正文当一个旁白单元兜底 */
 function buildSegments(output: { segments?: SceneSegment[]; narrativeText: string }): SceneSegment[] {
@@ -143,6 +145,8 @@ export interface ActiveScene {
   segments?: SceneSegment[];
   /** 当前正在显示到的 segment 下标（小箭头/自动推进；到 segments.length-1 即本批播完，才出「继续」签） */
   segIndex?: number;
+  /** 本场累计档案实体（open+各 continue，2026-07-01）：commit 时去重入 clueGraph */
+  discoveredEntities?: SceneEntity[];
   /** 延迟结算（2026-06-15）：runAction 已算好但未提交的引擎成品（含时段推进/体力/技能/例钱/location 跳转） */
   pendingSettledState?: GameState;
   /** 延迟结算的引擎数值签（resolve 时与 LLM 建议签合并 showSettlement） */
@@ -222,6 +226,8 @@ export function App() {
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
+  // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
+  const [newEntities, setNewEntities] = useState<{ items: ClueGraphNode[]; seq: number } | null>(null);
   const [activeScene, setActiveScene] = useState<ActiveScene | null>(null);
   /** 入院转场页引文：null = 生成中 */
   const [admissionText, setAdmissionText] = useState<string | null>(null);
@@ -270,6 +276,12 @@ export function App() {
 
   function showSettlement(patch: ValidatedStatePatch) {
     setSettlement((prev) => ({ patch, seq: (prev?.seq ?? 0) + 1 }));
+  }
+
+  /** 档案库新增实体飘条（2026-07-01）：commit 时新增的节点，主界面显数秒淡出 */
+  function showNewEntities(items: ClueGraphNode[]) {
+    if (!items.length) return;
+    setNewEntities((prev) => ({ items, seq: (prev?.seq ?? 0) + 1 }));
   }
 
   function buildSceneInput(scene: ActiveScene, anchor: GameState) {
@@ -536,8 +548,10 @@ export function App() {
     charDelta?: number;
     /** 本场算作一场叙事（2026-06-18）：slotSceneCount+1，满 MAX_SLOT_SCENES 后报时钟收尾签亮起 */
     countsAsScene?: boolean;
+    /** 本场累计档案实体（2026-07-01）：去重入 clueGraph，新增的飘「新增」提示 */
+    entities?: SceneEntity[];
   }) {
-    const { settled, enginePatch, combinedText, resolveTextLen, llmPatch, memoryNote, actionType, locationId, isLlmRendered, completedHookId, newHook, afterCommit, advanceSlotOnCommit, recordIntents, charDelta, countsAsScene } = args;
+    const { settled, enginePatch, combinedText, resolveTextLen, llmPatch, memoryNote, actionType, locationId, isLlmRendered, completedHookId, newHook, afterCommit, advanceSlotOnCommit, recordIntents, charDelta, countsAsScene, entities } = args;
     const live = stateRef.current;
     // 回灌后台异步写入字段（ensureMainline 可能在场景进行中写了 mainline，settled 基于行动前 base 不含它）
     let next: GameState = { ...settled, mainline: live?.mainline ?? settled.mainline };
@@ -546,6 +560,14 @@ export function App() {
     if (resolveTextLen > 0) {
       const ledgerNote = memoryNote || buildEnding(combinedText) || actionType;
       next = commitMemoryPatch({ state: next, actionType, renderedText: combinedText, locationId, memoryPatch: { storyLedgerNote: ledgerNote } });
+    }
+    // 档案实体去重入库（2026-07-01）：不依赖是否写账本，独立并入 clueGraph；新增的飘「新增」提示
+    if (entities?.length) {
+      const merged = mergeDiscoveredEntities(next.memory.clueGraph.nodes, entities);
+      if (merged.added.length > 0) {
+        next = { ...next, memory: { ...next.memory, clueGraph: { ...next.memory.clueGraph, nodes: merged.nodes } } };
+        showNewEntities(merged.added);
+      }
     }
     // 连贯锚点 + 地点线程：仅真实 LLM 正文才写（兜底句/预算跳过/失败不污染）
     if (isLlmRendered) {
@@ -672,7 +694,7 @@ export function App() {
       );
       setActiveScene((current) =>
         current?.status === 'loading-open'
-          ? { ...current, status: 'reading', openText: narrativeText, latestSegment: narrativeText, segments: buildSegments(response.output), segIndex: 0, sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
+          ? { ...current, status: 'reading', openText: narrativeText, latestSegment: narrativeText, segments: buildSegments(response.output), segIndex: 0, discoveredEntities: response.output.entitiesIntroduced ?? [], sceneCanContinue: canContinue, shouldConclude, suggestedActions: suggested }
           : current,
       );
     } catch {
@@ -742,6 +764,7 @@ export function App() {
               latestSegment: narrativeText,
               segments: buildSegments(response.output),
               segIndex: 0,
+              discoveredEntities: [...(current.discoveredEntities ?? []), ...(response.output.entitiesIntroduced ?? [])],
               segmentCount: current.segmentCount + 1,
               sceneCanContinue: canContinue,
               shouldConclude,
@@ -790,6 +813,7 @@ export function App() {
       advanceSlotOnCommit: false,
       recordIntents: scene.suggestedActions,
       countsAsScene: true,
+      entities: scene.discoveredEntities,
     });
   }
 
@@ -849,6 +873,7 @@ export function App() {
       // 推荐行动串场=同时段衔接不补推（2026-06-17）；本场算一场叙事
       advanceSlotOnCommit: false,
       countsAsScene: true,
+      entities: scene.discoveredEntities,
       // 推荐行动串场：结算落定后用 committed state 立即开下一场，避免 stale
       afterCommit: followNext
         ? (committed) => {
@@ -944,6 +969,7 @@ export function App() {
           actions={actions}
           llmError={llmError}
           settlement={settlement}
+          newEntities={newEntities}
           scene={activeScene}
           onContinue={continueScene}
           onLeaveScene={concludeScene}
@@ -1778,7 +1804,12 @@ export function App() {
       memoryPatch: response.output.memoryPatch,
       locationId: state.currentLocation,
       npcId: dialogueNpcId,
+      entities: response.output.entitiesIntroduced,
     });
+    // 闲聊新增实体飘条（commitMemoryPatch 已入库，这里算 added 供提示）
+    if (response.output.entitiesIntroduced?.length) {
+      showNewEntities(mergeDiscoveredEntities(patchedState.memory.clueGraph.nodes, response.output.entitiesIntroduced).added);
+    }
 
     // 对话往来持久化（2026-06-26）：本轮"我：…"+"希孟：…"追加进 chatHistory（跨日保留），上限末 30 条防膨胀
     const prevHistory = withMemory.relationships[dialogueNpcId].chatHistory ?? [];
@@ -1858,6 +1889,7 @@ export function App() {
       <ArchiveScreen
         ledger={state.memory.storyLedger}
         summaries={state.memory.summaries}
+        entities={state.memory.clueGraph.nodes}
         onClose={() => setIsArchiveOpen(false)}
       />
     );
@@ -1943,6 +1975,7 @@ export function App() {
       actions={actions}
       llmError={llmError}
       settlement={settlement}
+      newEntities={newEntities}
       scene={activeScene}
       onContinue={continueScene}
       onLeaveScene={concludeScene}

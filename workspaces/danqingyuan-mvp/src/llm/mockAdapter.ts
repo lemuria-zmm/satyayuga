@@ -315,6 +315,9 @@ export class MockLlmAdapter implements LlmAdapter {
             suggestedActions: [
               { label: '去街市看看', locationId: 'market', summary: '循着方才的念头去街市走走' },
             ],
+            entitiesIntroduced: request.input.npcsPresent?.[0]
+              ? [{ name: request.input.npcsPresent[0].name, kind: 'npc' as const, note: '在场的先生' }]
+              : [],
             atmosphereTags: ['日常', weather],
           }
         : phase === 'intro' || phase === 'practice'

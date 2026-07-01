@@ -4478,3 +4478,127 @@ dd {
 @keyframes vnNextPulse {
   50% { opacity: 0.55; }
 }
+
+/* 档案库新增飘条（2026-07-01）：右上浮现，仿结算笺，数秒淡出 */
+.gm-entity-toast {
+  position: absolute;
+  right: 300px;
+  top: 96px;
+  z-index: 13;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #f5ecd6 0%, #ece0c4 100%);
+  border: 1px solid #b89a63;
+  border-left: 3px solid #9C3328;
+  border-radius: 5px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  animation: entityToastIn 400ms ease both;
+}
+
+@keyframes entityToastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.gm-entity-toast-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9C3328;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+.gm-entity-toast-line {
+  font-size: 14px;
+  color: #2a1f16;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gm-entity-kind {
+  font-style: normal;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: #f5ecd6;
+  background: #8a7a52;
+}
+.gm-entity-kind-npc { background: #3F7666; }
+.gm-entity-kind-clue { background: #9C3328; }
+.gm-entity-kind-item { background: #8A5A32; }
+.gm-entity-kind-place { background: #24506B; }
+
+/* 画案手记 · 档案分区（2026-07-01）：Tab + 按类别卡片 */
+.arc-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 auto 0 24px;
+}
+.arc-tab {
+  border: 1px solid rgba(156, 51, 40, 0.35);
+  background: rgba(244, 238, 226, 0.5);
+  color: #6E675E;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  padding: 5px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.arc-tab.active {
+  background: #9C3328;
+  color: #f3ead4;
+  border-color: #9C3328;
+}
+
+.arc-dossier-group {
+  margin-bottom: 24px;
+}
+.arc-dossier-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #9C3328;
+  letter-spacing: 0.1em;
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(156, 51, 40, 0.2);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.arc-dossier-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: #8a7a52;
+}
+.arc-dossier-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.arc-dossier-card {
+  padding: 12px 16px;
+  background: rgba(245, 236, 214, 0.7);
+  border: 1px solid #cdb98c;
+  border-left: 3px solid #8a7a52;
+  border-radius: 5px;
+}
+.arc-dossier-npc { border-left-color: #3F7666; }
+.arc-dossier-clue { border-left-color: #9C3328; }
+.arc-dossier-item { border-left-color: #8A5A32; }
+.arc-dossier-place { border-left-color: #24506B; }
+.arc-dossier-name {
+  font-size: 16px;
+  color: #2a1f16;
+  letter-spacing: 0.05em;
+}
+.arc-dossier-note {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6b5a3d;
+}

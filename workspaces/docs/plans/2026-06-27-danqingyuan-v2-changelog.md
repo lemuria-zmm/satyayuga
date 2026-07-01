@@ -370,3 +370,11 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 ### 十八·补6 · VN 逐句四项打磨（2026-07-01，明明试玩）
 
 ①对话框缩短（每次只显一句）：gm-main-scroll height 30vh→**20vh**、bottom 96→80。②取消单独▶按钮，**点击对话框任意处=下一句**（gm-vn-box.clickable+onClick，自动按钮 stopPropagation）；右下改「点击继续▶」提示文+保留自动开关。③**修每轮结束重复显示前文**：VN 分支判定 `sceneReading?`→**`scene?`**（loading 期也走 VN box 显"墨正落纸"，不再落到 else 分支显示上一批累计旧全文 lastRenderedText）。④立绘缩至半 size：gm-scene-portrait-img height 88vh→**44vh**、max 880→440。纯前端+CSS，不重启 proxy。build ✅。
+
+## 十九、画案手记升级为档案库（2026-07-01，明明问题2）
+
+明明：画案手记只是行动线记录，想每次 LLM 出现人物/线索/道具/地点就自动归档并提示「新增」，做成档案库、与画案手记合并。**方案（AskUserQuestion）=完整档案库**：激活现有 clueGraph（结构早有、从未填充）+ LLM 结构化实体抽取 + 主界面飘条 + 手记加档案分区。
+- **契约**：`SceneEntity{name,kind:'npc'|'clue'|'item'|'place',note?}`；SceneNarratorOutput+CharacterDialogueOutput 加 `entitiesIntroduced?`；scene prompt v21→**v22**/dialogue v9→**v10** 加「档案实体」段（只收具名值得记的、宁缺毋滥、不重复、受剧透边界约束）；llm-validation `sanitizeEntities`（kind 白名单/name 非空截断/去重/上限6）scene+dialogue 都过；mock 各加示例。
+- **引擎**：ClueGraphNode 加 `note?`；writer 加 `mergeDiscoveredEntities(nodes,entities)`→归一化 key（kind+去书名号空格引号）去重入库、返回 {nodes,added}；commitMemoryPatch 加 entities 参。App：ActiveScene 加 `discoveredEntities`（open/continue 累加）；commitPendingSettlement 加 entities 参→并入 clueGraph+新增飘条；chat 路径同样入库+飘条。
+- **UI**：主界面新增实体飘 `gm-entity-toast`（右上、仿结算笺、4.5s 淡出，按 kind 上色）；ArchiveScreen 加「记事/档案」两 Tab，档案按类别（人物/线索/道具/地点/画作/母题）卡片列出已发现 clueGraph.nodes（label+note）。
+- 存档无需迁移（clueGraph.nodes 结构早在，旧档空数组自然兼容）。验证 build+node**9/0**（入库/discovered/note/去重/书名号归一化/同名不同kind/空安全）+真 LLM proxy 重启 v22（嵩正确抽为 npc+note、不过报路人）。**改 scene+dialogue prompt 已重启 proxy 前后端一致。**

@@ -1,5 +1,5 @@
 <!-- prompt-role: scene_narrator -->
-<!-- prompt-version: scene_narrator@2026-06-30.v21 -->
+<!-- prompt-version: scene_narrator@2026-06-30.v22 -->
 
 # 丹青院剧情写作器 Prompt（v6 双轨叙事：明线推主线 / 暗线照民生）
 
@@ -52,6 +52,16 @@ open/continue 阶段除了 `narrativeText`，**还要输出 `segments`**：把�
 - `segments` 各单元的 `text` 顺序拼起来 ≈ `narrativeText`（可有轻微标点差异）；不要遗漏内容、不要新增 narrativeText 里没有的剧情。
 - 一段通常切成 2~5 个单元。纯旁白段（无人说话）也要切，speaker 全 null。
 - 多角色对话：每个人的每句各自成单元、各标各的 speaker，让立绘能逐句切换到正确的人。
+
+## 档案实体（entitiesIntroduced，2026-07-01 画案手记档案库）
+
+open/continue 阶段可输出 `entitiesIntroduced`：把这段剧情里**新登场、值得记进档案的具名事物**列出来，玩家的「画案手记」会自动收录。
+
+- 只收**具名、值得记**的：`npc`（有名有姓的人物，如择端、卖浆老翁——**泛泛路人/摊贩不算**）、`clue`（线索/疑点，如"被涂改的题记""四位先生同署的旧档"）、`item`（关键物件/画作，如《千里江山卷》、一只药瓶）、`place`（有意义的地点/去处，如秘阁、某条巷子——寻常已知去处不必记）。
+- 每个 `{name, kind, note}`：`name` 简短具体；`note` ≤30 字一句话说明这是什么/为何值得记（可空）。
+- **宁缺毋滥**：多数日常场景 0~2 个即可，没有就给 `[]` 或不输出。不要把环境描写里的花草器物都记成道具。
+- 已经出现过的（前文/往日记过的）**不要重复报**——只报"这一段里头一回值得注意"的。
+- 受主线边界约束：不得靠实体名剧透（如不能记「希孟会消失」这种；记「希孟的另一卷画」这种可疑之物则可以）。
 
 ### phase = "resolve"（收束段）
 1. 输入会带 `openNarrative`（本场已写出的全部剧情）；玩家选择了「去别处」或某个推荐行动来结束本场。
@@ -190,11 +200,14 @@ phase = "open" / "continue" 时：
   "suggestedActions": [
     { "label": "去街市找画摊少年", "locationId": "market", "summary": "循着方才的念头，去街市那处画摊看看", "npcId": "zeduan" }
   ],
+  "entitiesIntroduced": [
+    { "name": "李唐", "kind": "npc", "note": "总教习，授山水与画理，说话像批画" }
+  ],
   "atmosphereTags": ["氛围标签"]
 }
 ```
 
-> 三信号至少给一个：剧情正酣 `sceneCanContinue:true`；指向下一步给 `suggestedActions`；这场了结 `shouldConclude:true`（通常同时 `sceneCanContinue:false`）。`suggestedActions` 无指向时给 `[]`。不输出 `choices`。`segments` 把 narrativeText 切成逐句单元（对白单独成句标 speaker=说话人 id，旁白 speaker=null）。
+> 三信号至少给一个：剧情正酣 `sceneCanContinue:true`；指向下一步给 `suggestedActions`；这场了结 `shouldConclude:true`（通常同时 `sceneCanContinue:false`）。`suggestedActions` 无指向时给 `[]`。不输出 `choices`。`segments` 把 narrativeText 切成逐句单元（对白单独成句标 speaker=说话人 id，旁白 speaker=null）。`entitiesIntroduced` 收本段新登场值得记档的具名人物/线索/道具/地点（宁缺毋滥、不重复、无则 `[]`）。
 
 phase = "resolve" 时：
 

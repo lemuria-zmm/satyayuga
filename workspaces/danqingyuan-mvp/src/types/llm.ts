@@ -100,6 +100,8 @@ export interface CharacterDialogueOutput {
   replyOptions?: ChatReplyOption[];
   /** 安全/隐私越界标志（2026-06-26）：玩家问AI/大模型/元游戏等 → NPC 不出戏回避，引擎据此直接降一档 */
   boundaryViolation?: boolean;
+  /** 档案实体（2026-07-01）：本轮对话里新出现、值得记档的人物/线索/道具/地点，引擎去重入档案库 */
+  entitiesIntroduced?: SceneEntity[];
   memoryPatch: MemoryPatch;
   safetyFlags: SafetyFlags;
 }
@@ -273,6 +275,16 @@ export interface SceneSegment {
   speaker: NpcId | null;
 }
 
+/** 档案实体（2026-07-01 档案库）：本段剧情里新出现、值得记档的人物/线索/道具/地点，入画案手记档案库 */
+export interface SceneEntity {
+  /** 实体名（人名/线索名/物件名/地点名，简短具体） */
+  name: string;
+  /** 类别：人物 / 线索 / 道具 / 地点 */
+  kind: 'npc' | 'clue' | 'item' | 'place';
+  /** ≤30 字一句话说明（这是什么/为何值得记），可空 */
+  note?: string;
+}
+
 export interface SceneSuggestedPatch {
   /** 心情建议 -1~+1，引擎裁决 */
   moodDelta?: number;
@@ -295,6 +307,8 @@ export interface SceneNarratorOutput {
   narrativeText: string;
   /** VN 逐句显示单元（2026-06-30）：open/continue 把 narrativeText 切成对白/旁白单元，前端逐个播、立绘随 speaker 切换。缺省时前端把整段当一个旁白单元兜底 */
   segments?: SceneSegment[];
+  /** 档案实体（2026-07-01）：本段新出现、值得记档的人物/线索/道具/地点，引擎去重入画案手记档案库 */
+  entitiesIntroduced?: SceneEntity[];
   /** （旧）open/mid 分支选项；2026-06-17 三件套模型下 open/continue 不再产出 */
   choices?: SceneChoice[];
   /** open/continue 阶段（2026-06-17）：本场是否还有剧情张力；false 则「继续」消失。缺省按 true */

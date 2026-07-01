@@ -71,6 +71,7 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 - ✅ **结局序列重设计（06-30，批一+批二完整）**：丹青试交卷后多段立绘演出——【导师点评(LLM)】→（落第→【补考保底过】）→【授衔(CSS朱印授祗候+七日回顾+解锁入口)】→（好感≥知己→【引希孟线过场→见希孟(LLM预热话)】）→【收尾动画(打字机)】。新建 `engine/endingSequence.ts`（EndingStage 纯函数状态机）+ EndingDialogue/TitleGrantOverlay/XimengBridge/EpilogueScreen 组件；rank/解锁推迟到授衔段提交（落第补考保底过 finalScore≥60 才授名分）；character_dialogue v7（examReview 点评 + endingMeet 见希孟，前后端一致）。
 - ✅ **主线增强（06-30，依据宋代画院史料）**：①靖康暗线前奏——ambience THEME_BEATS 第6~7日加亡国前奏（花石搬空/乡间乱子/北边边关/粮价涨，**半架空不用金辽徽宗靖康真名、只透风声不说破**）+ scene prompt + 结局 themeNote 点；②以诗入画 poem_intent 新题型——取古诗句考虚字（藏/锁/香），三选项=不同"怎么画出虚字"巧思，复用 hiddenRubric 评分，丹青试+温书自测都可能出（诗句 LLM 自选）。
 - ✅ **世界观/解谜线重构（06-30，单一真相源 `docs/plans/2026-06-30-worldview-rework-canon.md`）**：废「云起时」；主题「粉饰太平」→「繁华与黑暗的交织」；**真相层级** 穿越疑问(希孟为何消失)→千里江山卷(明·进献盛世)→繁华与黑暗(社会暗线)→骸游图(希孟/择端/李唐/嵩四人共创、进献警戒危局,秘阁揭开才点)→希孟消失(只埋钩)。希孟对话分档软线索+书房3条线索(克制)+入院页穿越 framing 明说。prompt 全升版(scene v19/dialogue v8/painting_prompt v3/painting_intent 06-30/mainline v2)。
+- ✅ **UI 大改（07-01）**：①主界面正文 **VN 逐句呈现**——scene_narrator 输出 `segments[{text,speaker}]`（v22），前端逐句播（点对话框任意处/自动▶▶）、立绘随 speaker 居中切换、本批播完才出「继续」签；②**画案手记升级为档案库**——LLM `entitiesIntroduced` 抽取人物/线索/道具/地点→writer `mergeDiscoveredEntities` 去重入 clueGraph→主界面飘「新增」条+手记加「记事/档案」双 Tab（dialogue v10）。引导弹窗态整块隐正文对话框防重叠。
 - **下一个主攻**：丹青试题型改法（明明另定）→ 秘阁三幕重做+8张线索（收束骸游图四人共创）→ 扩充择端/嵩/李唐好感线（各埋骸游图分工线索）。
 - **待补美术/增强**：温书自测 UI + 结局页各档卷轴/配图 + 结局 LLM 散文（见 project-memory 待补美术区）。
 
