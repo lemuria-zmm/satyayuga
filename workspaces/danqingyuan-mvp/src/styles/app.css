@@ -4387,8 +4387,8 @@ dd {
 }
 
 .gm-scene-portrait-img {
-  height: 44vh;
-  max-height: 440px;
+  height: 59vh;
+  max-height: 590px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
