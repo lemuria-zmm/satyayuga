@@ -460,7 +460,8 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
         </div>
       </aside>
 
-      {/* Center: main scroll */}
+      {/* Center: main scroll（引导弹窗激活时整块隐藏，避免与小书童/希孟初遇立绘对话框重叠，2026-07-01） */}
+      {!guideActive && (
       <section className="gm-main-scroll">
         <button
           className={`gm-scroll-toggle ${scrollCollapsed ? 'collapsed' : ''}`}
@@ -533,6 +534,7 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
           )}
         </div>
       </section>
+      )}
 
       {/* Settlement slip（引导激活时隐藏，避免半透明遮罩下结算笺透出与小书童弹窗重叠，2026-06-15） */}
       {!guideActive && slipVisible && settlement && settlementLines.length > 0 && (
