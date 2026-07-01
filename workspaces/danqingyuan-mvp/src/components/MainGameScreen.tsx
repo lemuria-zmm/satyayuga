@@ -470,24 +470,34 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
           {scrollCollapsed ? '展' : '✕'}
         </button>
         <div className={`gm-scroll-paper ${scrollCollapsed ? 'collapsed' : ''}`}>
-          {/* 场景进行中=纯净 VN 对话框（去地点标题/氛围句，显说话人名+当前单元）；非场景态=地点标题+机械/练习单段文 */}
-          {sceneReading && curSeg ? (
-            <div className="gm-vn-box">
-              {speakerNpc && <span className="gm-vn-speaker">{CHARACTERS[speakerNpc]?.name ?? ''}</span>}
-              <p className="gm-vn-text">{curSeg.text}</p>
-              {/* 小箭头（本批还有下一单元时）：纯前端切下一句，与「继续」签不同；旁边自动播放开关 */}
-              {segHasNext && (
-                <div className="gm-vn-controls">
-                  <button
-                    className={`gm-vn-auto ${autoPlay ? 'on' : ''}`}
-                    onClick={() => setAutoPlay((v) => !v)}
-                    type="button"
-                    title="自动播放"
-                  >
-                    {autoPlay ? '⏸ 自动' : '▶▶ 自动'}
-                  </button>
-                  <button className="gm-vn-next" onClick={onAdvanceSegment} type="button" title="下一句">▶</button>
-                </div>
+          {/* 场景中（含 loading）=VN 对话框；无场景=地点标题+机械/练习单段文。
+              分成 scene ? : 而非 sceneReading ? :——loading 期也走 VN 分支，避免落到 else 显示上一批累计旧全文（治#3 重复前文） */}
+          {scene ? (
+            <div
+              className={`gm-vn-box ${segHasNext ? 'clickable' : ''}`}
+              onClick={() => { if (segHasNext) onAdvanceSegment(); }}
+            >
+              {curSeg ? (
+                <>
+                  {speakerNpc && <span className="gm-vn-speaker">{CHARACTERS[speakerNpc]?.name ?? ''}</span>}
+                  <p className="gm-vn-text">{curSeg.text}</p>
+                  {segHasNext && (
+                    <div className="gm-vn-controls">
+                      {/* 自动播放开关（点击对话框任意处=手动下一句，2026-07-01 取消单独▶按钮） */}
+                      <button
+                        className={`gm-vn-auto ${autoPlay ? 'on' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); setAutoPlay((v) => !v); }}
+                        type="button"
+                        title="自动播放"
+                      >
+                        {autoPlay ? '⏸ 自动' : '▶▶ 自动'}
+                      </button>
+                      <span className="gm-vn-hint">点击继续 ▶</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="gm-vn-text gm-vn-loading">墨正落纸……</p>
               )}
             </div>
           ) : (
@@ -505,15 +515,10 @@ export function MainGameScreen({ state, actions, llmError, settlement, scene, on
             </>
           )}
 
-          {/* 场景 loading 文案（三件套按钮在底部 dock，2026-06-17 移出正文区） */}
-          {scene && (
+          {/* loading-end 文案（open/continue 的 loading 已在 VN box 内显） */}
+          {scene && scene.status === 'loading-end' && (
             <div className="gm-scene-branch">
-              {(scene.status === 'loading-open' || scene.status === 'loading-continue') && (
-                <p className="gm-scene-loading">墨正落纸……</p>
-              )}
-              {scene.status === 'loading-end' && (
-                <p className="gm-scene-loading">笔意未尽，稍候……</p>
-              )}
+              <p className="gm-scene-loading">笔意未尽，稍候……</p>
             </div>
           )}
 

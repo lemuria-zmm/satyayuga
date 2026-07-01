@@ -366,3 +366,7 @@ memory 待办的两项主线 prompt 增强。**决策（AskUserQuestion）**：�
 - **引擎**：ActiveScene 加 `segments`+`segIndex`；startScene open / continueScene 存 buildSegments(output)（无则整段当一旁白单元兜底）+segIndex=0；App.advanceSegment 推进 segIndex（纯前端不调 LLM）。
 - **UI**：场景中=纯净 VN 对话框（去地点标题/氛围句），显说话人名(CHARACTERS)+当前单元 curSeg.text；`segHasNext` 时右下显小箭头▶（切下一句）+自动▶▶开关（2.2s 连播、本批播完自动关）；**三件套「继续/去别处/推荐」dock 仅 batchDone（本批逐句播完）才出**——与小箭头明确区分（小箭头切当前批、继续调 LLM 出下一批）。立绘 `speakerNpc`（当前单元说话人）居中站立 88vh 从对话框后探出，随 speaker 逐句切换（修复①两角色立绘+②与课业面板重叠：改居中）。
 - 纯前端+prompt+mock，改 scene prompt 已重启 proxy(v21)。build ✅；真 LLM 冒烟：晨课纯叙事切 5 旁白单元、人物课嵩 2 句标 speaker=song 旁白 null（多角色立绘可逐句切换）。
+
+### 十八·补6 · VN 逐句四项打磨（2026-07-01，明明试玩）
+
+①对话框缩短（每次只显一句）：gm-main-scroll height 30vh→**20vh**、bottom 96→80。②取消单独▶按钮，**点击对话框任意处=下一句**（gm-vn-box.clickable+onClick，自动按钮 stopPropagation）；右下改「点击继续▶」提示文+保留自动开关。③**修每轮结束重复显示前文**：VN 分支判定 `sceneReading?`→**`scene?`**（loading 期也走 VN box 显"墨正落纸"，不再落到 else 分支显示上一批累计旧全文 lastRenderedText）。④立绘缩至半 size：gm-scene-portrait-img height 88vh→**44vh**、max 880→440。纯前端+CSS，不重启 proxy。build ✅。

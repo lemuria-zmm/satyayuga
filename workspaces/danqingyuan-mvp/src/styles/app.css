@@ -365,11 +365,11 @@ button {
   position: absolute;
   left: 252px;
   right: 282px;
-  /* VN 式底部对话框（2026-06-30）：正文从占满中央改为底部一条，让出上方大片背景图 */
+  /* VN 式底部对话框（2026-06-30；07-01 缩短：每次只显一句）：底部一条，让出上方更大背景 */
   top: auto;
-  height: 30vh;
-  min-height: 220px;
-  bottom: 96px;
+  height: 20vh;
+  min-height: 150px;
+  bottom: 80px;
   z-index: 10;
   animation: fadeIn 500ms ease 200ms both;
 }
@@ -4387,8 +4387,8 @@ dd {
 }
 
 .gm-scene-portrait-img {
-  height: 88vh;
-  max-height: 880px;
+  height: 44vh;
+  max-height: 440px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
@@ -4406,6 +4406,9 @@ dd {
   position: relative;
   padding: 4px 8px;
 }
+.gm-vn-box.clickable {
+  cursor: pointer;
+}
 
 .gm-vn-speaker {
   font-size: 19px;
@@ -4422,15 +4425,25 @@ dd {
   color: #2a1f16;
   white-space: pre-wrap;
 }
+.gm-vn-loading {
+  color: #6E675E;
+}
 
-/* 小箭头 + 自动：右下角，纯前端切句（区别于底部「继续」签调 LLM） */
+/* 自动开关 + 点击提示：右下角。点击对话框任意处=下一句（区别于底部「继续」签调 LLM） */
 .gm-vn-controls {
   position: absolute;
   right: 6px;
   bottom: 2px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+}
+
+.gm-vn-hint {
+  font-size: 12px;
+  color: #9C3328;
+  letter-spacing: 0.05em;
+  animation: vnNextPulse 1.6s ease-in-out infinite;
 }
 
 .gm-vn-auto {
@@ -4456,22 +4469,6 @@ dd {
   background: rgba(156, 51, 40, 0.95);
 }
 
-.gm-vn-next {
-  border: none;
-  background: rgba(156, 51, 40, 0.9);
-  color: #f3ead4;
-  font-size: 16px;
-  line-height: 1;
-  width: 34px;
-  height: 28px;
-  border-radius: 4px;
-  cursor: pointer;
-  animation: vnNextPulse 1.6s ease-in-out infinite;
-  transition: transform 140ms ease;
-}
-.gm-vn-next:hover {
-  transform: scale(1.12);
-}
 @keyframes vnNextPulse {
   50% { opacity: 0.55; }
 }
