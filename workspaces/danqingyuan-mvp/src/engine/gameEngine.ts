@@ -7,6 +7,7 @@ import { DAILY_SKILL_CAP, DAILY_KNOWLEDGE_CAP, RELATIONSHIP_STAGE_LABELS } from 
 import { applyValidatedStatePatch } from './statePatches';
 import { buildDailySummary, isLlmScene } from './sceneEngine';
 import { commitMemoryPatch } from '../memory/writer';
+import { clueGrantsForAction } from './clueGrants';
 import type { ActionResult, EndingResult, EndingTier, GameAction, GameState, LocationId, Rank, SkillId, ValidatedStatePatch } from '../types';
 
 const skillNames: Record<SkillId, string> = {
@@ -787,6 +788,14 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
   // 场景成品不自带时段推进——时段推进只在玩家点「去别处看看」时由 endScene 补一次。
   // 治"推荐行动原地耗时段、地点死锁"老问题：与沙盒"点收尾签才推进"心智统一。
   if (isLlmScene(action)) patch.timeAdvance = false;
+
+  // 七日预收集线索确定性授予（2026-07-02）：书房/街市 practice 卡 + 希孟书房撞见另一卷。
+  // 幂等（*Seen flag 守卫），并入现成 cluesGranted/flagsSet patch，供秘阁「入阁」幕展示。
+  const clueGrants = clueGrantsForAction(state, action);
+  if (clueGrants.cluesGranted.length > 0) {
+    patch.cluesGranted = Array.from(new Set([...(patch.cluesGranted ?? []), ...clueGrants.cluesGranted]));
+    patch.flagsSet = { ...patch.flagsSet, ...clueGrants.flagsSet };
+  }
 
   const patched = applyValidatedStatePatch(state, patch);
   // 当日小结（2026-06-16）：凡跨日（就寝 / 体力归零强制入夜）都把"将尽这一日"的 storyLedger 拼成小结，
