@@ -524,6 +524,9 @@ function getHookActions(state: GameState): GameAction[] {
  * 那个不调 LLM 只弹空提示。本签是有内容的环境场景，亦是将来 NPC 偶遇系统的挂载点）。
  */
 function getAmbienceAction(state: GameState): GameAction[] {
+  // 终章时间冻结（2026-07-02）：不出信步 wander 环境签（否则秘阁解谜期仍触发 LLM 闲逛场景，
+  // 与"外景+一句话"污染同源）。终章只留秘阁 + 走动，见 getFinalChapterActions。
+  if (state.progress.flags.finalChapter) return [];
   const slot = state.time.timeSlot;
   if (slot !== 'forenoon' && slot !== 'afternoon') return [];
   // 演满上限后不再出「信步走走」（与自动开场同 MAX_SLOT_SCENES 上限）：只剩报时钟推进时段（2026-06-18）

@@ -65,3 +65,23 @@
 - **美术**：秘阁五幕专属图（缀线分组卡、揭卷背景/朱印/四人题款示意）；现用 CSS 占位（pzl-carried/thread、hry- 黑场打字机）。
 - **prompt 增强（可选）**：painting_intent_evaluator 未改（8 线索复用现管道，多几个 clue ID 只是进 selectedClueIds）；若要"跨来源缀线越多→评档越高"显式激励，再改 prompt 升版。
 - **e2e 七日通玩**（待明明跑）：(a) 书房/街市 practice 卡授对应 carried 线索（deep 需学识≥10）；(b) 希孟好感≥40 进书房授案上另一卷；(c) 第7日秘阁幕一预载全部 carried；(d) 缀线 gate≥3 条 2 来源；(e) 揭卷按解读档出对应脚本、合卷后结算笺出、不可重入；(f) 结局 themeNote 反映新 awareCount。
+
+---
+
+## 七、试玩修复：考试后秘阁流程断裂（2026-07-02，明明七日通玩反馈）
+
+**反馈**：第七日授完头衔点「入秘阁」没有后续；重进后秘阁里只有一个外景+一句话，没有解谜。
+
+**病根（两层）**：
+1. **`finalChapter`（终章·时间冻结）从未被设置**。它只在「第7日*晚间*结束」由 `advanceTime` 触发；而丹青试在*晨课*，通过后 `timeAdvance` 只推进到 forenoon，永远走不到晚间。秘阁五幕解谜整个设计假定在终章进行（`getFinalChapterActions` 干净出 0 体力秘阁签、无自动 wander），但玩家实际落回 **day7/forenoon/院堂** 的普通叙事时段。
+2. 连锁后果：①秘阁签 `locationId='secret_archive'` 被 `getAvailableActions` 的「locationId===当前地点」过滤（玩家在院堂）→"没有后续"；②forenoon 非终章 → 自动 `wander` 场景触发，走到秘阁也被 wander 场景（"外景+一句话"）盖住解谜签。
+
+| 修复 | 位置 |
+|---|---|
+| **`commitTitleGrant` 落 `finalChapter: true`**——授衔即进终章（直接通过/补考保底过都经此点，语义统一：时间冻结、自动 wander 被 useEffect 守卫掐断、`getSlotActions` 走 `getFinalChapterActions`） | `app/App.tsx` |
+| **「入秘阁一观/赴希孟画室」落地到对应地点**（`enterAt` 设 `currentLocation` + 存档）——否则解谜签因地点过滤不可见，玩家还得自己摸路；结局序列（Epilogue）与旧 EndingScreen 回退路径都改 | `app/App.tsx` |
+| **`getAmbienceAction` 终章不出「信步走走」环境签**（引擎侧漏洞，node 测抓出：终章 forenoon 仍出 wander 签 → 又一个"外景+一句话"源头） | `engine/gameEngine.ts` |
+
+**验证**：build ✅；node 新测 `test-final-chapter-archive.mts` **7/0**（终章秘阁内出 0 体力解谜签/无报时钟/无 wander 签/院堂可走到秘阁/解读后签消失不可重入）+ 全量回归 38/0。纯前端+引擎，**不动 prompt 不重启 proxy**。
+
+**修复后流程**：第7日晨课丹青试 → 交卷 →【导师点评】→（落第→补考保底过）→【授衔·进终章】→（好感≥知己→见希孟）→【收尾打字机】→ 点「入秘阁一观」**直接落到秘阁、解谜签就在眼前** → 五幕（入阁→观画→缀线→解读→揭卷）→ 合卷。终章时间冻结，可自由走动看各处，无时段压力。

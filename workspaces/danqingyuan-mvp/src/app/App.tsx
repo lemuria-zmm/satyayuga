@@ -1557,6 +1557,11 @@ export function App() {
       flagsSet: {
         firstExamPassed: true,
         archiveUnlocked: ending.unlockArchive,
+        // 授衔即进终章：时间冻结（不再推进时段/不触发自动 wander 场景），
+        // 让秘阁五幕解谜在干净的终局态进行（getFinalChapterActions 出秘阁签，0 体力）。
+        // 丹青试在晨课通过只推进到 forenoon、永远走不到晚间，故须在此显式进终章，
+        // 否则玩家落回 forenoon 普通叙事时段——秘阁签被地点过滤、自动 wander 乱入（2026-07-02 修）。
+        finalChapter: true,
       },
       unlockedLocations: [
         ...(ending.unlockArchive ? ['secret_archive' as const] : []),
@@ -1926,12 +1931,20 @@ export function App() {
   // 导师点评(A) → 授衔(B) → 收尾(E)；落第补考桩/见希孟桩在 advanceEndingStage 内处理。
   if (state.ending && endingStage && !endingDismissed) {
     const ending = state.ending;
-    const enterArchive = ending.unlockArchive
-      ? () => { setEndingStage(null); setEndingDismissed(true); }
-      : undefined;
-    const enterStudio = ending.unlockStudio
-      ? () => { setEndingStage(null); setEndingDismissed(true); }
-      : undefined;
+    // 入秘阁/画室：暂隐结局序列进主界面，并把玩家落到对应地点——否则秘阁签/画室签因
+    // 「locationId===当前地点」过滤而看不见（授衔后玩家仍站在丹青试的院堂）。2026-07-02 修。
+    const enterAt = (locationId: 'secret_archive' | 'ximeng_studio') => {
+      setEndingStage(null);
+      setEndingDismissed(true);
+      setState((prev) => {
+        if (!prev) return prev;
+        const moved: GameState = { ...prev, currentLocation: locationId };
+        saveGameState(moved);
+        return moved;
+      });
+    };
+    const enterArchive = ending.unlockArchive ? () => enterAt('secret_archive') : undefined;
+    const enterStudio = ending.unlockStudio ? () => enterAt('ximeng_studio') : undefined;
 
     if (endingStage === 'mentor_review') {
       return (
@@ -1985,12 +1998,21 @@ export function App() {
 
   // 丹青试结局页（2026-06-28；2026-06-29 双入口）：旧静态结局页，保留作回退/参考（2026-06-30 起主流程走上方结局序列）
   if (state.ending && !endingDismissed) {
+    const enterAt = (locationId: 'secret_archive' | 'ximeng_studio') => {
+      setEndingDismissed(true);
+      setState((prev) => {
+        if (!prev) return prev;
+        const moved: GameState = { ...prev, currentLocation: locationId };
+        saveGameState(moved);
+        return moved;
+      });
+    };
     return (
       <EndingScreen
         ending={state.ending}
         state={state}
-        onEnterArchive={state.ending.unlockArchive ? () => setEndingDismissed(true) : undefined}
-        onEnterStudio={state.ending.unlockStudio ? () => setEndingDismissed(true) : undefined}
+        onEnterArchive={state.ending.unlockArchive ? () => enterAt('secret_archive') : undefined}
+        onEnterStudio={state.ending.unlockStudio ? () => enterAt('ximeng_studio') : undefined}
         onReset={resetGame}
       />
     );
