@@ -107,7 +107,7 @@ export class MockLlmAdapter implements LlmAdapter {
     const output: CharacterDialogueOutput = {
       dialogue: isFinal
         ? '你说的我记下了。天色不早，我那卷画也还欠几笔——改日再叙罢。'
-        : '水若走到尽头，画也不一定完。',
+        : '这卷青绿要进献宫里，呈的是盛世气象。有些景……画了也不一定合适。',
       actionText: isFinal
         ? '希孟说罢，已转身回到案前，重新执起了笔。'
         : '希孟把笔尖在砚边停了停，像是听见了什么，又没有解释。',
@@ -267,13 +267,13 @@ export class MockLlmAdapter implements LlmAdapter {
       suggestedStatePatch: {
         skillDelta: isPuzzle ? { figure: 1, landscape: 1 } : examSkillDelta,
         cluesGranted: isPuzzle ? ['clue_blocked_waterway'] : [],
-        flagsSuggested: isPuzzle ? ['haiyouLlmCoreRead'] : ['noticedWaterEndCloudWeak'],
+        flagsSuggested: [],
       },
       memoryPatch: {
         playerStyleTags: isPuzzle ? ['关注民生', '能连线索'] : examStyleTags,
         storyLedgerNote: isPuzzle
           ? '玩家在秘阁解读《骸游图》，把药瓶、婴孩、旁观者和被遮住的水路连在一起。'
-          : '玩家在丹青试中注意到水路断绝与云气留白。',
+          : '玩家在丹青试中注意到画面的留白与去处。',
       },
       safetyFlags: safeFlags,
     };

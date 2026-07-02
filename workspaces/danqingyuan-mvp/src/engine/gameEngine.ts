@@ -287,8 +287,8 @@ export function determineEnding(state: GameState, exam: { finalScore: number; ca
   const flags = state.progress.flags;
   const awareCount =
     (flags.haiyouDiscovered ? 1 : 0) +
-    (flags.noticedWaterEndCloudStrong ? 1 : 0) +
-    (flags.secondScrollTeased ? 1 : 0);
+    (flags.haiyouThreadStrong ? 1 : 0) +
+    (flags.haiyouDisappearanceHooked ? 1 : 0);
   let themeNote: string | undefined;
   if (awareCount >= 2) {
     themeNote = '你已看出这煌煌画院的太平景象之下，藏着没画进卷里的东西。骸游图的伏笔，在你心里挥之不去——而南边运花石的船、北边边关的风声，都像在说：这看似最盛的一年，底下的裂缝已经在走。';
@@ -750,38 +750,6 @@ export function applyAction(state: GameState, action: GameAction): ActionResult 
     text = `你在${locName}临摹半日，${skillNames[action.skillId]}的笔意稳了一点。`;
     if (state.stats.mood >= 8) text += '心情正好，落笔比平日多了三分准头。';
     if (state.stats.mood <= 3) text += '只是心绪不宁，几笔总归画歪了。';
-  }
-
-  if (action.type === 'talk_to_npc') {
-    patch.relationshipDeltaByNpc = { ximeng: 1 };
-    patch.timeAdvance = false;
-    text = '希孟听你问起水路，只说："水若走到尽头，画也不一定完。"';
-  }
-
-  if (action.type === 'take_exam') {
-    patch.skillDelta = { [state.player.styleOrigin]: 2 };
-    patch.flagsSet = {
-      firstExamTaken: true,
-      firstExamPassed: true,
-      archiveUnlocked: true,
-      noticedWaterEndCloudWeak: true,
-    };
-    patch.rankChange = 'painter_regular';
-    patch.unlockedLocations = ['secret_archive'];
-    text = '丹青试抽到一幅残画：水至画角而云起。你的答卷没有急着补桥。李唐批曰："尚知留白。"你晋为画正，秘阁入口由此开启。';
-  }
-
-  if (action.type === 'solve_puzzle') {
-    patch.cluesGranted = ['clue_medicine_bottle', 'clue_child_posture', 'clue_blocked_waterway'];
-    patch.flagsSet = {
-      haiyouDiscovered: true,
-      haiyouFirstInterpreted: true,
-      noticedWaterEndCloudStrong: true,
-      secondScrollTeased: true,
-    };
-    if (state.progress.flags.finalChapter) patch.timeAdvance = false;
-    text =
-      '《骸游图》里，药瓶、婴孩与旁观者的视线挤在一处。你注意到画角水路被摊位遮住。希孟没有称赞，只伸手压住画卷边角。另一只画匣松开一线：水尽处，云从山背升起。';
   }
 
   // LLM 叙事场景行动（晨课/成长活动/赴约/信步/推荐行动，2026-06-17 时段模型修正）：

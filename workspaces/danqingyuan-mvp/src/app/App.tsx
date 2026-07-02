@@ -1602,11 +1602,8 @@ export function App() {
     const evaluation = response.output;
     const suggestedClues = evaluation.suggestedStatePatch.cluesGranted ?? [];
     const tierIsStrong = evaluation.interpretationTier !== 'shallow';
-    const renderedText =
-      `《骸游图》评估：${evaluation.visibleFeedback} ` +
-      (tierIsStrong
-        ? '希孟没有称赞，只伸手压住画卷边角。另一只画匣松开一线：水尽处，云从山背升起。'
-        : '画匣仍旧沉默，但卷边那道被遮住的水路留在你眼中。');
+    // 戏剧性揭示移到幕五「揭卷」固定脚本（haiyouReveal）；此处只留可见批语入账本。
+    const renderedText = `《骸游图》评估：${evaluation.visibleFeedback}`;
 
     const patch: ValidatedStatePatch = {
       skillDelta: evaluation.suggestedStatePatch.skillDelta,
@@ -1616,8 +1613,8 @@ export function App() {
       flagsSet: {
         haiyouDiscovered: true,
         haiyouFirstInterpreted: true,
-        noticedWaterEndCloudStrong: tierIsStrong,
-        secondScrollTeased: evaluation.interpretationTier === 'core',
+        haiyouThreadStrong: tierIsStrong,
+        haiyouDisappearanceHooked: evaluation.interpretationTier === 'core',
         ...collectSuggestedFlags([evaluation]),
       },
     };
@@ -1636,6 +1633,7 @@ export function App() {
       ...withMemory,
       puzzle: {
         ...withMemory.puzzle,
+        haiyouRevealTier: evaluation.interpretationTier,
         discoveredAnomalyIds: Array.from(
           new Set([...withMemory.puzzle.discoveredAnomalyIds, ...submission.anomalyIds]),
         ),
