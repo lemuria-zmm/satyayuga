@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HAIYOU_PAINTING } from '../content/paintings';
+import { CLUE_BY_ID } from '../content/clues';
+import type { ClueDef, ClueSource } from '../content/clues';
+import { ACT_LABELS, canAdvanceAct, nextAct } from '../engine/puzzleActs';
+import type { PuzzleAct } from '../engine/puzzleActs';
 import type { PaintingPromptGeneratorOutput } from '../types';
 
 interface PuzzleScreenProps {
   assessmentPrompt: PaintingPromptGeneratorOutput;
+  /** 玩家七日带入 + 秘阁已解锁的线索 ID（来自 state.puzzle.collectedClueIds） */
+  collectedClueIds: string[];
   onCancel: () => void;
   onSubmit: (result: PuzzleSubmission) => Promise<void> | void;
 }
@@ -14,25 +20,7 @@ export interface PuzzleSubmission {
   freeText: string;
 }
 
-const clueCards = [
-  {
-    id: 'clue_medicine_bottle',
-    title: '药瓶',
-    text: '瓶口朝外，像被刻意摆给看画的人。',
-  },
-  {
-    id: 'clue_child_posture',
-    title: '婴孩',
-    text: '孩子的哭不是热闹的一部分，更像无人回应的求救。',
-  },
-  {
-    id: 'clue_blocked_waterway',
-    title: '被遮住的水路',
-    text: '摊位与人群挡住画角，那里似乎有一条走不到尽头的水路。',
-  },
-];
-
-type PuzzlePhase = 'intro' | 'observing' | 'interpreting' | 'submitting';
+const SOURCE_ORDER: ClueSource[] = ['书房', '街市', '希孟', '秘阁'];
 
 /* Ink trail hook */
 function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
@@ -77,22 +65,49 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScreenProps) {
-  const [phase, setPhase] = useState<PuzzlePhase>('intro');
+export function PuzzleScreen({ assessmentPrompt, collectedClueIds, onCancel, onSubmit }: PuzzleScreenProps) {
+  const [act, setAct] = useState<PuzzleAct>('enter');
   const [selectedAnomalyIds, setSelectedAnomalyIds] = useState<string[]>([]);
-  const [selectedClueIds, setSelectedClueIds] = useState<string[]>([]);
+  // 缀线选取：玩家勾选带入解读的线索（carried + observe）
+  const [threadedClueIds, setThreadedClueIds] = useState<string[]>([]);
   const [freeText, setFreeText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
-  const unlockedClues = useMemo(() => {
+  // 七日带入的线索（carried：书房/街市/希孟）
+  const carriedClues = useMemo(
+    () =>
+      collectedClueIds
+        .map((id) => CLUE_BY_ID[id])
+        .filter((c): c is ClueDef => Boolean(c) && c.act === 'carried'),
+    [collectedClueIds],
+  );
+
+  // 观画解锁的秘阁线索（选中异常→grantsClueId）
+  const observeClues = useMemo(() => {
     const clueIds = HAIYOU_PAINTING.anomalies
       .filter((anomaly) => selectedAnomalyIds.includes(anomaly.id))
       .map((anomaly) => anomaly.grantsClueId)
       .filter((clueId): clueId is string => Boolean(clueId));
-    return clueCards.filter((clue) => clueIds.includes(clue.id));
+    return clueIds.map((id) => CLUE_BY_ID[id]).filter((c): c is ClueDef => Boolean(c));
   }, [selectedAnomalyIds]);
+
+  // 缀线可选的全部线索 = 带入 + 观画解锁
+  const threadableClues = useMemo(() => [...carriedClues, ...observeClues], [carriedClues, observeClues]);
+
+  const threadedSourceCount = useMemo(() => {
+    const sources = new Set(
+      threadedClueIds.map((id) => CLUE_BY_ID[id]?.source).filter(Boolean) as ClueSource[],
+    );
+    return sources.size;
+  }, [threadedClueIds]);
+
+  const actCtx = {
+    observedAnomalyCount: selectedAnomalyIds.length,
+    threadedClueCount: threadedClueIds.length,
+    threadedSourceCount,
+  };
 
   function toggleAnomaly(anomalyId: string) {
     setSelectedAnomalyIds((current) =>
@@ -100,21 +115,25 @@ export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScr
     );
   }
 
-  function toggleClue(clueId: string) {
-    setSelectedClueIds((current) =>
+  function toggleThread(clueId: string) {
+    setThreadedClueIds((current) =>
       current.includes(clueId) ? current.filter((id) => id !== clueId) : [...current, clueId],
     );
   }
 
-  const canSubmit = selectedClueIds.length >= 2 || freeText.trim().length > 8;
+  function advance() {
+    const next = nextAct(act);
+    if (next && canAdvanceAct(act, actCtx)) setAct(next);
+  }
+
+  const canSubmit = threadedClueIds.length >= 2 || freeText.trim().length > 8;
 
   async function submitPuzzle() {
     setIsSubmitting(true);
-    setPhase('submitting');
     try {
       await onSubmit({
         anomalyIds: selectedAnomalyIds,
-        clueIds: selectedClueIds,
+        clueIds: threadedClueIds,
         freeText,
       });
     } finally {
@@ -122,24 +141,33 @@ export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScr
     }
   }
 
-  // ---- Intro phase ----
-  if (phase === 'intro') {
-    return (
-      <main className="pzl-page" ref={pageRef}>
-        <div className="pzl-bg" />
-        <div className="pzl-vignette" />
-
-        <header className="pzl-top-bar">
-          <div className="pzl-top-bar-inner">
+  const topBar = (withBack: boolean) => (
+    <header className="pzl-top-bar">
+      <div className="pzl-top-bar-inner">
+        {withBack && (
+          <>
             <button className="pzl-back-btn" onClick={onCancel} type="button">
               ← 暂离秘阁
             </button>
             <span className="pzl-top-sep">｜</span>
-            <span className="pzl-top-location">秘阁 · 深处</span>
-            <span className="pzl-top-sep">｜</span>
-            <span className="pzl-top-painting">{HAIYOU_PAINTING.title}</span>
-          </div>
-        </header>
+          </>
+        )}
+        <span className="pzl-top-location">秘阁 · 深处</span>
+        <span className="pzl-top-sep">｜</span>
+        <span className="pzl-top-painting">{HAIYOU_PAINTING.title}</span>
+        <span className="pzl-top-sep">｜</span>
+        <span className="pzl-top-phase">{ACT_LABELS[act]}</span>
+      </div>
+    </header>
+  );
+
+  // ---- 幕一 · 入阁 ----
+  if (act === 'enter') {
+    return (
+      <main className="pzl-page" ref={pageRef}>
+        <div className="pzl-bg" />
+        <div className="pzl-vignette" />
+        {topBar(true)}
 
         <section className="pzl-intro-panel">
           <div className="pzl-intro-inner">
@@ -157,11 +185,26 @@ export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScr
             </p>
             <h2 className="pzl-intro-title">{HAIYOU_PAINTING.title}</h2>
             <p className="pzl-intro-summary">{HAIYOU_PAINTING.visibleSummary}</p>
-            <button
-              className="pzl-begin-btn"
-              onClick={() => setPhase('observing')}
-              type="button"
-            >
+
+            {/* 你已带入的线索（七日收集） */}
+            <div className="pzl-carried">
+              <h3 className="pzl-carried-title">你带入秘阁的线索</h3>
+              {carriedClues.length === 0 ? (
+                <p className="pzl-carried-empty">这七日里，你并未在别处留意到什么——只能就着眼前这幅画细看了。</p>
+              ) : (
+                <ul className="pzl-carried-list">
+                  {carriedClues.map((clue) => (
+                    <li className="pzl-carried-item" key={clue.id}>
+                      <span className="pzl-carried-src">{clue.source}</span>
+                      <span className="pzl-carried-name">{clue.title}</span>
+                      <span className="pzl-carried-text">{clue.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <button className="pzl-begin-btn" onClick={advance} type="button">
               近前观画
             </button>
           </div>
@@ -170,117 +213,21 @@ export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScr
     );
   }
 
-  // ---- Submitting phase ----
-  if (phase === 'submitting') {
-    return (
-      <main className="pzl-page" ref={pageRef}>
-        <div className="pzl-bg" />
-        <div className="pzl-vignette" />
-
-        <header className="pzl-top-bar">
-          <div className="pzl-top-bar-inner">
-            <span className="pzl-top-location">秘阁 · 深处</span>
-            <span className="pzl-top-sep">｜</span>
-            <span className="pzl-top-painting">{HAIYOU_PAINTING.title}</span>
-            <span className="pzl-top-sep">｜</span>
-            <span className="pzl-top-status">候批中</span>
-          </div>
-        </header>
-
-        <section className="pzl-intro-panel">
-          <div className="pzl-intro-inner">
-            <p className="pzl-intro-text">
-              你的解读随墨迹渗入画卷。
-              <br />
-              灯焰微颤，秘阁中一时寂然无声。
-            </p>
-            <p className="pzl-reviewing-dots">批阅中 · · ·</p>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
-  // ---- Observing & Interpreting phases ----
+  // ---- 幕二 · 观画 / 幕三 · 缀线 / 幕四 · 解读 ----
   return (
     <main className="pzl-page" ref={pageRef}>
       <div className="pzl-bg" />
       <div className="pzl-vignette" />
+      {topBar(true)}
 
-      {/* Top bar */}
-      <header className="pzl-top-bar">
-        <div className="pzl-top-bar-inner">
-          <button className="pzl-back-btn" onClick={onCancel} type="button">
-            ← 暂离秘阁
-          </button>
-          <span className="pzl-top-sep">｜</span>
-          <span className="pzl-top-location">秘阁 · 深处</span>
-          <span className="pzl-top-sep">｜</span>
-          <span className="pzl-top-painting">{HAIYOU_PAINTING.title}</span>
-          <span className="pzl-top-sep">｜</span>
-          <span className="pzl-top-phase">
-            {phase === 'observing' ? '一 · 观画' : '二 · 解读'}
-          </span>
-          <span className="pzl-top-sep">｜</span>
-          <span className="pzl-top-progress">
-            异常 {selectedAnomalyIds.length}/{HAIYOU_PAINTING.anomalies.length}
-            {' '}· 线索 {selectedClueIds.length}
-          </span>
-        </div>
-      </header>
-
-      {/* Left: Clue box */}
-      <aside className="pzl-clue-box">
-        <div className="pzl-clue-box-inner">
-          <h3 className="pzl-clue-title">线索匣</h3>
-          {unlockedClues.length === 0 ? (
-            <p className="pzl-clue-empty">先从画面里指出异常，线索才会浮出来。</p>
-          ) : (
-            <div className="pzl-clue-list">
-              {unlockedClues.map((clue) => (
-                <button
-                  className={`pzl-clue-card ${selectedClueIds.includes(clue.id) ? 'selected' : ''}`}
-                  key={clue.id}
-                  onClick={() => toggleClue(clue.id)}
-                  type="button"
-                >
-                  <span className="pzl-clue-card-title">{clue.title}</span>
-                  <span className="pzl-clue-card-text">{clue.text}</span>
-                  {selectedClueIds.includes(clue.id) && (
-                    <span className="pzl-clue-stamp" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Selected clue slots */}
-          <div className="pzl-clue-slots">
-            <span className="pzl-slots-label">已取线索</span>
-            <div className="pzl-slots-row">
-              {[0, 1, 2].map((i) => {
-                const clueId = selectedClueIds[i];
-                const clue = clueCards.find((c) => c.id === clueId);
-                return (
-                  <div className={`pzl-slot ${clue ? 'filled' : ''}`} key={i}>
-                    {clue ? clue.title : '—'}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Center: question panel */}
+      {/* 中央面板 */}
       <section className="pzl-center">
-        {phase === 'observing' && (
+        {/* 幕二 观画 */}
+        {act === 'observe' && (
           <div className="pzl-question-panel">
             <div className="pzl-question-panel-inner">
-              <h2 className="pzl-question-title">
-                《{HAIYOU_PAINTING.title}》
-              </h2>
-              <p className="pzl-question-desc">你凝视画卷，以下哪些细节令你不安？</p>
+              <h2 className="pzl-question-title">《{HAIYOU_PAINTING.title}》</h2>
+              <p className="pzl-question-desc">你凝视画卷，以下哪些细节令你不安？（选出的异常会化作线索）</p>
 
               <div className="pzl-choice-list">
                 {HAIYOU_PAINTING.anomalies.map((anomaly) => {
@@ -299,98 +246,128 @@ export function PuzzleScreen({ assessmentPrompt, onCancel, onSubmit }: PuzzleScr
                 })}
               </div>
 
-              {selectedAnomalyIds.length > 0 && (
-                <button
-                  className="pzl-proceed-btn"
-                  onClick={() => setPhase('interpreting')}
-                  type="button"
-                >
-                  解
+              {canAdvanceAct('observe', actCtx) && (
+                <button className="pzl-proceed-btn" onClick={advance} type="button">
+                  缀线
                 </button>
               )}
             </div>
           </div>
         )}
 
-        {phase === 'interpreting' && (
+        {/* 幕三 缀线 */}
+        {act === 'thread' && (
           <div className="pzl-question-panel">
             <div className="pzl-question-panel-inner">
-              <div className="pzl-interpret-header">
-                <span className="pzl-interpret-tag">解读</span>
-                <h2 className="pzl-interpret-prompt">{assessmentPrompt.promptText}</h2>
+              <h2 className="pzl-question-title">缀线成暗</h2>
+              <p className="pzl-question-desc">
+                把七日所见与眼前画中异常并在一处——勾选你要带入解读的线索（至少 3 条，跨 2 处来源）。
+              </p>
+
+              <div className="pzl-thread-groups">
+                {SOURCE_ORDER.map((source) => {
+                  const group = threadableClues.filter((c) => c.source === source);
+                  if (group.length === 0) return null;
+                  return (
+                    <div className="pzl-thread-group" key={source}>
+                      <h4 className="pzl-thread-src">{source}</h4>
+                      <div className="pzl-thread-list">
+                        {group.map((clue) => (
+                          <button
+                            className={`pzl-clue-card ${threadedClueIds.includes(clue.id) ? 'selected' : ''}`}
+                            key={clue.id}
+                            onClick={() => toggleThread(clue.id)}
+                            type="button"
+                          >
+                            <span className="pzl-clue-card-title">{clue.title}</span>
+                            <span className="pzl-clue-card-text">{clue.text}</span>
+                            {threadedClueIds.includes(clue.id) && <span className="pzl-clue-stamp" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="pzl-interpret-body">
-                <textarea
-                  className="pzl-interpret-input"
-                  value={freeText}
-                  onChange={(e) => setFreeText(e.target.value)}
-                  placeholder={assessmentPrompt.freeInputHint || '写下你对这幅画的解读……'}
-                  maxLength={200}
-                />
-                <span className="pzl-interpret-hint">
-                  结合所取线索，写下你对画中异常的理解。措辞影响评价深度。
-                </span>
-              </div>
+              <p className="pzl-thread-progress">
+                已缀 {threadedClueIds.length} 条 · 跨 {threadedSourceCount} 处来源
+              </p>
 
               <div className="pzl-interpret-actions">
-                <button
-                  className="pzl-back-phase-btn"
-                  onClick={() => setPhase('observing')}
-                  type="button"
-                >
+                <button className="pzl-back-phase-btn" onClick={() => setAct('observe')} type="button">
                   返回观画
                 </button>
+                {canAdvanceAct('thread', actCtx) && (
+                  <button className="pzl-proceed-btn" onClick={advance} type="button">
+                    解
+                  </button>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Bottom submit button */}
-        {phase === 'interpreting' && (
-          <button
-            className="pzl-submit-btn"
-            disabled={!canSubmit || isSubmitting}
-            onClick={submitPuzzle}
-            type="button"
-          >
-            <span className="pzl-submit-text">
-              {isSubmitting ? '候批中……' : '落笔成解'}
-            </span>
-          </button>
+        {/* 幕四 解读 */}
+        {act === 'interpret' && (
+          <>
+            <div className="pzl-question-panel">
+              <div className="pzl-question-panel-inner">
+                <div className="pzl-interpret-header">
+                  <span className="pzl-interpret-tag">解读</span>
+                  <h2 className="pzl-interpret-prompt">{assessmentPrompt.promptText}</h2>
+                </div>
+
+                <div className="pzl-interpret-body">
+                  <textarea
+                    className="pzl-interpret-input"
+                    value={freeText}
+                    onChange={(e) => setFreeText(e.target.value)}
+                    placeholder={assessmentPrompt.freeInputHint || '写下你对这幅画的解读……'}
+                    maxLength={200}
+                  />
+                  <span className="pzl-interpret-hint">
+                    结合所缀线索，写下你对画中异常的理解。措辞影响评价深度。
+                  </span>
+                </div>
+
+                <div className="pzl-interpret-actions">
+                  <button className="pzl-back-phase-btn" onClick={() => setAct('thread')} type="button">
+                    返回缀线
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="pzl-submit-btn"
+              disabled={!canSubmit || isSubmitting}
+              onClick={submitPuzzle}
+              type="button"
+            >
+              <span className="pzl-submit-text">{isSubmitting ? '候批中……' : '落笔成解'}</span>
+            </button>
+          </>
         )}
       </section>
 
-      {/* Right: observation notes */}
+      {/* 右侧：已缀线索札记 */}
       <aside className="pzl-notes">
         <div className="pzl-notes-inner">
-          <h3 className="pzl-notes-title">观画札记</h3>
-          {selectedAnomalyIds.length === 0 ? (
-            <p className="pzl-notes-empty">尚未发现异常。</p>
+          <h3 className="pzl-notes-title">缀线札记</h3>
+          {threadedClueIds.length === 0 ? (
+            <p className="pzl-notes-empty">尚未缀入线索。</p>
           ) : (
-            <div className="pzl-notes-list">
-              {selectedAnomalyIds.map((anomalyId) => {
-                const anomaly = HAIYOU_PAINTING.anomalies.find((a) => a.id === anomalyId);
-                if (!anomaly) return null;
-                return (
-                  <div className="pzl-note-item" key={anomalyId}>
-                    <span className="pzl-note-bullet" />
-                    <span className="pzl-note-text">{anomaly.visibleText}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {selectedClueIds.length > 0 && (
             <div className="pzl-notes-clues">
-              <h4 className="pzl-notes-subtitle">已取线索</h4>
-              {selectedClueIds.map((clueId) => {
-                const clue = clueCards.find((c) => c.id === clueId);
+              {threadedClueIds.map((clueId) => {
+                const clue = CLUE_BY_ID[clueId];
                 if (!clue) return null;
                 return (
                   <div className="pzl-note-clue" key={clueId}>
-                    <span className="pzl-note-clue-title">{clue.title}</span>
+                    <span className="pzl-note-clue-title">
+                      {clue.title}
+                      <span className="pzl-note-clue-src">· {clue.source}</span>
+                    </span>
                     <span className="pzl-note-clue-text">{clue.text}</span>
                   </div>
                 );

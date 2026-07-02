@@ -2481,6 +2481,110 @@ button {
   margin: 0 0 28px;
 }
 
+/* 幕一入阁 · 带入线索（2026-07-02 五幕重做） */
+.pzl-carried {
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  background: rgba(20, 14, 8, 0.4);
+  border: 1px solid rgba(197, 164, 91, 0.2);
+  border-radius: 4px;
+  text-align: left;
+}
+
+.pzl-carried-title {
+  margin: 0 0 12px;
+  color: #C5A45B;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+.pzl-carried-empty {
+  margin: 0;
+  color: rgba(239, 227, 200, 0.5);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.pzl-carried-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pzl-carried-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  align-items: baseline;
+}
+
+.pzl-carried-src {
+  grid-row: span 2;
+  align-self: center;
+  padding: 2px 8px;
+  background: rgba(197, 164, 91, 0.16);
+  border: 1px solid rgba(197, 164, 91, 0.3);
+  border-radius: 3px;
+  color: #C5A45B;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.pzl-carried-name {
+  color: #EFE3C8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pzl-carried-text {
+  grid-column: 2;
+  color: rgba(239, 227, 200, 0.6);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* 幕三缀线 · 分组 */
+.pzl-thread-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 18px 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.pzl-thread-src {
+  margin: 0 0 8px;
+  color: #C5A45B;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  border-bottom: 1px solid rgba(197, 164, 91, 0.2);
+  padding-bottom: 4px;
+}
+
+.pzl-thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pzl-thread-progress {
+  margin: 6px 0 14px;
+  color: rgba(239, 227, 200, 0.7);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.pzl-note-clue-src {
+  margin-left: 6px;
+  color: rgba(197, 164, 91, 0.7);
+  font-size: 10px;
+  font-weight: 400;
+}
+
 .pzl-begin-btn {
   display: inline-block;
   padding: 12px 44px;

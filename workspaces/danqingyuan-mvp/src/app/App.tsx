@@ -1662,10 +1662,11 @@ export function App() {
     setState(nextState);
   }
 
-  if (isPuzzleOpen && puzzleAssessmentPrompt) {
+  if (isPuzzleOpen && puzzleAssessmentPrompt && state) {
     return (
       <PuzzleScreen
         assessmentPrompt={puzzleAssessmentPrompt}
+        collectedClueIds={state.puzzle.collectedClueIds}
         onCancel={() => setIsPuzzleOpen(false)}
         onSubmit={submitPuzzle}
       />
