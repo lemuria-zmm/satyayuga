@@ -46,6 +46,7 @@ import { MainGameScreen } from '../components/MainGameScreen';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
 import { HaiyouRevealScreen } from '../components/HaiyouRevealScreen';
+import { ArchiveBridge } from '../components/ArchiveBridge';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
@@ -219,6 +220,8 @@ export function App() {
   const [mentorReview, setMentorReview] = useState<{ dialogue: string; actionText: string } | null>(null);
   // 见希孟 LLM 文（批二）：null=生成中
   const [ximengMeet, setXimengMeet] = useState<{ dialogue: string; actionText: string } | null>(null);
+  // 秘阁引桥过场（2026-07-02）：收尾页点「入秘阁一观」先播"发现重门虚掩"过场，「推门而入」才落地秘阁
+  const [archiveBridgeOpen, setArchiveBridgeOpen] = useState(false);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
@@ -1254,6 +1257,7 @@ export function App() {
     setIsPuzzleOpen(false);
     setEndingDismissed(false);
     setEndingStage(null);
+    setArchiveBridgeOpen(false);
     setMentorReview(null);
     setXimengMeet(null);
     setDialogueNpcId(null);
@@ -1570,6 +1574,25 @@ export function App() {
     });
     saveGameState(granted);
     setState(granted);
+  }
+
+  /** 通关探索入口落地（2026-07-02）：暂隐结局序列进主界面，并把玩家落到对应地点——
+   * 否则秘阁签/画室签因「locationId===当前地点」过滤而看不见（授衔后玩家仍站在丹青试的院堂）。
+   * 正文同步接一句落地文（否则还显示丹青试批语，与过场断裂）。 */
+  function enterEndingLocation(locationId: 'secret_archive' | 'ximeng_studio') {
+    setArchiveBridgeOpen(false);
+    setEndingStage(null);
+    setEndingDismissed(true);
+    const arrivalText =
+      locationId === 'secret_archive'
+        ? '门轴轻响，你侧身入内。秘阁深处灯影幽微，架上卷轴层叠，尘香扑面。正中的石案上，平展着一幅画。'
+        : '你来到希孟画室门前。门半掩，青绿色的光从缝隙里透出。';
+    setState((prev) => {
+      if (!prev) return prev;
+      const moved: GameState = { ...prev, currentLocation: locationId, lastRenderedText: arrivalText };
+      saveGameState(moved);
+      return moved;
+    });
   }
 
   async function submitPuzzle(submission: PuzzleSubmission) {
@@ -1929,22 +1952,17 @@ export function App() {
 
   // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出，优先于旧 EndingScreen。
   // 导师点评(A) → 授衔(B) → 收尾(E)；落第补考桩/见希孟桩在 advanceEndingStage 内处理。
+  // 秘阁引桥过场（2026-07-02）：优先于结局序列渲染——发现重门虚掩 → 推门而入落地秘阁
+  if (archiveBridgeOpen) {
+    return <ArchiveBridge onEnter={() => enterEndingLocation('secret_archive')} />;
+  }
+
   if (state.ending && endingStage && !endingDismissed) {
     const ending = state.ending;
-    // 入秘阁/画室：暂隐结局序列进主界面，并把玩家落到对应地点——否则秘阁签/画室签因
-    // 「locationId===当前地点」过滤而看不见（授衔后玩家仍站在丹青试的院堂）。2026-07-02 修。
-    const enterAt = (locationId: 'secret_archive' | 'ximeng_studio') => {
-      setEndingStage(null);
-      setEndingDismissed(true);
-      setState((prev) => {
-        if (!prev) return prev;
-        const moved: GameState = { ...prev, currentLocation: locationId };
-        saveGameState(moved);
-        return moved;
-      });
-    };
-    const enterArchive = ending.unlockArchive ? () => enterAt('secret_archive') : undefined;
-    const enterStudio = ending.unlockStudio ? () => enterAt('ximeng_studio') : undefined;
+    // 入秘阁：先播秘阁引桥过场（发现重门虚掩，2026-07-02），「推门而入」才真正落地——见下方 archiveBridgeOpen 渲染。
+    // 入画室：直接落地。落地 = 暂隐结局序列 + currentLocation 设到对应地点（否则签被地点过滤看不见）。
+    const enterArchive = ending.unlockArchive ? () => setArchiveBridgeOpen(true) : undefined;
+    const enterStudio = ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined;
 
     if (endingStage === 'mentor_review') {
       return (
@@ -1998,21 +2016,12 @@ export function App() {
 
   // 丹青试结局页（2026-06-28；2026-06-29 双入口）：旧静态结局页，保留作回退/参考（2026-06-30 起主流程走上方结局序列）
   if (state.ending && !endingDismissed) {
-    const enterAt = (locationId: 'secret_archive' | 'ximeng_studio') => {
-      setEndingDismissed(true);
-      setState((prev) => {
-        if (!prev) return prev;
-        const moved: GameState = { ...prev, currentLocation: locationId };
-        saveGameState(moved);
-        return moved;
-      });
-    };
     return (
       <EndingScreen
         ending={state.ending}
         state={state}
-        onEnterArchive={state.ending.unlockArchive ? () => enterAt('secret_archive') : undefined}
-        onEnterStudio={state.ending.unlockStudio ? () => enterAt('ximeng_studio') : undefined}
+        onEnterArchive={state.ending.unlockArchive ? () => setArchiveBridgeOpen(true) : undefined}
+        onEnterStudio={state.ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined}
         onReset={resetGame}
       />
     );
