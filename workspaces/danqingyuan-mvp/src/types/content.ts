@@ -33,6 +33,8 @@ export interface PaintingBible {
   requiredElements: string[];
   anomalies: PaintingAnomaly[];
   clueIds: string[];
+  /** 七日预收集线索 ID（书房/街市/希孟，秘阁幕一入阁展示；2026-07-02 五幕重做） */
+  carriedClueIds?: string[];
   coreThemes: string[];
   partialInterpretations: string[];
   forbiddenInterpretations: string[];

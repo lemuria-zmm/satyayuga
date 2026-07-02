@@ -251,6 +251,8 @@ export interface PuzzleState {
   collectedClueIds: string[];
   interpretationHistory: PuzzleInterpretationRecord[];
   unlockedPaintingIds: string[];
+  /** 揭卷落档（2026-07-02 五幕重做）：幕五揭卷时按解读 tier 落，供 determineEnding 读觉察深度 */
+  haiyouRevealTier?: InterpretationTier;
 }
 
 export interface PuzzleInterpretationRecord {

@@ -13,9 +13,17 @@ export const INITIAL_FLAGS = {
   archiveUnlocked: false,
   haiyouDiscovered: false,
   haiyouFirstInterpreted: false,
-  noticedWaterEndCloudWeak: false,
-  noticedWaterEndCloudStrong: false,
-  secondScrollTeased: false,
+  /** 秘阁五幕重做（2026-07-02）：揭卷完成 */
+  haiyouRevealed: false,
+  /** 解读 tier≥partial（缀线成暗），替旧 noticedWaterEndCloudStrong */
+  haiyouThreadStrong: false,
+  /** 揭卷 core 档埋下希孟消失钩，替旧 secondScrollTeased */
+  haiyouDisappearanceHooked: false,
+  /** 七日预收集线索幂等守卫（clueGrants.ts 授予后置真，防重授） */
+  clueArchiveNamesSeen: false,
+  clueColophonSeen: false,
+  clueSecondScrollSeen: false,
+  clueMarketHardshipSeen: false,
   /** 买画材 buff（2026-06-12）：下次成长行动（晨课/写生/查证）技能或学识收益 +1，生效后清 */
   art_supplies_ready: false,
 } as const;
