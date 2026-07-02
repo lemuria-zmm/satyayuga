@@ -4366,6 +4366,122 @@ dd {
   background: rgba(230, 214, 184, 0.1);
 }
 
+/* —— 秘阁幕五 · 揭卷（HaiyouRevealScreen，2026-07-02 五幕重做）：黑场 + 逐段打字机 —— */
+.hry-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #060402;
+  cursor: pointer;
+}
+
+.hry-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, #17110a 0%, #060402 78%);
+  animation: epiVeilIn 1200ms ease both;
+}
+
+.hry-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  width: min(680px, 84vw);
+  padding: 0 12px;
+}
+
+.hry-title {
+  margin: 0;
+  color: #c5a45b;
+  font-size: 18px;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+}
+
+.hry-feedback {
+  margin: 0;
+  color: rgba(197, 164, 91, 0.75);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.hry-line {
+  margin: 0;
+  min-height: 4.5em;
+  color: #e6d6b8;
+  font-size: 17px;
+  line-height: 2;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-shadow: 0 0 14px rgba(230, 214, 184, 0.18);
+}
+
+.hry-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  background: #e6d6b8;
+  animation: epiCaret 800ms step-end infinite;
+}
+
+.hry-progress {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.hry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(230, 214, 184, 0.18);
+  transition: background 300ms ease;
+}
+
+.hry-dot.on {
+  background: #c5a45b;
+}
+
+.hry-tail {
+  min-height: 48px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+}
+
+.hry-tail-in {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hry-done-btn {
+  border: 1px solid rgba(230, 214, 184, 0.45);
+  background: rgba(230, 214, 184, 0.06);
+  color: #e6d6b8;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  padding: 10px 34px;
+  border-radius: 3px;
+  transition: background 200ms ease, transform 160ms ease;
+}
+
+.hry-done-btn:hover {
+  background: rgba(230, 214, 184, 0.16);
+  transform: translateY(-2px);
+}
+
 /* —— 引出希孟线 C 过场（XimengBridge，2026-06-30 批二）：黑场水墨 + 一句独白 —— */
 .xb-page {
   position: fixed;

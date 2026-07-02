@@ -45,6 +45,7 @@ import { EpilogueScreen } from '../components/EpilogueScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
+import { HaiyouRevealScreen } from '../components/HaiyouRevealScreen';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
@@ -65,6 +66,7 @@ import type {
   EndingResult,
   GameAction,
   GameState,
+  InterpretationTier,
   LocationId,
   MainlineState,
   NpcId,
@@ -224,6 +226,9 @@ export function App() {
   // 考试模式（2026-06-28；2026-06-30 批二加 retake）：final=第7日丹青试；quick=晚间温书自测；retake=落第补考（保底过）
   const [examMode, setExamMode] = useState<'final' | 'quick' | 'retake'>('final');
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
+  // 幕五揭卷（2026-07-02）：submitPuzzle 拿到 tier 后不关屏，转揭卷固定脚本演出；onDone 才真正关闭
+  const [puzzleReveal, setPuzzleReveal] = useState<{ tier: InterpretationTier; feedback: string } | null>(null);
+  const [pendingPuzzleSettlement, setPendingPuzzleSettlement] = useState<ValidatedStatePatch | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
@@ -1656,10 +1661,33 @@ export function App() {
 
     saveGameState(nextState);
     setHasSave(true);
+    // 幕五揭卷（2026-07-02）：不直接关屏——转揭卷固定脚本演出（HaiyouRevealScreen），
+    // 结算笺延后到揭卷「合卷」时出，避免盖在揭卷演出上。
+    setPuzzleReveal({ tier: evaluation.interpretationTier, feedback: evaluation.visibleFeedback });
+    setPendingPuzzleSettlement(patch);
+    setState(nextState);
+  }
+
+  /** 揭卷合卷（2026-07-02）：关闭秘阁 + 出延后的结算笺。 */
+  function finishPuzzleReveal() {
+    setPuzzleReveal(null);
     setIsPuzzleOpen(false);
     setPuzzleAssessmentPrompt(null);
-    showSettlement(patch);
-    setState(nextState);
+    if (pendingPuzzleSettlement) {
+      showSettlement(pendingPuzzleSettlement);
+      setPendingPuzzleSettlement(null);
+    }
+  }
+
+  // 幕五揭卷：优先于 PuzzleScreen 渲染（submit 后转揭卷演出）
+  if (puzzleReveal) {
+    return (
+      <HaiyouRevealScreen
+        tier={puzzleReveal.tier}
+        feedback={puzzleReveal.feedback}
+        onDone={finishPuzzleReveal}
+      />
+    );
   }
 
   if (isPuzzleOpen && puzzleAssessmentPrompt && state) {
