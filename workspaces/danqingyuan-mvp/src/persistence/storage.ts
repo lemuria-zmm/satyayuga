@@ -2,8 +2,8 @@ import type { GameState } from '../types';
 
 const SAVE_KEY = 'danqingyuan-mvp:auto-save';
 
-/** schema 11（2026-06-26）：对话往来历史 chatHistory（per relationship） */
-const SCHEMA_VERSION = 15;
+/** 存档 schema 版本（最新 v16，2026-07-02 秘阁五幕重做：骸游图 flag 重命名 + PuzzleState.haiyouRevealTier + 预收集线索 *Seen flag） */
+const SCHEMA_VERSION = 16;
 
 export interface SaveFile {
   saveId: string;
@@ -109,6 +109,35 @@ function migrateV14(saveFile: SaveFile): SaveFile {
   if (ending && typeof (ending as { unlockStudio?: boolean }).unlockStudio !== 'boolean') {
     (ending as { unlockStudio: boolean }).unlockStudio = false;
   }
+  return { ...saveFile, schemaVersion: 15 };
+}
+
+/**
+ * v15→v16 骸游图 flag 翻译（2026-07-02 秘阁五幕重做）——纯函数，就地改传入 flags：
+ * - 云起时 flag 翻译为骸游图语义：noticedWaterEndCloudStrong→haiyouThreadStrong、secondScrollTeased→haiyouDisappearanceHooked；删旧键。
+ * - 补七日预收集线索幂等守卫 *Seen flag（默认 false）+ haiyouRevealed。
+ * 导出供 node 单测直接验证（防 test 复刻逻辑漂移）。
+ */
+export function migrateHaiyouFlagsV15(flags: Record<string, boolean>): Record<string, boolean> {
+  flags.haiyouThreadStrong ??= flags.noticedWaterEndCloudStrong ?? false;
+  flags.haiyouDisappearanceHooked ??= flags.secondScrollTeased ?? false;
+  flags.haiyouRevealed ??= false;
+  flags.clueArchiveNamesSeen ??= false;
+  flags.clueColophonSeen ??= false;
+  flags.clueSecondScrollSeen ??= false;
+  flags.clueMarketHardshipSeen ??= false;
+  delete flags.noticedWaterEndCloudWeak;
+  delete flags.noticedWaterEndCloudStrong;
+  delete flags.secondScrollTeased;
+  return flags;
+}
+
+/**
+ * v15→v16 旧档迁移（2026-07-02 秘阁五幕重做）：flag 翻译（见 migrateHaiyouFlagsV15）；
+ * PuzzleState.haiyouRevealTier 为可选字段，旧档无即 undefined（passthrough）。
+ */
+function migrateV15(saveFile: SaveFile): SaveFile {
+  migrateHaiyouFlagsV15(saveFile.gameState.progress.flags as Record<string, boolean>);
   return { ...saveFile, schemaVersion: SCHEMA_VERSION };
 }
 
@@ -160,6 +189,9 @@ export function loadSaveFile(): SaveFile | null {
     }
     if (parsed.schemaVersion === 14) {
       parsed = migrateV14(parsed);
+    }
+    if (parsed.schemaVersion === 15) {
+      parsed = migrateV15(parsed);
     }
     if (parsed.schemaVersion !== SCHEMA_VERSION) {
       return null;
