@@ -73,7 +73,7 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 - ✅ **世界观/解谜线重构（06-30，单一真相源 `docs/plans/2026-06-30-worldview-rework-canon.md`）**：废「云起时」；主题「粉饰太平」→「繁华与黑暗的交织」；**真相层级** 穿越疑问(希孟为何消失)→千里江山卷(明·进献盛世)→繁华与黑暗(社会暗线)→骸游图(希孟/择端/李唐/嵩四人共创、进献警戒危局,秘阁揭开才点)→希孟消失(只埋钩)。希孟对话分档软线索+书房3条线索(克制)+入院页穿越 framing 明说。prompt 全升版(scene v19/dialogue v8/painting_prompt v3/painting_intent 06-30/mainline v2)。
 - ✅ **UI 大改（07-01）**：①主界面正文 **VN 逐句呈现**——scene_narrator 输出 `segments[{text,speaker}]`（v22），前端逐句播（点对话框任意处/自动▶▶）、立绘随 speaker 居中切换、本批播完才出「继续」签；②**画案手记升级为档案库**——LLM `entitiesIntroduced` 抽取人物/线索/道具/地点→writer `mergeDiscoveredEntities` 去重入 clueGraph→主界面飘「新增」条+手记加「记事/档案」双 Tab（dialogue v10）。引导弹窗态整块隐正文对话框防重叠。
 - ✅ **秘阁五幕重做+8线索（07-02，收束骸游图四人共创）**：秘阁改**五幕**（入阁→观画→缀线→解读→揭卷，`engine/puzzleActs.ts` 纯函数态机）；**8 线索周内+秘阁混合**（4 carried 七日 practice 卡/希孟书房确定性授予 via `engine/clueGrants.ts`+`content/clues.ts` 注册表，4 observe 观画解锁，新增第4异常旁观者视线）；**幕五揭卷固定脚本**（`content/haiyouReveal.ts` 三档，HaiyouRevealScreen 打字机，按解读 tier 收束四人共创/以画进谏/埋消失钩，守 canon §7 边界不调 LLM）。**顺清云起时技术债**：删3死handler+submitPuzzle换云起文+flag重命名(noticedWaterEndCloud*/secondScrollTeased→haiyouThreadStrong/DisappearanceHooked)+存档 SCHEMA v16 迁移。node测38/0。**未改 prompt .md（评估器复用现管道），改 mock-provider.mjs 已重启 proxy。**
-- **下一个主攻**：丹青试题型改法（明明另定）→ 扩充择端/嵩/李唐好感线（各埋骸游图分工线索）。
+- **下一个主攻**：美术第二批产出（VN化配套 P0 53张，清单 `docs/plans/2026-07-03-danqingyuan-v2-art-assets-p0.md`：角色场景图10+通用场景图14+半身像24+引文/秘阁5；P1 骸游图长卷/线索卡8/朱印）→ 美术到位后工程接入轮（场景图池选择器+半身像 emotionState 差分+各页背景替换）→ 丹青试题型改法（明明另定）→ 扩充择端/嵩/李唐好感线（各埋骸游图分工线索）。
 - **待补美术/增强**：温书自测 UI + 结局页各档卷轴/配图 + 结局 LLM 散文（见 project-memory 待补美术区）。
 
 ## 工作流约定
