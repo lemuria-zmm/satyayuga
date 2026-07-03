@@ -59,7 +59,8 @@ npm run dev:proxy      # 前端 :5176（vite HMR，前端改动自动热载）
 - **世界观/解谜线 canon（最新·权威）**：`workspaces/docs/plans/2026-06-30-worldview-rework-canon.md`（真相层级、希孟两卷、骸游图四人共创、穿越 framing、各 prompt 边界的单一真相源）。
 - **决策全编年（80+条）**：`workspaces/docs/project-memory/project_danqingyuan_v2_redesign.md`（每条含落点+依据，最权威的"改了什么/为什么"）。
 - **防返工纪律详版**：`workspaces/docs/project-memory/feedback_no_regression_discipline.md`。
-- 美术清单：`workspaces/docs/plans/2026-06-10-danqingyuan-v2-art-assets.md`。
+- 美术清单：`workspaces/docs/plans/2026-06-10-danqingyuan-v2-art-assets.md`（第一批）+ `2026-07-03-danqingyuan-v2-art-assets-p0.md`（第二批·VN化配套）。
+- **美术唯一标准（角色/风格）**：`workspaces/docs/plans/2026-07-03-danqingyuan-character-style-bible-v1.md`（Character Bible + Style Bible v1.0）——所有含角色生图引用其 Calm 半身母版，人设改动先改此文件+characters.ts。
 
 ## 当前进度 / 下一步
 - ✅ 引擎/活动卡/剧情写作器/A+C叙事时段重构/希孟NPC完整系统（好感融叙事+多轮闲聊+数值平衡+OOC约束）/LLM调用加固。
