@@ -3,10 +3,8 @@ import type { EndingResult, GameState } from '../types';
 interface EndingScreenProps {
   ending: EndingResult;
   state: GameState;
-  /** 入秘阁一观（unlockArchive=通过即解锁）：暂隐结局页进主界面看《骸游图》 */
-  onEnterArchive?: () => void;
-  /** 赴希孟画室（unlockStudio=通过+好感知己）：暂隐结局页进主界面看画室专属场景 */
-  onEnterStudio?: () => void;
+  /** 「继续」：进秘阁引桥过场（引文→推门而入/赴画室）。无解锁时 undefined，只留重新开始。 */
+  onContinue?: () => void;
   /** 重新开始：回到开局表单 */
   onReset: () => void;
 }
@@ -31,12 +29,9 @@ const TIER_PROLOGUE: Record<EndingResult['tier'], string[]> = {
   ],
 };
 
-export function EndingScreen({ ending, state, onEnterArchive, onEnterStudio, onReset }: EndingScreenProps) {
+export function EndingScreen({ ending, state, onContinue, onReset }: EndingScreenProps) {
   void state;
   const prologue = TIER_PROLOGUE[ending.tier];
-  const showArchive = ending.unlockArchive && !!onEnterArchive;
-  const showStudio = ending.unlockStudio && !!onEnterStudio;
-  const bothOpen = showArchive && showStudio;
 
   return (
     <main className="ex-page">
@@ -68,29 +63,11 @@ export function EndingScreen({ ending, state, onEnterArchive, onEnterStudio, onR
           {ending.ximengNote && <p className="ex-intro-quote">{ending.ximengNote}</p>}
           {ending.themeNote && <p className="ex-intro-quote">{ending.themeNote}</p>}
 
-          {/* 入口区（2026-06-29 双入口）：双开时并列 + 预热语；单开各自一句引导 */}
-          {(showArchive || showStudio) && (
-            <div className="ed-gates">
-              <p className="ed-gates-lead">
-                {bothOpen
-                  ? '两扇门，自此同时为你敞开——'
-                  : showArchive
-                    ? '秘阁的重门，向你敞开一线。'
-                    : '希孟的画室，为你留着一盏灯。'}
-              </p>
-              <div className={`ed-gates-row${bothOpen ? ' ed-gates-row-dual' : ''}`}>
-                {showArchive && (
-                  <button className="ex-begin-btn" onClick={onEnterArchive} type="button">
-                    入秘阁一观
-                  </button>
-                )}
-                {showStudio && (
-                  <button className="ex-begin-btn" onClick={onEnterStudio} type="button">
-                    赴希孟画室
-                  </button>
-                )}
-              </div>
-            </div>
+          {/* 「继续」→ 秘阁引桥过场（引文在过场里，入口按钮在过场末尾） */}
+          {onContinue && (
+            <button className="ex-begin-btn" onClick={onContinue} type="button">
+              继续
+            </button>
           )}
 
           <button className="ex-leave-btn" onClick={onReset} type="button">

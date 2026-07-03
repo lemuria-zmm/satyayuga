@@ -1576,8 +1576,9 @@ export function App() {
     setState(granted);
   }
 
-  /** 通关探索入口落地（2026-07-02）：暂隐结局序列进主界面，并把玩家落到对应地点——
-   * 否则秘阁签/画室签因「locationId===当前地点」过滤而看不见（授衔后玩家仍站在丹青试的院堂）。
+  /** 通关探索入口落地（2026-07-02；2026-07-03 加固）：暂隐结局序列进主界面，落到对应地点。
+   * **自足解锁**：入秘阁必带 archiveUnlocked+finalChapter+授祗候——否则从 fallback EndingScreen（reload 丢 endingStage）
+   *   或旧档进来时 commitTitleGrant 未跑过 → 秘阁签因 archiveUnlocked 未置而不出（"此处此刻无事可做"）。
    * 正文同步接一句落地文（否则还显示丹青试批语，与过场断裂）。 */
   function enterEndingLocation(locationId: 'secret_archive' | 'ximeng_studio') {
     setArchiveBridgeOpen(false);
@@ -1589,7 +1590,13 @@ export function App() {
         : '你来到希孟画室门前。门半掩，青绿色的光从缝隙里透出。';
     setState((prev) => {
       if (!prev) return prev;
-      const moved: GameState = { ...prev, currentLocation: locationId, lastRenderedText: arrivalText };
+      // 自足解锁：确保入秘阁后解谜签必然可达（幂等——已解锁则无副作用）
+      const unlockPatch: ValidatedStatePatch =
+        locationId === 'secret_archive'
+          ? { flagsSet: { archiveUnlocked: true, finalChapter: true }, unlockedLocations: ['secret_archive'] }
+          : { flagsSet: { finalChapter: true }, unlockedLocations: ['ximeng_studio'] };
+      const unlocked = applyValidatedStatePatch(prev, unlockPatch);
+      const moved: GameState = { ...unlocked, currentLocation: locationId, lastRenderedText: arrivalText };
       saveGameState(moved);
       return moved;
     });
@@ -1952,17 +1959,23 @@ export function App() {
 
   // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出，优先于旧 EndingScreen。
   // 导师点评(A) → 授衔(B) → 收尾(E)；落第补考桩/见希孟桩在 advanceEndingStage 内处理。
-  // 秘阁引桥过场（2026-07-02）：优先于结局序列渲染——发现重门虚掩 → 推门而入落地秘阁
-  if (archiveBridgeOpen) {
-    return <ArchiveBridge onEnter={() => enterEndingLocation('secret_archive')} />;
+  // 秘阁引桥过场（2026-07-02）：优先于结局序列渲染——发现重门虚掩 → 推门而入落地秘阁。
+  // 过场末尾承接探索入口（推门而入 + 好感够则「赴希孟画室」），确保"授衔→引文→入秘阁按钮"顺序。
+  if (archiveBridgeOpen && state.ending) {
+    return (
+      <ArchiveBridge
+        onEnter={() => enterEndingLocation('secret_archive')}
+        onEnterStudio={state.ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined}
+      />
+    );
   }
 
   if (state.ending && endingStage && !endingDismissed) {
     const ending = state.ending;
-    // 入秘阁：先播秘阁引桥过场（发现重门虚掩，2026-07-02），「推门而入」才真正落地——见下方 archiveBridgeOpen 渲染。
-    // 入画室：直接落地。落地 = 暂隐结局序列 + currentLocation 设到对应地点（否则签被地点过滤看不见）。
-    const enterArchive = ending.unlockArchive ? () => setArchiveBridgeOpen(true) : undefined;
-    const enterStudio = ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined;
+    // 收尾页「继续」→ 秘阁引桥过场（引文）→ 过场末尾才给「推门而入 / 赴画室」入口。
+    // 保证顺序：授衔 → 收尾 → 引文 → 入秘阁按钮（按钮不再抢在引文前出现）。
+    // 无任何解锁（理论上通过必解锁秘阁，此处兜底）时收尾页只留「重新开始」。
+    const openBridge = ending.unlockArchive || ending.unlockStudio ? () => setArchiveBridgeOpen(true) : undefined;
 
     if (endingStage === 'mentor_review') {
       return (
@@ -1999,7 +2012,7 @@ export function App() {
       );
     }
     if (endingStage === 'epilogue') {
-      return <EpilogueScreen ending={ending} onEnterArchive={enterArchive} onEnterStudio={enterStudio} onReset={resetGame} />;
+      return <EpilogueScreen ending={ending} onContinue={openBridge} onReset={resetGame} />;
     }
     // retake：补考出题中（isExamOpen 尚未开）的过渡，显点评页占位避免回落旧 EndingScreen
     if (endingStage === 'retake') {
@@ -2014,14 +2027,16 @@ export function App() {
     }
   }
 
-  // 丹青试结局页（2026-06-28；2026-06-29 双入口）：旧静态结局页，保留作回退/参考（2026-06-30 起主流程走上方结局序列）
+  // 丹青试结局页（2026-06-28；2026-06-29 双入口；2026-07-03 入口收敛为「继续」→引桥）：
+  // 旧静态结局页，作回退/参考（endingStage 丢失如 reload/DEV 时命中）。授衔文+回顾在页上，
+  // 「继续」→ 秘阁引桥过场（引文→推门而入），保证"授衔→引文→入秘阁按钮"顺序。
   if (state.ending && !endingDismissed) {
+    const openBridge = state.ending.unlockArchive || state.ending.unlockStudio ? () => setArchiveBridgeOpen(true) : undefined;
     return (
       <EndingScreen
         ending={state.ending}
         state={state}
-        onEnterArchive={state.ending.unlockArchive ? () => setArchiveBridgeOpen(true) : undefined}
-        onEnterStudio={state.ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined}
+        onContinue={openBridge}
         onReset={resetGame}
       />
     );

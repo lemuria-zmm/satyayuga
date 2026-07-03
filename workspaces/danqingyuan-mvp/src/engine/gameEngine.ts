@@ -430,7 +430,10 @@ function getDaySlotActions(state: GameState): GameAction[] {
 /** 终章（第7日晚间后时间冻结）：只保留秘阁与自由走动 */
 function getFinalChapterActions(state: GameState): GameAction[] {
   const actions: GameAction[] = [];
-  if (state.progress.flags.archiveUnlocked && !state.progress.flags.haiyouFirstInterpreted) {
+  // 身处秘阁即视为已达秘阁（archiveUnlocked 兜底）：治旧档/回退路径未置 archiveUnlocked 时
+  // 人已在秘阁却出不了解谜签（"此处此刻无事可做"）。2026-07-03 加固。
+  const atArchive = state.currentLocation === 'secret_archive';
+  if ((state.progress.flags.archiveUnlocked || atArchive) && !state.progress.flags.haiyouFirstInterpreted) {
     actions.push({
       id: 'solve-haiyou',
       type: 'solve_puzzle',

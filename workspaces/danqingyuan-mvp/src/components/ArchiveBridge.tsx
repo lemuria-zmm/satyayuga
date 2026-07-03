@@ -1,15 +1,18 @@
 interface ArchiveBridgeProps {
   /** 「推门而入」：结束过场，落地秘阁 */
   onEnter: () => void;
+  /** 「赴希孟画室」：好感≥知己额外解锁时，过场末尾同时提供画室入口 */
+  onEnterStudio?: () => void;
 }
 
 /**
- * 秘阁引桥过场（2026-07-02，明明：授衔后直接开秘阁突兀，加一段文字引导）。
- * 收尾页点「入秘阁一观」后先播此过场：授衔人散 → 发现往昔紧闭的秘阁重门虚掩着 → 推门而入。
- * 黑场水墨基调（仿 XimengBridge），三段逐次淡入 + 「推门而入」按钮最后浮现。
+ * 秘阁引桥过场（2026-07-02；2026-07-03 承接入口）：授衔/收尾后点「继续」进此过场——
+ * 授衔人散 → 发现往昔紧闭的秘阁重门虚掩着 → 推门而入。过场末尾才给探索入口（推门而入 / 赴画室），
+ * 确保「授衔 → 引文 → 入秘阁按钮」的顺序（按钮不再抢在引文之前出现）。
+ * 黑场水墨基调（仿 XimengBridge），三段逐次淡入。
  * 剧情合理性：祗候名分刚到 → 门为新祗候而开；"像等你来"呼应骸游图暗线（不点破）。
  */
-export function ArchiveBridge({ onEnter }: ArchiveBridgeProps) {
+export function ArchiveBridge({ onEnter, onEnterStudio }: ArchiveBridgeProps) {
   return (
     <main className="ab-page">
       <div className="ab-veil" />
@@ -29,8 +32,14 @@ export function ArchiveBridge({ onEnter }: ArchiveBridgeProps) {
           <button className="ex-begin-btn ab-enter" onClick={onEnter} type="button">
             推门而入
           </button>
+          {onEnterStudio && (
+            <button className="ex-leave-btn ab-studio" onClick={onEnterStudio} type="button">
+              先赴希孟画室
+            </button>
+          )}
         </div>
       </section>
     </main>
   );
 }
+

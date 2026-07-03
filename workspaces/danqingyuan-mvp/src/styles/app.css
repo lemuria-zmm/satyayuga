@@ -4569,7 +4569,26 @@ dd {
 .ab-tail {
   align-self: center;
   margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   animation: tgFadeIn 900ms ease 4400ms both;
+}
+
+/* 引桥次要入口「先赴希孟画室」：暗底可读（ex-leave-btn 是浅底深字，此处覆盖为暖白描边） */
+.ab-studio {
+  border: 1px solid rgba(216, 198, 164, 0.4);
+  background: rgba(216, 198, 164, 0.05);
+  color: #d8c6a4;
+  border-radius: 3px;
+  padding: 8px 22px;
+  letter-spacing: 0.1em;
+}
+
+.ab-studio:hover {
+  background: rgba(216, 198, 164, 0.14);
+  color: #f2e8d2;
 }
 
 

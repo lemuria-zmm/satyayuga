@@ -66,5 +66,28 @@ function grantedState(): GameState {
   check('解读后秘阁签消失', !actions.some((a) => a.type === 'solve_puzzle'));
 }
 
+// 5. 兜底：终章·人在秘阁但 archiveUnlocked 未置（旧档/回退路径）——仍出解谜签（治"此处此刻无事可做"）
+{
+  const s = createInitialGameState({ player: { name: '测者', styleOrigin: 'landscape' } });
+  s.time.day = 7;
+  s.progress.flags.finalChapter = true;
+  s.progress.flags.archiveUnlocked = false; // 关键：未置
+  s.currentLocation = 'secret_archive';
+  s.progress.unlockedLocations = [...s.progress.unlockedLocations, 'secret_archive'];
+  const actions = getAvailableActions(s);
+  check('兜底：在秘阁即使 archiveUnlocked 未置也出解谜签', actions.some((a) => a.type === 'solve_puzzle'));
+}
+
+// 6. 兜底不越界：终章·不在秘阁且 archiveUnlocked 未置——不出解谜签
+{
+  const s = createInitialGameState({ player: { name: '测者', styleOrigin: 'landscape' } });
+  s.time.day = 7;
+  s.progress.flags.finalChapter = true;
+  s.progress.flags.archiveUnlocked = false;
+  s.currentLocation = 'hall';
+  const actions = getAvailableActions(s);
+  check('兜底不越界：不在秘阁且未解锁不出解谜签', !actions.some((a) => a.type === 'solve_puzzle'));
+}
+
 console.log(`final-chapter-archive: ${pass}/${fail} (pass/fail)`);
 process.exit(fail === 0 ? 0 : 1);
