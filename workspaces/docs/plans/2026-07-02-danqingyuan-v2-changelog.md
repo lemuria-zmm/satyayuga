@@ -98,3 +98,24 @@
 - **情节合理性**：祗候名分刚授 → 门为新祗候而开的"名分说"+"忘了上锁"的暧昧留白——不坐实是谁开的门，与骸游图"欲进献警戒"的隐秘性一致（canon §7 边界内）。
 
 **验证**：build ✅；纯前端组件+CSS，不动引擎/prompt，不重启 proxy。回归 test-final-chapter-archive 7/0 不受影响。
+
+---
+
+## 九、试玩两修：入口顺序 + 秘阁仍无解谜（2026-07-03，明明试玩反馈）
+
+**反馈**：①授衔界面直接出现「入秘阁一观」按钮、点了才出引文，顺序不对（应授衔→引文→入秘阁按钮）；②点进秘阁后仍只有落地模板句、没有解谜页（截图：终章·画正·人在秘阁，dock 显"此处此刻无事可做"）。
+
+**病根**：
+1. **入口顺序**：结果页（收尾 Epilogue / 旧 EndingScreen）把「入秘阁一观/赴画室」destination 按钮直接摆在页上，点了才跳引桥引文——引文反而在按钮之后。
+2. **秘阁无解谜（截图关键证据：rank=画正而非祗候）**：画正只可能来自 endingStage 丢失后命中的 **fallback EndingScreen**（reload/DEV 直跳），其入口只调 `enterEndingLocation` 落地、**未跑 `commitTitleGrant`→archiveUnlocked 从未置**，于是人已在秘阁但解谜签 gate（`archiveUnlocked && !haiyouFirstInterpreted`）不成立→"此处此刻无事可做"。
+
+**修**（纯前端+引擎，不动 prompt）：
+| 修 | 位置 |
+|---|---|
+| **入口顺序统一**：结果页只留「继续」→ 秘阁引桥过场（引文）→ **过场末尾**才给「推门而入」+（好感够）「先赴希孟画室」。EndingScreen/Epilogue 去掉 destination 按钮改单一 onContinue；ArchiveBridge 承接 onEnterStudio 次要入口 | `EndingScreen.tsx`/`EpilogueScreen.tsx`/`ArchiveBridge.tsx`/`app/App.tsx` |
+| **enterEndingLocation 自足解锁**：入秘阁必带 `archiveUnlocked+finalChapter`+解锁 secret_archive（幂等）——治 fallback/旧档进来时 commitTitleGrant 未跑过导致解谜签不出 | `app/App.tsx` |
+| **getFinalChapterActions 兜底**：身处 secret_archive 即视为已达（archiveUnlocked 兜底），治已卡在秘阁的旧存档——人在阁里就出解谜签，不越界（不在阁+未解锁仍不出） | `engine/gameEngine.ts` |
+
+**验证**：build ✅；node `test-final-chapter-archive` **9/0**（新增：在秘阁 archiveUnlocked 未置仍出解谜签 / 不在秘阁未解锁不越界出签）+ 全量回归 47/0。ArchiveBridge 次要入口 `.ab-studio` 暗底可读样式。
+
+**修复后顺序**：…【授衔·进终章】→（见希孟）→【收尾打字机·「继续」】→【秘阁引桥·门虚掩引文·「推门而入」/「先赴画室」】→ 落地秘阁·解谜签就在眼前 → 五幕。
