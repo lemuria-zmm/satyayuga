@@ -1,49 +1,72 @@
 import { useEffect, useState } from 'react';
+import { buildEpilogueLines } from '../content/epilogueText';
 import type { EndingResult } from '../types';
 
 interface EpilogueScreenProps {
   ending: EndingResult;
-  /** 「继续」：打字机播完后浮现，进秘阁引桥过场（引文→推门而入）。无解锁时为 undefined，只留重新开始。 */
-  onContinue?: () => void;
-  /** 重新开始：序列终点，回开局表单 */
+  /** 重新开始：日终收尾序列终点，回开局表单 */
   onReset: () => void;
 }
 
-const EPILOGUE_LINE = '画院之路，才刚刚开始……';
+const CHAR_MS = 60;
+const LINE_PAUSE_MS = 550;
 
 /**
- * 收尾动画段 E（2026-06-30，批一；2026-07-03 改：入口收敛为「继续」→ 秘阁引桥过场）：
- * 黑场 + 打字机渐显收尾语；打字完成后淡入「继续」（→ 引桥引文 → 推门而入）+「重新开始」。
- * 探索入口（秘阁/画室）移到引桥过场末尾，保证"收尾→引文→入秘阁按钮"顺序。
+ * 日终收尾文章段（2026-06-30 初版；2026-07-05 第七日重构：改为按结局档的收尾文章 + 续作预热）。
+ * 黑场 + 逐行打字机呈现 `epilogueText` 固定模板；全部播完后淡入「重新开始」。
+ * 秘阁五幕已在序列内走完，此处只作最终收束——不再有入秘阁/画室入口。
  */
-export function EpilogueScreen({ onContinue, onReset }: EpilogueScreenProps) {
+export function EpilogueScreen({ ending, onReset }: EpilogueScreenProps) {
+  const lines = buildEpilogueLines(ending.tier);
+  const [lineIndex, setLineIndex] = useState(0);
   const [shown, setShown] = useState(0);
-  const done = shown >= EPILOGUE_LINE.length;
 
+  const current = lines[lineIndex] ?? '';
+  const lineDone = shown >= current.length;
+  const allDone = lineIndex >= lines.length - 1 && lineDone;
+
+  // 逐字打字
   useEffect(() => {
-    if (done) return;
-    const timer = setTimeout(() => setShown((n) => n + 1), 140);
+    if (lineDone) return;
+    const timer = setTimeout(() => setShown((n) => n + 1), CHAR_MS);
     return () => clearTimeout(timer);
-  }, [shown, done]);
+  }, [shown, lineDone]);
+
+  // 本行打完自动进下一行（留停顿）
+  useEffect(() => {
+    if (!lineDone || allDone) return;
+    const timer = setTimeout(() => {
+      setLineIndex((i) => i + 1);
+      setShown(0);
+    }, LINE_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [lineDone, allDone]);
+
+  function handleSkip() {
+    if (!lineDone) setShown(current.length);
+    else if (!allDone) { setLineIndex((i) => i + 1); setShown(0); }
+  }
 
   return (
-    <main className="epi-page">
+    <main className="epi-page" onClick={handleSkip}>
       <div className="epi-veil" />
-      <section className="epi-center">
-        <p className="epi-line">
-          {EPILOGUE_LINE.slice(0, shown)}
-          {!done && <span className="epi-caret" />}
+      <section className="epi-center epi-center-article">
+        {/* 已播完的行 */}
+        {lines.slice(0, lineIndex).map((line, i) => (
+          <p className="epi-article-line" key={i}>{line}</p>
+        ))}
+        {/* 当前打字行 */}
+        <p className="epi-article-line">
+          {current.slice(0, shown)}
+          {!lineDone && <span className="epi-caret" />}
         </p>
 
-        <div className={`epi-tail${done ? ' epi-tail-in' : ''}`}>
-          {onContinue && (
-            <button className="epi-gate-btn" onClick={onContinue} type="button">
-              继续
+        <div className={`epi-tail${allDone ? ' epi-tail-in' : ''}`}>
+          {allDone && (
+            <button className="epi-reset-btn" onClick={(e) => { e.stopPropagation(); onReset(); }} type="button">
+              重新开始
             </button>
           )}
-          <button className="epi-reset-btn" onClick={onReset} type="button">
-            重新开始
-          </button>
         </div>
       </section>
     </main>
