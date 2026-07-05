@@ -418,7 +418,7 @@ export const PRACTICE_ACTIVITIES: ActivityCard[] = [
     track: 'practice',
     timeSlots: ['noon', 'evening'],
     locationId: 'garden',
-    staminaCost: 2,
+    staminaCost: 1,
     practiceSkill: 'landscape',
     narratives: [
       '你什么也不画，只是看。竹影移过粉墙，泉声断续，看久了，山水的虚实忽然在心里排布开来。',
@@ -433,7 +433,7 @@ export const PRACTICE_ACTIVITIES: ActivityCard[] = [
     track: 'practice',
     timeSlots: ['noon', 'evening'],
     locationId: 'market',
-    staminaCost: 2,
+    staminaCost: 1,
     practiceSkill: 'figure',
     narratives: [
       '你在桥头支起小案。挑夫、货郎、药铺掌柜，一一入了速写。人物的活法，比临帖扎实。',
@@ -447,7 +447,7 @@ export const PRACTICE_ACTIVITIES: ActivityCard[] = [
     track: 'practice',
     timeSlots: ['noon', 'evening'],
     locationId: 'market',
-    staminaCost: 2,
+    staminaCost: 1,
     practiceSkill: 'architecture',
     narratives: [
       '你对着州桥的飞虹起稿，斗拱、栏板、桥洞，一笔不苟。界画的难，全在这分毫不让的规矩里。',

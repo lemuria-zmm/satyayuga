@@ -72,6 +72,8 @@ export interface ValidatedStatePatch {
   skillGainedTodayDelta?: number;
   /** 当日学识涨幅累加（2026-06-28 学识封顶）：仅练习结算填，累加到 time.knowledgeGainedToday */
   knowledgeGainedTodayDelta?: number;
+  /** 练习收益被每日封顶裁剪为 0 时的提示（2026-07-06 #4a）：结算笺显示，让玩家知道是封顶而非白练 */
+  cappedNote?: string;
 }
 
 export interface ActionResult {

@@ -175,9 +175,11 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
   if (patch.skillDelta) {
     const remaining = Math.max(0, DAILY_SKILL_CAP - state.time.skillGainedToday);
     let applied = 0;
+    let wantedSkill = 0; // 封顶前本欲增长的量（判是否被裁为 0，给玩家反馈）
     const capped: Partial<Record<SkillId, number>> = {};
     for (const [skillId, delta] of Object.entries(patch.skillDelta) as [SkillId, number][]) {
       if (delta > 0) {
+        wantedSkill += delta;
         const room = Math.max(0, remaining - applied);
         const granted = Math.min(delta, room);
         applied += granted;
@@ -188,6 +190,8 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
     }
     patch.skillDelta = capped;
     if (applied > 0) patch.skillGainedTodayDelta = applied;
+    // 封顶反馈（2026-07-06 #4a）：本欲长技却被每日封顶裁为 0 → 提示玩家是封顶而非白练
+    if (wantedSkill > 0 && applied === 0) patch.cappedNote = '今日画技已臻精进之限，明日再来';
   }
 
   // 每日学识封顶（2026-06-28）：练习签学识正增长受 DAILY_KNOWLEDGE_CAP - knowledgeGainedToday 约束
@@ -196,6 +200,7 @@ function resolvePractice(state: GameState, action: GameAction): { patch: Validat
     const granted = Math.min(patch.knowledgeDelta, room);
     patch.knowledgeDelta = granted;
     if (granted > 0) patch.knowledgeGainedTodayDelta = granted;
+    else patch.cappedNote = '今日学识已积到尽头，明日再进';
   }
 
   return { patch, text: pickNarrative(card.narratives) };
