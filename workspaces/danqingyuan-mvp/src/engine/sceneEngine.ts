@@ -119,8 +119,12 @@ export function rollNpcsPresent(state: GameState, action: GameAction, locationId
   }
   // 希孟画室：希孟必在场（专属场景，2026-06-25）
   if (locationId === 'ximeng_studio') present.add('ximeng');
+  // 希孟首遇前不滚入场景（2026-07-06 #1）：正式书房首遇（脚本）之前，希孟不在任何 wander/日常场景出场，
+  // 免得被迫在脚本外"首次现身"、逼 LLM 写不合情理的绕弯。首遇后才按 NPC_HAUNTS 正常 roll。
+  const metXimeng = state.progress.flags.metXimeng === true;
   for (const npcId of NPC_HAUNTS[locationId] ?? []) {
     if (present.size >= 2) break;
+    if (npcId === 'ximeng' && !metXimeng) continue;
     if (!present.has(npcId) && Math.random() < 0.4) present.add(npcId);
   }
   return [...present];
