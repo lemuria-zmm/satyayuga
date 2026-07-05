@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CHARACTERS } from '../content/characters';
-import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward, computeExamScore, determineEnding, EXAM_SKILL_GATE } from '../engine/gameEngine';
+import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward, computeExamScore, determineEnding } from '../engine/gameEngine';
 import { createInitialGameState } from '../engine/initialState';
 import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
@@ -2086,27 +2086,6 @@ export function App() {
         saveGameState(devState);
         setHasSave(true);
         setState(devState);
-      } : undefined}
-      onPreviewEnding={import.meta.env.DEV ? (score, ximengAffinity) => {
-        // 开发预览（2026-06-29；2026-06-30 改走结局序列）：引擎 determineEnding 生成对应档结局，启动结局序列逐段预览。
-        // 用真实引擎函数保证预览与实际逻辑一致；好感设到 ximengAffinity 以预览好感修饰/画室入口。
-        // 注意：computeExamScore 有本科技能 gating（<30 封顶 59 分），预览时玩家技能仍是初始 18，
-        //   会把"优 90 分"封成落第。预览意图是直跳目标档，故把本科技能临时拉到门槛以上让分数生效。
-        const previewState: GameState = {
-          ...state,
-          skills: { ...state.skills, [state.player.styleOrigin]: Math.max(state.skills[state.player.styleOrigin], EXAM_SKILL_GATE) },
-          relationships: {
-            ...state.relationships,
-            ximeng: { ...state.relationships.ximeng, hiddenAffinity: ximengAffinity },
-          },
-        };
-        const ending = determineEnding(previewState, computeExamScore(previewState, score));
-        const nextState = { ...previewState, ending };
-        setEndingDismissed(false);
-        setMentorReview(null);
-        setEndingStage('mentor_review');
-        setState(nextState);
-        void fetchMentorReview(nextState, ending);
       } : undefined}
     />
   );
