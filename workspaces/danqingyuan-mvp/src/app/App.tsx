@@ -86,10 +86,10 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-06-30.v22';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-07-05.v23';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-06-30.v10';
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-07-05.v11';
 
 /** VN 逐句（2026-06-30）：取 LLM segments，无则把整段正文当一个旁白单元兜底 */
 function buildSegments(output: { segments?: SceneSegment[]; narrativeText: string }): SceneSegment[] {

@@ -136,7 +136,7 @@ const ximengAtmosphere: Record<GameState['relationships']['ximeng']['emotionStat
   silent: '他没有与你搭话。只是你提到"水路"二字时，他的笔尖停了一瞬。',
   irritated: '他似乎不愿被打扰。笔下的墨色比平日更重。',
   trusting: '他看向你的时间比昨日稍久。',
-  avoidant: '你提到秘阁时，他避开了视线。',
+  avoidant: '你提到那处不便去的地方时，他避开了视线。',
   shaken: '他的手停在画卷边缘，像在犹豫要不要继续。',
 };
 
@@ -695,6 +695,11 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
         <div className="gm-loc-panel-title">院中去处</div>
         {LOCATION_PANEL_ORDER.map((locationId) => {
           const unlocked = state.progress.unlockedLocations.includes(locationId);
+          // 秘阁/希孟画室是主线剧情去处：解锁前**完全不列出**（连"未启"灰签都不显），
+          // 防止玩家在结局开启秘阁之前见到"秘阁"二字（2026-07-05 canon 前置隐藏）。
+          if (!unlocked && (locationId === 'secret_archive' || locationId === 'ximeng_studio')) {
+            return null;
+          }
           if (!unlocked) {
             return (
               <div className="gm-loc-sign locked" key={locationId}>

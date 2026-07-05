@@ -340,7 +340,12 @@ const TIME_SLOT_LABELS: Record<GameState['time']['timeSlot'], string> = {
 export function buildTodayPlan(state: GameState): string | undefined {
   const parts: string[] = [];
   if (state.time.day >= 7) {
-    parts.push('今日为丹青试之日');
+    if (state.progress.flags.firstExamTaken) {
+      // 考后（放榜之后）：故事围绕考完展开——院里松一口气、各怀心事，前路怅惘（2026-07-05 第七日重构）
+      parts.push('丹青试已考毕，此刻是放榜之后——院中人松了口气，却也各怀心事，对前路半是期许半是怅惘');
+    } else {
+      parts.push('今日为丹青试之日');
+    }
   } else {
     const courseId = state.curriculum?.[state.time.day];
     if (courseId) {
