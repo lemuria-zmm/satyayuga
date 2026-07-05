@@ -540,7 +540,7 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
           {!sceneReading && (
             <div className="gm-action-count">
               {isFinalChapter
-                ? '七日已尽。时间在秘阁门前停了下来。'
+                ? '七日已尽。这一日的余光里，时间静静停了下来。'
                 : <>现在是第{state.time.day}日·{timeSlotLabels[state.time.timeSlot]}。{daysUntilExam > 0 && ` 距丹青试还有 ${daysUntilExam} 日。`}</>}
             </div>
           )}
