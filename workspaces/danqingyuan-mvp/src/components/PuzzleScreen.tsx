@@ -10,7 +10,8 @@ interface PuzzleScreenProps {
   assessmentPrompt: PaintingPromptGeneratorOutput;
   /** 玩家七日带入 + 秘阁已解锁的线索 ID（来自 state.puzzle.collectedClueIds） */
   collectedClueIds: string[];
-  onCancel: () => void;
+  /** 暂离秘阁（2026-07-05：日终序列内不给退出，省略即隐藏返回按钮） */
+  onCancel?: () => void;
   onSubmit: (result: PuzzleSubmission) => Promise<void> | void;
 }
 
@@ -144,7 +145,7 @@ export function PuzzleScreen({ assessmentPrompt, collectedClueIds, onCancel, onS
   const topBar = (withBack: boolean) => (
     <header className="pzl-top-bar">
       <div className="pzl-top-bar-inner">
-        {withBack && (
+        {withBack && onCancel && (
           <>
             <button className="pzl-back-btn" onClick={onCancel} type="button">
               ← 暂离秘阁

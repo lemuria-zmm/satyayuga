@@ -1,4 +1,3 @@
-import { HAIYOU_PAINTING } from '../content/paintings';
 import { LOCATIONS } from '../content/locations';
 import { COURSES } from '../content/courses';
 import { ACTIVITY_BY_ID, ALL_ACTIVITIES } from '../content/activities';
@@ -403,20 +402,9 @@ function getActivitySlotActions(state: GameState, slot: GameState['time']['timeS
   ).map((card) => activityToAction(card, state.player.origin));
 }
 
-/** 上午/下午行动：活动卡 + 秘阁（解锁后）+ 报时钟收尾签（演完 ≥1 场即可点，满 3 场 UI 高亮） */
+/** 上午/下午行动：活动卡 + 报时钟收尾签（演完 ≥1 场即可点，满 3 场 UI 高亮） */
 function getDaySlotActions(state: GameState): GameAction[] {
   const actions = getActivitySlotActions(state, state.time.timeSlot);
-
-  if (state.progress.flags.archiveUnlocked && !state.progress.flags.haiyouFirstInterpreted) {
-    actions.unshift({
-      id: 'solve-haiyou',
-      type: 'solve_puzzle',
-      label: '秘阁观《骸游图》',
-      paintingId: HAIYOU_PAINTING.id,
-      locationId: 'secret_archive',
-      staminaCost: 1,
-    });
-  }
 
   // 报时钟收尾签（2026-06-18 A+C 修正）：演完 ≥1 场即可点，玩家随时有推进出口（治"去别处后卡死跳不出院堂"）；
   // 自动开场仍上限 MAX_SLOT_SCENES，满后 UI 高亮强调"该收了"。
@@ -427,23 +415,13 @@ function getDaySlotActions(state: GameState): GameAction[] {
   return actions;
 }
 
-/** 终章（第7日晚间后时间冻结）：只保留秘阁与自由走动 */
-function getFinalChapterActions(state: GameState): GameAction[] {
-  const actions: GameAction[] = [];
-  // 身处秘阁即视为已达秘阁（archiveUnlocked 兜底）：治旧档/回退路径未置 archiveUnlocked 时
-  // 人已在秘阁却出不了解谜签（"此处此刻无事可做"）。2026-07-03 加固。
-  const atArchive = state.currentLocation === 'secret_archive';
-  if ((state.progress.flags.archiveUnlocked || atArchive) && !state.progress.flags.haiyouFirstInterpreted) {
-    actions.push({
-      id: 'solve-haiyou',
-      type: 'solve_puzzle',
-      label: '秘阁观《骸游图》',
-      paintingId: HAIYOU_PAINTING.id,
-      locationId: 'secret_archive',
-      staminaCost: 0,
-    });
-  }
-  return actions;
+/**
+ * 终章（第7日晚间就寝后 finalChapter=true）：时间冻结。
+ * 2026-07-05 第七日重构：秘阁五幕已移入"日终收尾序列"（App 按 finalChapter 触发的结局演出），
+ * 不再作主界面 location-gated 行动。终章态主界面不再单独可玩（被日终序列覆盖），此处返回空。
+ */
+function getFinalChapterActions(_state: GameState): GameAction[] {
+  return [];
 }
 
 function getSlotActions(state: GameState): GameAction[] {

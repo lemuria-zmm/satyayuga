@@ -37,7 +37,6 @@ import { ArchiveScreen } from '../components/ArchiveScreen';
 import { GuideDialogue } from '../components/GuideDialogue';
 import type { ExamAnswer } from '../components/ExamScreen';
 import { ExamScreen } from '../components/ExamScreen';
-import { EndingScreen } from '../components/EndingScreen';
 import { EndingDialogue } from '../components/EndingDialogue';
 import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
 import { XimengBridge } from '../components/XimengBridge';
@@ -210,18 +209,13 @@ export function App() {
   // 穿越引语页（2026-06-30）：入院名录前的打字机引语，每次进程只放一次（有存档可续则跳过）
   const [prologueSeen, setPrologueSeen] = useState(() => loadSaveFile() !== null);
   const [isExamOpen, setIsExamOpen] = useState(false);
-  const [isPuzzleOpen, setIsPuzzleOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-  // 结局页临时关闭（2026-06-28）：玩家点「入秘阁一观」后暂隐结局页，进主界面看《骸游图》；可再唤回 */
-  const [endingDismissed, setEndingDismissed] = useState(false);
-  // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出（导师点评→授衔→收尾）。null=不在序列中。UI 临时态不入存档。
+  // 结局演出段（2026-06-30；2026-07-05 第七日重构）：exam_review 考后简评 / 日终收尾序列各幕。null=不在演出中，UI 临时态不入存档。
   const [endingStage, setEndingStage] = useState<EndingStage | null>(null);
-  // 导师点评 LLM 文（批一）：null=生成中
+  // 导师点评 LLM 文：null=生成中
   const [mentorReview, setMentorReview] = useState<{ dialogue: string; actionText: string } | null>(null);
-  // 见希孟 LLM 文（批二）：null=生成中
+  // 见希孟 LLM 文：null=生成中
   const [ximengMeet, setXimengMeet] = useState<{ dialogue: string; actionText: string } | null>(null);
-  // 秘阁引桥过场（2026-07-02）：收尾页点「入秘阁一观」先播"发现重门虚掩"过场，「推门而入」才落地秘阁
-  const [archiveBridgeOpen, setArchiveBridgeOpen] = useState(false);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
@@ -229,9 +223,8 @@ export function App() {
   // 考试模式（2026-06-28；2026-06-30 批二加 retake）：final=第7日丹青试；quick=晚间温书自测；retake=落第补考（保底过）
   const [examMode, setExamMode] = useState<'final' | 'quick' | 'retake'>('final');
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
-  // 幕五揭卷（2026-07-02）：submitPuzzle 拿到 tier 后不关屏，转揭卷固定脚本演出；onDone 才真正关闭
+  // 揭卷幕（2026-07-02；2026-07-05 作日终序列 reveal 幕）：submitPuzzle 存 tier/feedback 供 HaiyouRevealScreen
   const [puzzleReveal, setPuzzleReveal] = useState<{ tier: InterpretationTier; feedback: string } | null>(null);
-  const [pendingPuzzleSettlement, setPendingPuzzleSettlement] = useState<ValidatedStatePatch | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
@@ -248,13 +241,14 @@ export function App() {
   const actions = useMemo(() => (state ? getAvailableActions(state) : []), [state]);
   /** 当前应播的引导脚本（固定脚本）：场景/考试/解谜/对话进行中不插播 */
   const guideStep =
-    state && !activeScene && !isExamOpen && !isPuzzleOpen && !dialogueNpcId ? getActiveGuideStep(state) : null;
+    state && !activeScene && !isExamOpen && !endingStage && !dialogueNpcId ? getActiveGuideStep(state) : null;
 
   // 叙事时段自动开场（2026-06-18 A+C）：进入 forenoon/afternoon、走到新地点时自动开 LLM 场景；
   // 玩家通过三件套（继续/推荐/去别处）推进。去别处不推进时段、回主界面自由走动。
   // 防重入：每个地点本时段只自动开一次（visited 集合），满 MAX_SLOT_SCENES 场后停开（报时钟收尾签接管）。
   useEffect(() => {
     if (!state || activeScene || guideStep) return;
+    if (endingStage) return; // 结局演出中（含考后简评）：不后台起日常场景（2026-07-05 治后台乱入根因）
     if (state.progress.flags.finalChapter) return;
     const slot = state.time.timeSlot;
     if (slot !== 'forenoon' && slot !== 'afternoon') return;
@@ -281,6 +275,25 @@ export function App() {
     };
     runAction(state, action);
   }, [state, activeScene, guideStep]);
+
+  // 日终收尾序列触发（2026-07-05 第七日重构）：第七日晚间就寝→advanceTime 设 finalChapter=true→
+  // 若已考完（state.ending 在）且不在演出中，按持久 flag 断点续演（reload 安全）：
+  //   未授衔→title_grant(授衔)；已授衔未揭卷→archive_bridge(秘阁引桥)；已揭卷→epilogue(收尾)。
+  useEffect(() => {
+    if (!state) return;
+    if (!state.progress.flags.finalChapter || !state.ending) return;
+    if (endingStage !== null) return; // 序列已在演
+    const flags = state.progress.flags;
+    if (!flags.firstExamPassed) {
+      commitTitleGrant(state, state.ending);
+      setEndingStage('title_grant');
+    } else if (!flags.haiyouRevealed) {
+      setEndingStage('archive_bridge');
+    } else {
+      setEndingStage('epilogue');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, endingStage]);
 
   function showSettlement(patch: ValidatedStatePatch) {
     setSettlement((prev) => ({ patch, seq: (prev?.seq ?? 0) + 1 }));
@@ -902,7 +915,7 @@ export function App() {
   useEffect(() => {
     window.render_game_to_text = () =>
       JSON.stringify({
-        mode: state === null ? 'setup' : !state.progress.flags.admitted ? 'admission' : guideStep ? 'guide' : state.progress.flags.intro_tour_done && !state.curriculum ? 'planner' : isExamOpen ? 'exam' : isPuzzleOpen ? 'puzzle' : dialogueNpcId ? 'dialogue' : 'main',
+        mode: state === null ? 'setup' : !state.progress.flags.admitted ? 'admission' : guideStep ? 'guide' : state.progress.flags.intro_tour_done && !state.curriculum ? 'planner' : isExamOpen ? 'exam' : endingStage === 'puzzle' ? 'puzzle' : dialogueNpcId ? 'dialogue' : 'main',
         guide: guideStep?.script.id ?? null,
         curriculum: state?.curriculum ?? null,
         player: state?.player,
@@ -928,7 +941,7 @@ export function App() {
         lastRenderedText: state?.lastRenderedText,
       });
     window.advanceTime = () => undefined;
-  }, [actions, activeScene, dialogueNpcId, examQuestions, isExamOpen, isPuzzleOpen, llmError, puzzleAssessmentPrompt, state]);
+  }, [actions, activeScene, dialogueNpcId, examQuestions, isExamOpen, endingStage, llmError, puzzleAssessmentPrompt, state]);
 
   if (state === null) {
     if (!prologueSeen) {
@@ -1210,16 +1223,6 @@ export function App() {
       }
       return;
     }
-    if (action.type === 'solve_puzzle') {
-      try {
-        const prompt = await generatePaintingPrompt(state, 'puzzle', 'archive_observation');
-        setPuzzleAssessmentPrompt(prompt);
-        setIsPuzzleOpen(true);
-      } catch (error) {
-        setLlmError(renderLlmError(error));
-      }
-      return;
-    }
     if (action.type === 'talk_to_npc' && action.npcId) {
       setDialogueNpcId(action.npcId);
       return;
@@ -1254,10 +1257,9 @@ export function App() {
     setHasSave(false);
     setPrologueSeen(false);
     setIsExamOpen(false);
-    setIsPuzzleOpen(false);
-    setEndingDismissed(false);
     setEndingStage(null);
-    setArchiveBridgeOpen(false);
+    setPuzzleReveal(null);
+    setPuzzleAssessmentPrompt(null);
     setMentorReview(null);
     setXimengMeet(null);
     setDialogueNpcId(null);
@@ -1322,8 +1324,8 @@ export function App() {
     const passed = quickScore >= 60;
     const feedback = evaluations.map((evaluation) => evaluation.visibleFeedback).join('；');
 
-    // 补考（2026-06-30 批二）：落第后保底过——finalScore 至少 60（保底过线），重算 ending 为通过档，直接进授衔段。
-    // 不重启序列、不扣体力、不推时段；技能加成照给（补考也是真画了一场）。
+    // 补考（2026-06-30 批二；2026-07-05 第七日重构）：落第后就地保底过——finalScore 至少 60，
+    // 重算 ending 为通过档；不授衔（授衔移到日终），只更新成绩后回考后日常。不扣体力、不推时段。
     if (examMode === 'retake') {
       const exam = computeExamScore(state, rawScore);
       const guaranteedScore = Math.max(exam.finalScore, 60); // 保底到通过线
@@ -1347,9 +1349,13 @@ export function App() {
       };
       setIsExamOpen(false);
       setExamQuestions([]);
-      // 补考过 → 授衔段（commitTitleGrant 用重算后的通过档 ending 授名分）
-      commitTitleGrant(retakeState, retakeEnding);
-      setEndingStage('title_grant');
+      saveGameState(retakeState);
+      setHasSave(true);
+      setState(retakeState);
+      // 补考过 → 再来一段简评（通过档）→「继续」回考后日常；日终就寝后授衔
+      setMentorReview(null);
+      setEndingStage('exam_review');
+      void fetchMentorReview(retakeState, retakeEnding);
       return;
     }
 
@@ -1418,10 +1424,11 @@ export function App() {
     showSettlement(patch);
     setState(nextState);
 
-    // 丹青试 → 启动结局序列（2026-06-30 批一）：导师点评 → 授衔 → 收尾
+    // 丹青试交卷 → 简短导师点评（2026-07-05 第七日重构：不再直接走完整结局序列）。
+    // exam_review「继续」：落第→就地补考保底过；通过→回考后日常。授衔/秘阁/收尾移到日终（就寝后 finalChapter 触发）。
     if (endingResult) {
       setMentorReview(null);
-      setEndingStage('mentor_review');
+      setEndingStage('exam_review');
       void fetchMentorReview(nextState, endingResult);
     }
   }
@@ -1473,34 +1480,45 @@ export function App() {
   }
 
   /**
-   * 结局序列推进（2026-06-30 批一骨架 + 批二补全）：按当前段算下一段。
-   * - retake：落第→点评后启动真补考（ExamScreen examMode='retake' 保底过），不在此折叠。
-   * - ximeng_meet：好感≥知己→拉希孟话别 LLM。
-   * 授衔段（title_grant）提交时正式授 rank / 解锁秘阁画室 / 落 firstExamPassed（推迟到此，落第补考过后才给名分）。
+   * 日终收尾序列推进（2026-07-05 第七日重构）：按当前段算下一段并办理副作用。
+   * 日终链：title_grant →（好感≥知己 ximeng_bridge→ximeng_meet）→ archive_bridge → puzzle → reveal → epilogue。
+   * exam_review/retake 在考后就地处理（见 advanceExamReview / submitExam），不走此函数。
    */
   function advanceEndingStage(from: EndingStage) {
     if (!state || !state.ending) return;
     const next = nextEndingStage(from, state.ending, state);
 
-    if (next === 'retake') {
-      // 批二：落第补考——点评后真走一场 ExamScreen（examMode='retake' 保底过）
-      void launchRetake(state);
-      setEndingStage('retake');
-      return;
-    }
-    if (next === 'title_grant') {
-      commitTitleGrant(state, state.ending);
-      setEndingStage('title_grant');
-      return;
-    }
     if (next === 'ximeng_meet') {
-      // 批二：见希孟——拉希孟话别预热语
       setXimengMeet(null);
       void fetchXimengMeet(state);
       setEndingStage('ximeng_meet');
       return;
     }
+    if (next === 'puzzle') {
+      // 进秘阁五幕：生成观画 prompt（原主界面 solve_puzzle 行动时机，现移到序列幕）
+      void (async () => {
+        try {
+          const prompt = await generatePaintingPrompt(state, 'puzzle', 'archive_observation');
+          setPuzzleAssessmentPrompt(prompt);
+          setEndingStage('puzzle');
+        } catch (error) {
+          setLlmError(renderLlmError(error));
+        }
+      })();
+      return;
+    }
     setEndingStage(next);
+  }
+
+  /** 考后简评「继续」（2026-07-05）：落第→就地补考保底过；通过→回考后日常（setEndingStage null）。 */
+  function advanceExamReview() {
+    if (!state || !state.ending) return;
+    if (state.ending.tier === 'fail') {
+      void launchRetake(state);
+      setEndingStage('retake');
+    } else {
+      setEndingStage(null); // 回考后日常；日终就寝后由 finalChapter 触发日终序列
+    }
   }
 
   /** 落第补考（2026-06-30 批二）：复用 final 出题，examMode='retake'；submitExam retake 分支保底过 */
@@ -1551,21 +1569,16 @@ export function App() {
     }
   }
 
-  /** 授衔提交（2026-06-30）：授 rank=zhihou（落第补考保底过同授）+ 解锁秘阁/画室 + 落 firstExamPassed/archiveUnlocked 旗标。
+  /** 授衔提交（2026-06-30；2026-07-05 日终触发）：授 rank=zhihou（落第补考保底过同授）+ 解锁秘阁/画室 + 落 firstExamPassed/archiveUnlocked。
+   * 由日终收尾序列 title_grant 段调用（此刻 finalChapter 已由就寝 advanceTime 设，无需再设）。
    * 以传入 baseState/ending 为准（避免 setState 异步后读 stale state）。 */
   function commitTitleGrant(baseState: GameState, ending: EndingResult) {
-    // 落第补考保底过后 ending 已被重算为通过档（见 submitExam retake 分支），此处统一按 ending 授名分
     const grantedRank = ending.rankChange ?? ('zhihou' as const);
     const granted = applyValidatedStatePatch(baseState, {
       rankChange: grantedRank,
       flagsSet: {
         firstExamPassed: true,
         archiveUnlocked: ending.unlockArchive,
-        // 授衔即进终章：时间冻结（不再推进时段/不触发自动 wander 场景），
-        // 让秘阁五幕解谜在干净的终局态进行（getFinalChapterActions 出秘阁签，0 体力）。
-        // 丹青试在晨课通过只推进到 forenoon、永远走不到晚间，故须在此显式进终章，
-        // 否则玩家落回 forenoon 普通叙事时段——秘阁签被地点过滤、自动 wander 乱入（2026-07-02 修）。
-        finalChapter: true,
       },
       unlockedLocations: [
         ...(ending.unlockArchive ? ['secret_archive' as const] : []),
@@ -1576,38 +1589,10 @@ export function App() {
     setState(granted);
   }
 
-  /** 通关探索入口落地（2026-07-02；2026-07-03 加固）：暂隐结局序列进主界面，落到对应地点。
-   * **自足解锁**：入秘阁必带 archiveUnlocked+finalChapter+授祗候——否则从 fallback EndingScreen（reload 丢 endingStage）
-   *   或旧档进来时 commitTitleGrant 未跑过 → 秘阁签因 archiveUnlocked 未置而不出（"此处此刻无事可做"）。
-   * 正文同步接一句落地文（否则还显示丹青试批语，与过场断裂）。 */
-  function enterEndingLocation(locationId: 'secret_archive' | 'ximeng_studio') {
-    setArchiveBridgeOpen(false);
-    setEndingStage(null);
-    setEndingDismissed(true);
-    const arrivalText =
-      locationId === 'secret_archive'
-        ? '门轴轻响，你侧身入内。秘阁深处灯影幽微，架上卷轴层叠，尘香扑面。正中的石案上，平展着一幅画。'
-        : '你来到希孟画室门前。门半掩，青绿色的光从缝隙里透出。';
-    setState((prev) => {
-      if (!prev) return prev;
-      // 自足解锁：确保入秘阁后解谜签必然可达（幂等——已解锁则无副作用）
-      const unlockPatch: ValidatedStatePatch =
-        locationId === 'secret_archive'
-          ? { flagsSet: { archiveUnlocked: true, finalChapter: true }, unlockedLocations: ['secret_archive'] }
-          : { flagsSet: { finalChapter: true }, unlockedLocations: ['ximeng_studio'] };
-      const unlocked = applyValidatedStatePatch(prev, unlockPatch);
-      const moved: GameState = { ...unlocked, currentLocation: locationId, lastRenderedText: arrivalText };
-      saveGameState(moved);
-      return moved;
-    });
-  }
-
+  /** 秘阁五幕解谜提交（2026-07-05 第七日重构：作日终收尾序列的一幕，不再是主界面行动）。
+   * 评估玩家解读 → 落 clue/flags/tier + haiyouRevealed → 转揭卷幕（reveal）。终章时间已冻结，不推时段/不出结算笺。 */
   async function submitPuzzle(submission: PuzzleSubmission) {
     if (!state || !puzzleAssessmentPrompt) {
-      return;
-    }
-    const puzzleAction = actions.find((action) => action.type === 'solve_puzzle');
-    if (!puzzleAction) {
       return;
     }
 
@@ -1642,17 +1627,17 @@ export function App() {
     const evaluation = response.output;
     const suggestedClues = evaluation.suggestedStatePatch.cluesGranted ?? [];
     const tierIsStrong = evaluation.interpretationTier !== 'shallow';
-    // 戏剧性揭示移到幕五「揭卷」固定脚本（haiyouReveal）；此处只留可见批语入账本。
+    // 戏剧性揭示在揭卷幕（HaiyouRevealScreen 固定脚本）；此处只留可见批语入账本。
     const renderedText = `《骸游图》评估：${evaluation.visibleFeedback}`;
 
     const patch: ValidatedStatePatch = {
       skillDelta: evaluation.suggestedStatePatch.skillDelta,
-      staminaDelta: -puzzleAction.staminaCost,
-      timeAdvance: true,
+      // 终章时间冻结：不扣体力、不推时段
       cluesGranted: Array.from(new Set([...submission.clueIds, ...suggestedClues])),
       flagsSet: {
         haiyouDiscovered: true,
         haiyouFirstInterpreted: true,
+        haiyouRevealed: true,
         haiyouThreadStrong: tierIsStrong,
         haiyouDisappearanceHooked: evaluation.interpretationTier === 'core',
         ...collectSuggestedFlags([evaluation]),
@@ -1663,7 +1648,7 @@ export function App() {
       state: patchedState,
       actionType: 'solve_puzzle',
       renderedText,
-      locationId: puzzleAction.locationId,
+      locationId: 'secret_archive',
       memoryPatch: {
         ...evaluation.memoryPatch,
         storyLedgerNote: renderedText,
@@ -1681,7 +1666,7 @@ export function App() {
           ...withMemory.puzzle.interpretationHistory,
           {
             id: `interpretation-${Date.now()}`,
-            paintingId: puzzleAction.paintingId ?? 'haiyou',
+            paintingId: 'haiyou',
             day: state.time.day,
             selectedClueIds: submission.clueIds,
             freeText: submission.freeText,
@@ -1696,44 +1681,10 @@ export function App() {
 
     saveGameState(nextState);
     setHasSave(true);
-    // 幕五揭卷（2026-07-02）：不直接关屏——转揭卷固定脚本演出（HaiyouRevealScreen），
-    // 结算笺延后到揭卷「合卷」时出，避免盖在揭卷演出上。
+    // 转揭卷幕（reveal）：存 tier/feedback 供 HaiyouRevealScreen；日终序列推进
     setPuzzleReveal({ tier: evaluation.interpretationTier, feedback: evaluation.visibleFeedback });
-    setPendingPuzzleSettlement(patch);
     setState(nextState);
-  }
-
-  /** 揭卷合卷（2026-07-02）：关闭秘阁 + 出延后的结算笺。 */
-  function finishPuzzleReveal() {
-    setPuzzleReveal(null);
-    setIsPuzzleOpen(false);
-    setPuzzleAssessmentPrompt(null);
-    if (pendingPuzzleSettlement) {
-      showSettlement(pendingPuzzleSettlement);
-      setPendingPuzzleSettlement(null);
-    }
-  }
-
-  // 幕五揭卷：优先于 PuzzleScreen 渲染（submit 后转揭卷演出）
-  if (puzzleReveal) {
-    return (
-      <HaiyouRevealScreen
-        tier={puzzleReveal.tier}
-        feedback={puzzleReveal.feedback}
-        onDone={finishPuzzleReveal}
-      />
-    );
-  }
-
-  if (isPuzzleOpen && puzzleAssessmentPrompt && state) {
-    return (
-      <PuzzleScreen
-        assessmentPrompt={puzzleAssessmentPrompt}
-        collectedClueIds={state.puzzle.collectedClueIds}
-        onCancel={() => setIsPuzzleOpen(false)}
-        onSubmit={submitPuzzle}
-      />
-    );
+    setEndingStage('reveal');
   }
 
   /**
@@ -1957,38 +1908,34 @@ export function App() {
     );
   }
 
-  // 结局序列（2026-06-30 批一）：丹青试交卷后分段演出，优先于旧 EndingScreen。
-  // 导师点评(A) → 授衔(B) → 收尾(E)；落第补考桩/见希孟桩在 advanceEndingStage 内处理。
-  // 秘阁引桥过场（2026-07-02）：优先于结局序列渲染——发现重门虚掩 → 推门而入落地秘阁。
-  // 过场末尾承接探索入口（推门而入 + 好感够则「赴希孟画室」），确保"授衔→引文→入秘阁按钮"顺序。
-  if (archiveBridgeOpen && state.ending) {
-    return (
-      <ArchiveBridge
-        onEnter={() => enterEndingLocation('secret_archive')}
-        onEnterStudio={state.ending.unlockStudio ? () => enterEndingLocation('ximeng_studio') : undefined}
-      />
-    );
-  }
-
-  if (state.ending && endingStage && !endingDismissed) {
+  // 结局演出（2026-07-05 第七日重构）：endingStage 非空即渲对应幕，覆盖主界面。
+  // 考后简评（exam_review/retake）在考后就地演，「继续」回日常；日终序列（就寝后 finalChapter 触发）
+  // 授衔→(见希孟)→秘阁引桥→五幕→揭卷→收尾。秘阁不再进主界面。
+  if (endingStage) {
     const ending = state.ending;
-    // 收尾页「继续」→ 秘阁引桥过场（引文）→ 过场末尾才给「推门而入 / 赴画室」入口。
-    // 保证顺序：授衔 → 收尾 → 引文 → 入秘阁按钮（按钮不再抢在引文前出现）。
-    // 无任何解锁（理论上通过必解锁秘阁，此处兜底）时收尾页只留「重新开始」。
-    const openBridge = ending.unlockArchive || ending.unlockStudio ? () => setArchiveBridgeOpen(true) : undefined;
-
-    if (endingStage === 'mentor_review') {
+    if (endingStage === 'exam_review') {
       return (
         <EndingDialogue
           npcId={mentorForStyle(state.player.styleOrigin)}
           dialogue={mentorReview ? mentorReview.dialogue : null}
           actionText={mentorReview ? mentorReview.actionText : null}
           caption="丹青试 · 放榜点评"
-          onContinue={() => advanceEndingStage('mentor_review')}
+          onContinue={advanceExamReview}
         />
       );
     }
-    if (endingStage === 'title_grant') {
+    if (endingStage === 'retake') {
+      // 补考出题中的过渡占位（isExamOpen 尚未开）
+      return (
+        <EndingDialogue
+          npcId={mentorForStyle(state.player.styleOrigin)}
+          dialogue={null}
+          caption="补试 · 准备中"
+          onContinue={() => {}}
+        />
+      );
+    }
+    if (endingStage === 'title_grant' && ending) {
       return (
         <TitleGrantOverlay
           ending={ending}
@@ -2011,36 +1958,32 @@ export function App() {
         />
       );
     }
-    if (endingStage === 'epilogue') {
-      return <EpilogueScreen ending={ending} onContinue={openBridge} onReset={resetGame} />;
+    if (endingStage === 'archive_bridge') {
+      return <ArchiveBridge onEnter={() => advanceEndingStage('archive_bridge')} />;
     }
-    // retake：补考出题中（isExamOpen 尚未开）的过渡，显点评页占位避免回落旧 EndingScreen
-    if (endingStage === 'retake') {
+    if (endingStage === 'puzzle' && puzzleAssessmentPrompt) {
       return (
-        <EndingDialogue
-          npcId={mentorForStyle(state.player.styleOrigin)}
-          dialogue={null}
-          caption="补试 · 准备中"
-          onContinue={() => {}}
+        <PuzzleScreen
+          assessmentPrompt={puzzleAssessmentPrompt}
+          collectedClueIds={state.puzzle.collectedClueIds}
+          onSubmit={submitPuzzle}
         />
       );
     }
+    if (endingStage === 'reveal' && puzzleReveal) {
+      return (
+        <HaiyouRevealScreen
+          tier={puzzleReveal.tier}
+          feedback={puzzleReveal.feedback}
+          onDone={() => advanceEndingStage('reveal')}
+        />
+      );
+    }
+    if (endingStage === 'epilogue' && ending) {
+      return <EpilogueScreen ending={ending} onReset={resetGame} />;
+    }
   }
 
-  // 丹青试结局页（2026-06-28；2026-06-29 双入口；2026-07-03 入口收敛为「继续」→引桥）：
-  // 旧静态结局页，作回退/参考（endingStage 丢失如 reload/DEV 时命中）。授衔文+回顾在页上，
-  // 「继续」→ 秘阁引桥过场（引文→推门而入），保证"授衔→引文→入秘阁按钮"顺序。
-  if (state.ending && !endingDismissed) {
-    const openBridge = state.ending.unlockArchive || state.ending.unlockStudio ? () => setArchiveBridgeOpen(true) : undefined;
-    return (
-      <EndingScreen
-        ending={state.ending}
-        state={state}
-        onContinue={openBridge}
-        onReset={resetGame}
-      />
-    );
-  }
 
   return (
     <MainGameScreen
