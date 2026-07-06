@@ -226,6 +226,20 @@ export class MockLlmAdapter implements LlmAdapter {
         potentialClueIds: [],
         canonWarnings: ['以诗入画雅题，不揭示主线秘密。'],
       },
+      free_creation: {
+        id: 'mock-free-creation',
+        promptText: `以你这些时日所见——${(request.input.inspirations ?? []).map((i) => i.label).join('、') || '院中所见'}——为意，作一幅${request.input.majorSkillLabel ?? '画'}，说说你会怎么画、要立什么意。`,
+        options: [],
+        freeInputHint: '说说你会取哪些入画、怎么布置经营、想立什么意。',
+        hiddenRubric: {
+          coreSignals: ['把所选灵感熔于一个有立意的构图', '见取舍与巧思', '合本科技法'],
+          partialSignals: ['用了灵感但堆砌罗列', '立意平平'],
+          shallowSignals: ['离题空泛', '没真用上灵感', '与本科不符'],
+          forbiddenInterpretations: ['坐实希孟消失原因', '骸游图四人共创'],
+        },
+        potentialClueIds: [],
+        canonWarnings: ['自由创作只取灵感画意，不揭示主线秘密。'],
+      },
     };
     const selectedPrompt = prompts[request.input.questionType];
     const output: PaintingPromptGeneratorOutput = {

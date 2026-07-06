@@ -20,6 +20,7 @@ const allowedQuestionTypes = new Set([
   'character_dispute',
   'archive_observation',
   'poem_intent',
+  'free_creation',
 ]);
 const allowedSkillIds = new Set(['landscape', 'figure', 'architecture']);
 const allowedInterpretationTiers = new Set(['core', 'partial', 'shallow']);
@@ -258,6 +259,14 @@ function validatePaintingPromptOutput(output, errors) {
   requireStringArray(output, 'potentialClueIds', errors);
   requireStringArray(output, 'canonWarnings', errors);
   validateHiddenRubric(output.hiddenRubric, errors);
+
+  // 自由创作（2026-07-06）：无选项，只凭玩家自陈构思——options 须为空数组，跳过三选项校验。
+  if (output.questionType === 'free_creation') {
+    if (!Array.isArray(output.options) || output.options.length !== 0) {
+      errors.push('schema: free_creation options must be empty');
+    }
+    return;
+  }
 
   if (!Array.isArray(output.options) || output.options.length !== 3) {
     errors.push('schema: options must contain exactly three choices');

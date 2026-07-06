@@ -147,6 +147,27 @@ function generateCharacterDialogueOutput(request) {
 }
 
 function generatePaintingPromptOutput(request) {
+  // 自由创作（2026-07-06）：据灵感 + 本科动态出命题（非静态查表）
+  if (request.input?.questionType === 'free_creation') {
+    const insp = (request.input.inspirations ?? []).map((i) => i.label).join('、') || '院中所见';
+    const major = request.input.majorSkillLabel ?? '画';
+    return {
+      id: 'proxy-free-creation',
+      questionType: 'free_creation',
+      promptText: `以你这些时日所见——${insp}——为意，作一幅${major}，说说你会怎么画、要立什么意。`,
+      options: [],
+      freeInputHint: '说说你会取哪些入画、怎么布置经营、想立什么意。',
+      hiddenRubric: {
+        coreSignals: ['把所选灵感熔于一个有立意的构图', '见取舍与巧思', '合本科技法'],
+        partialSignals: ['用了灵感但堆砌罗列', '立意平平'],
+        shallowSignals: ['离题空泛', '没真用上灵感', '与本科不符'],
+        forbiddenInterpretations: ['坐实希孟消失原因', '骸游图四人共创'],
+      },
+      relatedSkills: request.input.relatedSkills,
+      potentialClueIds: [],
+      canonWarnings: ['自由创作只取灵感画意，不揭示主线秘密。'],
+    };
+  }
   const selectedPrompt = promptByQuestionType[request.input?.questionType];
   if (!selectedPrompt) {
     throw new Error(`Unsupported question type: ${request.input?.questionType}`);

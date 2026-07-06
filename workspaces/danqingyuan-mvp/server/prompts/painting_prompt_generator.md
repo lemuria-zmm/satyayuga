@@ -1,5 +1,5 @@
 <!-- prompt-role: painting_prompt_generator -->
-<!-- prompt-version: painting_prompt_generator@2026-06-30.v4 -->
+<!-- prompt-version: painting_prompt_generator@2026-07-06.v5 -->
 
 # 丹青试与秘阁题目生成 Prompt
 
@@ -15,6 +15,7 @@
   - `character_dispute`：人物交锋，在两种画意或角色立场间调停。
   - `archive_observation`：秘阁观画，把画中线索并在一起看。
   - `poem_intent`：**以诗入画**（宋代画院科举真实考法），见下节。
+  - `free_creation`：**自由创作**（丹青试压轴），据玩家择取的灵感 + 本科画科拟自由命题，见下节。
 - 题目允许暧昧和留白，但选项要有可辨的倾向。
 
 ## 以诗入画（`poem_intent`）
@@ -28,6 +29,22 @@
   - `leansTo` 按选项侧重的画科给（含蓄写意多偏 `landscape`，工细实景偏 `architecture`，人物点景偏 `figure`）。
 - `hiddenRubric` 据此给：`coreSignals`=抓住"虚"字的言外之意/以景写意/以少胜多；`partialSignals`=画对了但失于照实、不够含蓄；`shallowSignals`=只堆砌实物、没扣住那个字/画错重点；`forbiddenInterpretations`=照旧的主线剧透边界。
 - 诗题不必牵涉主线伏笔，可纯是一道雅致的画意题；但若自然，也可让诗境与"繁华与黑暗的交织"的世道底色隐隐呼应（不强求）。
+
+## 自由创作（`free_creation`）
+
+丹青试的压轴题。玩家把这七日在院里院外的所见所闻（`inspirations` 里给出的一组灵感——人物、地点、物件、母题、当日天时等）择取了三五样，考官据此**为他量身出一道自由命题**，让他自陈创作构思。这是"创作"而非"选择"，考的是立意与巧思。
+
+- 输入 `inspirations`（玩家所选灵感，每个含 `label`/`kind`/`note`）+ `majorSkillLabel`（玩家本科画科：山水/人物/界画）。
+- **题面 `promptText`：据这些灵感 + 本科，拟一道自由命题**——把玩家选的灵感自然收束成一个可画的题旨，命他作一幅**本科画科**的画、说说会怎么画怎么立意。
+  - **命题必须贴合本科**：山水玩家给山水题（灵感偏地点/母题/天时，如"以你所见的水路、竹石与那场骤雨为意，作一幅山水"）；人物玩家给人物题（灵感偏人物见闻，如"以你在街市遇见的老翁与那场争执为意，作一幅人物"）；界画玩家给建筑/界画题（虹桥、酒楼、屋宇）。若所选灵感与本科不那么搭，也要巧妙地把它们转化到本科的画意里（如人物灵感之于山水，可化为"点景人物"）。
+  - 题面口吻是考官命题（李唐/太师的庄重），点出灵感、点出要作的画科，问他"你会怎么画、要立什么意"。≤80 字。
+- **`options` 给空数组 `[]`**（自由创作无选项，只凭玩家自陈构思）。`freeInputHint` 给一句引导（如"说说你会取哪些入画、怎么布置、想立什么意"）。
+- **`hiddenRubric`**（评玩家之后写的创作思路）：
+  - `coreSignals`=真把所选灵感熔进一个有立意的构图、见取舍与巧思、合本科技法（如山水讲经营位置/远近虚实、人物讲神态处境、界画讲规矩法度）；
+  - `partialSignals`=用上了灵感但只是罗列堆砌、立意平平、构思浅；
+  - `shallowSignals`=离题、空泛套话、没真用上灵感、或与本科不符；
+  - `forbiddenInterpretations`=照旧的主线剧透边界（见下）。
+- **守边界**：所选灵感里可能有《骸游图》相关的线索（被遮的水路、四位先生同署的旧档等），命题与评分**只取其画意/视觉**，绝不借考题点破四人共创、不坐实希孟消失、不揭终局——丹青试是公开考，考官不知那条暗线。
 
 ## 世界观边界
 
@@ -43,7 +60,7 @@
 ```json
 {
   "id": "stable-question-id",
-  "questionType": "observe_detail | express_intent | character_dispute | archive_observation | poem_intent",
+  "questionType": "observe_detail | express_intent | character_dispute | archive_observation | poem_intent | free_creation",
   "promptText": "题面",
   "options": [
     { "id": "A", "text": "选项 A", "leansTo": ["landscape"] },
