@@ -2048,11 +2048,27 @@ export function App() {
           },
           currentLocation: 'hall',
           time: { ...state.time, day: 7, timeSlot: 'morning_class', isExamDay: true },
-          lastRenderedText: '开发捷径：直达第七日丹青试（已种画案手记灵感，供自由创作择取）。点「入场，应丹青试」。',
+          lastRenderedText: '开发捷径：直达第七日丹青试。',
         };
         saveGameState(devState);
         setHasSave(true);
+        // 清掉可能进行中的场景/弹层，直接把玩家丢进考试（跳过主界面场景）
+        setActiveScene(null);
+        setSettlement(null);
+        setDialogueNpcId(null);
+        setEndingStage(null);
         setState(devState);
+        void (async () => {
+          try {
+            const optionType = examQuestionTypes[Math.floor(Math.random() * examQuestionTypes.length)];
+            const optionQuestion = await generatePaintingPrompt(devState, 'exam', optionType);
+            setExamMode('final');
+            setExamQuestions([optionQuestion, buildFreeCreationShell()]);
+            setIsExamOpen(true);
+          } catch (error) {
+            setLlmError(renderLlmError(error));
+          }
+        })();
       } : undefined}
     />
   );
