@@ -52,7 +52,7 @@
 ## 七、分阶段（Stage 1 完成；后续轮）
 
 - **Stage 2（P1）** ✅ 完成（2026-07-06，见下八）。
-- **Stage 3（P2）**：#2 固定成长签改模板句（储备文案库省 token）、#3 食物/娱乐文化小百科 Tips、#5 主界面换 bg-the-main-hall。
+- **Stage 3（P2）** ✅ 完成（2026-07-06，见下九；#3 文化小百科经明明拍板去掉）。
 
 ---
 
@@ -65,3 +65,15 @@
 **#1 希孟首遇前 LLM 写不合情理** —— 根因：`rollNpcsPresent` **未 gate metXimeng**，希孟有 40% 被滚入书房/后花园 wander 场景（首遇脚本之前），与 prompt"未遇不出场"冲突，逼 LLM 写绕弯/牵强首现。**决策（AskUserQuestion）**：保留书房固定首遇脚本、只清干扰 / 首遇前可极轻旁人铺垫。**修**：①引擎 `rollNpcsPresent` 首遇前不滚希孟入场；②scene prompt 希孟出场门槛段简化——"未遇时他根本不在你笔下场景，不必为回避写绕弯，至多旁人极轻一提；首遇后按好感严格生疏→熟"。prompt scene v23→**v24** 重启 proxy。
 
 **验证**：build ✅；node 引擎单测 **59/0**（+practice-cap 10：首练山水+2 证非显示 bug/封顶出提示/学识封顶提示/三卡体力对齐）。真 LLM 冒烟：首遇前后花园信步自然写景（脚店伙计叹气暗线一笔），希孟无台词、无牵强回避。
+
+---
+
+## 九、Stage 3（2026-07-06）：练习签改固定模板 + 主界面院堂换图（#3 文化小百科去掉）
+
+**#2 固定成长签改模板句省 token** —— 练习卡（对景写生/研读画论等 7 张）原每次调 LLM（scene_narrator practice phase）出单段沉浸文，费 token 且无太大必要。**改**：`runPractice` 不再调 LLM，改从卡 `narratives` 池随机取一句（避开上一句 anti-repeat）直接结算；7 张练习卡模板池从 2 句扩到 **6~7 句**（书房学识/后花园山水/街市人物界画各写足，避免重复）。练习变即时无 loading、零 token。清 `PRACTICE_SEGMENT_MIN/MAX` 孤儿引用；scene_narrator practice phase 就此无调用（prompt 段留存不清）。
+
+**#5 主界面院堂换新场景图** —— 新院堂场景图 `bg-main-hall.png`(日)/`bg-main-hall-night.png`(夜) 从 `美术/场景图` 复制到 `public/`，`MainGameScreen` hall 日/夜背景 + 档案库 backdrop 指向新图（替原 `main-bg`/`main-night-bg`）。**注**：实际文件名是 `bg-main-hall`（明明口述的 "bg-the-main-hall" 近似）；同套还有 `-class`/`-afterclass`/`-rainday` 变体，留**场景图池接入轮**（地点×时段×活动/晨课选图）。
+
+**#3 文化小百科 Tips**：明明拍板**去掉**，不做。
+
+**验证**：build ✅；node 引擎单测 **59/0** 全绿；练习模板池每卡 6~7 句核实。
