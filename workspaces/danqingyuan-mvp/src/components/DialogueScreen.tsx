@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CHARACTERS } from '../content/characters';
+import { npcSpriteFor } from '../content/npcSprites';
 import type { CharacterDialogueOutput, ChatReplyOption, ChatReplyTone, NpcEmotionState, NpcId } from '../types';
 
 const emotionStateLabels: Record<NpcEmotionState, string> = {
@@ -11,20 +12,6 @@ const emotionStateLabels: Record<NpcEmotionState, string> = {
   avoidant: '避让',
   shaken: '动摇',
 };
-
-const npcSprites: Record<NpcId, string> = {
-  ximeng: '/npc-ximeng.png',
-  zeduan: '/npc-zeduan.png',
-  litang: '/npc-litang.png',
-  song: '/npc-song.png',
-};
-
-/** 希孟好感差分立绘（2026-06-25）：好感越高越亲近 normal→painting→smile */
-function ximengPortraitByAffinity(affinity: number): string {
-  if (affinity >= 60) return '/char/char-ximeng-smile.png';
-  if (affinity >= 40) return '/char/char-ximeng-painting.png';
-  return '/char/char-ximeng-normal.png';
-}
 
 const npcColors: Record<NpcId, string> = {
   ximeng: '#24506B',
@@ -97,7 +84,11 @@ export function DialogueScreen({ npcId, affinity, maxTurns, countsTowardQuota, p
   const turnsLeft = Math.max(0, budget - turnsUsed);
   const nameColor = npcColors[npcId];
   const plumsLit = affinity <= 0 ? 0 : Math.min(5, 1 + Math.floor(affinity / 20));
-  const portrait = npcId === 'ximeng' ? ximengPortraitByAffinity(affinity) : npcSprites[npcId];
+  // 立绘按情绪差分（2026-07-06）：有回应时按 response.emotionState 切表情；进场（无回应）用 normal/好感兜底。
+  // 希孟保留好感入场差分（越熟越亲近），有回应后交给 emotionState。
+  const portrait = response
+    ? npcSpriteFor(npcId, response.emotionState, affinity)
+    : npcSpriteFor(npcId, npcId === 'ximeng' && affinity >= 40 ? 'noticing' : undefined, affinity);
   // 完整往来 = 持久历史 + 本场新增
   const fullLog = [...priorHistory, ...history];
 

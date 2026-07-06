@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { LOCATIONS } from '../content/locations';
 import { CHARACTERS } from '../content/characters';
+import { npcSpriteFor } from '../content/npcSprites';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
 import { DAY_CHARS_MAX, SEGMENT_MIN } from '../engine/sceneEngine';
 import { MAX_SLOT_SCENES, isActionAffordable, isPracticeMoodLocked } from '../engine/gameEngine';
+import { getWeather } from '../engine/ambience';
 import { dailyChatQuota } from '../types/core';
 import type { GameAction, GameState, LocationId, NpcId, SkillId, ValidatedStatePatch } from '../types';
 import type { ClueGraphNode } from '../types/memory';
@@ -303,10 +305,23 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
   // 场景进行中以 scene.locationId 为准（2026-06-17 修 bug：否则晨课等场景背景停在 currentLocation 如宿舍）
   const bgLocation = scene?.locationId ?? currentLocation;
   const isEveningBg = state.time.timeSlot === 'evening';
+  // 院堂场景图变体（2026-07-06 接入）：晨课=上课图 / 晚间=夜景 / 雨天=雨景 / 上下午课后=课后图 / 其余=日景。
+  const weather = getWeather(state.time.day);
+  const isRainy = weather.includes('雨') && !weather.includes('歇');
+  const isHallClass = scene?.action.type === 'attend_class' || state.time.timeSlot === 'morning_class';
+  const hallVariant = isEveningBg
+    ? '/bg-main-hall-night.png'
+    : isHallClass
+      ? '/bg-main-hall-class.png'
+      : isRainy
+        ? '/bg-main-hall-rainday.png'
+        : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'afternoon'
+          ? '/bg-main-hall-afterclass.png'
+          : '/bg-main-hall.png';
   const backgroundUrl =
     (scene?.action.activityId && sceneActivityBackgrounds[scene.action.activityId]) ||
-    (bgLocation === 'hall' && isEveningBg
-      ? '/bg-main-hall-night.png'
+    (bgLocation === 'hall'
+      ? hallVariant
       : bgLocation === 'garden' && isEveningBg
         ? '/garden-night-bg.png'
         : bgLocation === 'market' && isEveningBg
@@ -365,7 +380,11 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
       {/* 场景立绘（2026-06-30 VN 逐句）：当前单元说话人立绘，居中站立、随 speaker 切换 */}
       {speakerNpc && (
         <div className="gm-scene-portrait" key={speakerNpc}>
-          <img className="gm-scene-portrait-img" src={sceneNpcSprite[speakerNpc]} alt="" />
+          <img
+            className="gm-scene-portrait-img"
+            src={npcSpriteFor(speakerNpc, state.relationships[speakerNpc]?.emotionState, state.relationships[speakerNpc]?.hiddenAffinity)}
+            alt=""
+          />
         </div>
       )}
 
