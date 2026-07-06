@@ -384,6 +384,9 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
             className="gm-scene-portrait-img"
             src={npcSpriteFor(speakerNpc, state.relationships[speakerNpc]?.emotionState, state.relationships[speakerNpc]?.hiddenAffinity)}
             alt=""
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
         </div>
       )}

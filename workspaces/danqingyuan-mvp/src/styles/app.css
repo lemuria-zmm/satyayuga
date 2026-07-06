@@ -3303,8 +3303,8 @@ button {
 
 .dlg-character-sprite {
   position: relative;
-  height: 92vh;
-  max-height: 900px;
+  height: 76vh;
+  max-height: 680px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(30, 25, 20, 0.15));
@@ -4049,8 +4049,8 @@ dd {
   position: absolute;
   bottom: 0;
   left: 6%;
-  height: min(82vh, 720px);
-  max-width: 44vw;
+  height: min(60vh, 460px);
+  max-width: 30vw;
   object-fit: contain;
   object-position: bottom;
   filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.45));
@@ -4789,8 +4789,8 @@ dd {
 }
 
 .gm-scene-portrait-img {
-  height: 59vh;
-  max-height: 590px;
+  height: 52vh;
+  max-height: 520px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));

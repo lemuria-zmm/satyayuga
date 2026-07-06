@@ -209,7 +209,14 @@ export function DialogueScreen({ npcId, affinity, maxTurns, countsTowardQuota, p
       {/* NPC character sprite */}
       <div className="dlg-character">
         <div className="dlg-character-aura" />
-        <img className="dlg-character-sprite" src={portrait} alt={character.name} />
+        <img
+          className="dlg-character-sprite"
+          src={portrait}
+          alt={character.name}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
       </div>
 
 
