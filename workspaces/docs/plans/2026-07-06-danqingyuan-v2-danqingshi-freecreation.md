@@ -39,3 +39,9 @@
 
 ## 六、待明明微调（已用默认值，可改）
 - 加权 选项 0.4 / 自由创作 0.6；灵感选 3-5（gate≥3）；补考仍走选项题。
+
+## 七、追加（2026-07-06）：批阅标准明确化 + 落榜原因可见（决策92）
+明明反馈"流程没问题，但 llm 批阅标准要明确——我没考上需知道原因"。修复两头：
+- **评分硬标准**（painting_intent_evaluator@2026-07-06.v2）：加「分数与档次」段，score 必须绑 tier——core 82~96 / partial 62~80 / shallow 32~56，**过线 60**。心法：认真答、说出具体看法或构思（哪怕稚拙）→ partial(≥62) 过关；shallow 只留给真空泛/离题/套话敷衍。防"tier 说 partial 却给 50 分"。
+- **逐题失分可见**：examReview 加 `perQuestion[{label,tier,feedback}]`；character_dialogue@2026-07-06.v12 结局点评读 perQuestion 找最弱题**点名是哪题、差在何处**，落第必须让玩家明白为何没考上；点评放宽≤3 句。App submitExam 构建 perQuestion 传 fetchMentorReview；EndingDialogue exam_review caption 显示"得分 X / 过线 60（已过/未过）"；mockAdapter 同步用 perQuestion 点名最弱题。
+- **验证**（scripts/smoke-exam-grading.mjs，已重启 proxy）：空泛答 → shallow **32**；认真竹石雨后构思 → partial **72**（过线）；落第点评李唐口吻点名自由创作空泛堆砌无章法 + 给补试机会。build ✅。
