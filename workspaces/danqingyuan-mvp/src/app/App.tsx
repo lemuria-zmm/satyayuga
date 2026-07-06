@@ -2025,6 +2025,35 @@ export function App() {
         setHasSave(true);
         setState(devState);
       } : undefined}
+      onPreviewExam={import.meta.env.DEV ? () => {
+        // DEV 预览丹青试（2026-07-06）：直达第七日丹青试 + 种画案手记灵感（供自由创作灵感池），本科技能拉过门槛。
+        const seed = [
+          { id: 'dev-npc-laoweng', label: '卖浆老翁', kind: 'npc' as const, discovered: true, hidden: false, note: '街市桥头卖浆，佝腰舀汤' },
+          { id: 'dev-place-hongqiao', label: '州桥虹桥', kind: 'place' as const, discovered: true, hidden: false, note: '飞虹跨河，斗拱层叠' },
+          { id: 'dev-item-yaoping', label: '一只药瓶', kind: 'item' as const, discovered: true, hidden: false, note: '瓶口朝外，摆得刻意' },
+          { id: 'dev-clue-water', label: '被遮住的水路', kind: 'clue' as const, discovered: true, hidden: false, note: '画角走不到尽头的水路' },
+          { id: 'dev-clue-archive', label: '四位先生同署的旧档', kind: 'clue' as const, discovered: true, hidden: false, note: '旧档里几位先生名字同现' },
+          { id: 'dev-clue-dispute', label: '街市一场争执', kind: 'clue' as const, discovered: true, hidden: false, note: '两人涨红了脸、攥紧了拳' },
+        ];
+        const existingIds = new Set(state.memory.clueGraph.nodes.map((n) => n.id));
+        const devState: GameState = {
+          ...state,
+          skills: { ...state.skills, [state.player.styleOrigin]: Math.max(state.skills[state.player.styleOrigin], 35) },
+          memory: {
+            ...state.memory,
+            clueGraph: {
+              ...state.memory.clueGraph,
+              nodes: [...state.memory.clueGraph.nodes, ...seed.filter((n) => !existingIds.has(n.id))],
+            },
+          },
+          currentLocation: 'hall',
+          time: { ...state.time, day: 7, timeSlot: 'morning_class', isExamDay: true },
+          lastRenderedText: '开发捷径：直达第七日丹青试（已种画案手记灵感，供自由创作择取）。点「入场，应丹青试」。',
+        };
+        saveGameState(devState);
+        setHasSave(true);
+        setState(devState);
+      } : undefined}
     />
   );
 }
