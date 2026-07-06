@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CHARACTERS } from '../content/characters';
-import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward, computeExamScore, determineEnding } from '../engine/gameEngine';
+import { applyAction, getAvailableActions, isSandboxSlot, MAX_SLOT_SCENES, buildQuickExamReward, computeExamScore, determineEnding, weightedExamRawScore } from '../engine/gameEngine';
+import { buildInspirations } from '../engine/inspirations';
 import { createInitialGameState } from '../engine/initialState';
 import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
@@ -223,6 +224,8 @@ export function App() {
   const [puzzleAssessmentPrompt, setPuzzleAssessmentPrompt] = useState<PaintingPromptGeneratorOutput | null>(null);
   // 揭卷幕（2026-07-02；2026-07-05 作日终序列 reveal 幕）：submitPuzzle 存 tier/feedback 供 HaiyouRevealScreen
   const [puzzleReveal, setPuzzleReveal] = useState<{ tier: InterpretationTier; feedback: string } | null>(null);
+  // 自由创作已拟命题（2026-07-06 丹青试改版）：玩家选灵感后 LLM 现拟的命题，供 submitExam 评分
+  const [freeCreationComposed, setFreeCreationComposed] = useState<PaintingPromptGeneratorOutput | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
@@ -1032,7 +1035,9 @@ export function App() {
     mode: 'exam' | 'puzzle',
     questionType: QuestionType,
     quickReview = false,
+    inspirations?: { label: string; kind: string; note?: string }[],
   ) {
+    const isFree = questionType === 'free_creation';
     const response = await llmAdapter.generatePaintingPrompt({
       traceId: `${mode}-prompt-${questionType}-${Date.now()}`,
       role: 'painting_prompt_generator',
@@ -1044,22 +1049,53 @@ export function App() {
         relatedSkills:
           questionType === 'archive_observation'
             ? ['figure', 'landscape']
-            : mode === 'exam'
-              ? getStudiedSkills(currentState.curriculum, currentState.player.styleOrigin)
-              : ['landscape', 'figure', 'architecture'],
+            : isFree
+              ? [currentState.player.styleOrigin]
+              : mode === 'exam'
+                ? getStudiedSkills(currentState.curriculum, currentState.player.styleOrigin)
+                : ['landscape', 'figure', 'architecture'],
         day: currentState.time.day,
         playerStyleTags: currentState.memory.playerStyle.tags,
         requiredElements:
           questionType === 'archive_observation'
             ? ['《骸游图》', '药瓶', '婴孩', '被遮住的水路']
-            : ['三选项', '自由输入', '趣味考查'],
+            : isFree
+              ? ['自由命题', '据灵感与本科', '无选项']
+              : ['三选项', '自由输入', '趣味考查'],
         forbiddenElements: ['坐实希孟消失原因', '骸游图四人共创', '进献警戒目的'],
         tone: mode === 'exam' ? 'plain' : 'restrained',
         quickReview,
+        ...(isFree ? { inspirations, majorSkillLabel: SKILL_LABELS[currentState.player.styleOrigin] } : {}),
       },
       context: buildMemoryContext(currentState, 'painting_prompt_generator'),
     });
     return response.output;
+  }
+
+  /** 自由创作占位题（2026-07-06）：真命题在 ExamScreen 择灵感后经 composeFreeCreationTheme 现拟。 */
+  function buildFreeCreationShell(): PaintingPromptGeneratorOutput {
+    return {
+      id: 'free-creation-shell',
+      questionType: 'free_creation',
+      promptText: '',
+      options: [],
+      freeInputHint: '说说你会取哪些入画、怎么布置经营、想立什么意。',
+      hiddenRubric: { coreSignals: [], partialSignals: [], shallowSignals: [], forbiddenInterpretations: [] },
+      relatedSkills: [],
+      potentialClueIds: [],
+      canonWarnings: [],
+    };
+  }
+
+  /** 自由创作拟题（2026-07-06）：玩家择灵感 → LLM 据灵感+本科出自由命题；存下供 submitExam 评分。 */
+  async function composeFreeCreationTheme(inspirationIds: string[]): Promise<PaintingPromptGeneratorOutput> {
+    if (!state) throw new Error('no state');
+    const selected = buildInspirations(state)
+      .filter((i) => inspirationIds.includes(i.id))
+      .map(({ label, kind, note }) => ({ label, kind, note }));
+    const composed = await generatePaintingPrompt(state, 'exam', 'free_creation', false, selected);
+    setFreeCreationComposed(composed);
+    return composed;
   }
 
   /** 行动结算 + 场景发起（handleAction 与课表确认后自动开讲共用） */
@@ -1139,12 +1175,12 @@ export function App() {
     }
     setLlmError(null);
     if (action.type === 'take_exam') {
+      // 丹青试改版（2026-07-06）：1 道选项题 + 1 道自由创作（占位，真命题在 ExamScreen 里据玩家所选灵感现场拟）。
       try {
-        const questions = await Promise.all(
-          pickExamQuestionTypes().map((questionType) => generatePaintingPrompt(state, 'exam', questionType)),
-        );
+        const optionType = examQuestionTypes[Math.floor(Math.random() * examQuestionTypes.length)];
+        const optionQuestion = await generatePaintingPrompt(state, 'exam', optionType);
         setExamMode('final');
-        setExamQuestions(questions);
+        setExamQuestions([optionQuestion, buildFreeCreationShell()]);
         setIsExamOpen(true);
       } catch (error) {
         setLlmError(renderLlmError(error));
@@ -1199,6 +1235,7 @@ export function App() {
     setIsExamOpen(false);
     setEndingStage(null);
     setPuzzleReveal(null);
+    setFreeCreationComposed(null);
     setPuzzleAssessmentPrompt(null);
     setMentorReview(null);
     setXimengMeet(null);
@@ -1228,16 +1265,19 @@ export function App() {
     try {
       evaluationResponses = await Promise.all(
         examQuestions.map((question) => {
+          // 自由创作（2026-07-06）：占位题的真命题在 freeCreationComposed（含 id/hiddenRubric）；答案仍按占位 id 取
+          const scoringQuestion =
+            question.questionType === 'free_creation' && freeCreationComposed ? freeCreationComposed : question;
           const answer = answers[question.id] ?? { freeText: '' };
           return llmAdapter.evaluatePaintingIntent({
-            traceId: `exam-eval-${question.id}-${Date.now()}`,
+            traceId: `exam-eval-${scoringQuestion.id}-${Date.now()}`,
             role: 'painting_intent_evaluator',
             promptVersion: 'mock-0.2',
             input: {
               mode: 'exam',
               question: {
-                id: question.id,
-                hiddenRubric: question.hiddenRubric,
+                id: scoringQuestion.id,
+                hiddenRubric: scoringQuestion.hiddenRubric,
               },
               playerAnswer: {
                 selectedOptionIds: answer.optionId ? [answer.optionId] : [],
@@ -1246,7 +1286,7 @@ export function App() {
               playerStats: state.skills,
               knowledge: state.stats.knowledge,
               relationshipStage: state.relationships.ximeng.stage,
-              canonWarnings: question.canonWarnings,
+              canonWarnings: scoringQuestion.canonWarnings,
             },
             context: buildMemoryContext(state, 'painting_intent_evaluator'),
           });
@@ -1257,7 +1297,13 @@ export function App() {
       return;
     }
     const evaluations = evaluationResponses.map((response) => response.output);
-    const rawScore = evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0) / evaluations.length;
+    // 计分（2026-07-06 丹青试改版）：丹青试=选项题+自由创作 → 加权（自由创作 0.6 重头）；其余（温书1题/补考选项题）取均值。
+    const optionEval = examQuestions.map((q, i) => ({ q, ev: evaluations[i] })).find((x) => x.q.questionType !== 'free_creation')?.ev;
+    const freeEval = examQuestions.map((q, i) => ({ q, ev: evaluations[i] })).find((x) => x.q.questionType === 'free_creation')?.ev;
+    const rawScore =
+      optionEval && freeEval
+        ? weightedExamRawScore(optionEval.score, freeEval.score)
+        : evaluations.reduce((sum, evaluation) => sum + evaluation.score, 0) / evaluations.length;
     // 学识加分 floor(k/5) 在 quick 用简单口径；final 走引擎 computeExamScore（含本科技能 gating）
     const knowledgeBonus = Math.floor(state.stats.knowledge / 5);
     const quickScore = Math.max(0, Math.min(100, rawScore + knowledgeBonus));
@@ -1373,8 +1419,17 @@ export function App() {
     }
   }
 
-  if (isExamOpen) {
-    return <ExamScreen questions={examQuestions} mode={examMode} onCancel={() => setIsExamOpen(false)} onSubmit={submitExam} />;
+  if (isExamOpen && state) {
+    return (
+      <ExamScreen
+        questions={examQuestions}
+        mode={examMode}
+        inspirations={buildInspirations(state)}
+        onComposeTheme={composeFreeCreationTheme}
+        onCancel={() => setIsExamOpen(false)}
+        onSubmit={submitExam}
+      />
+    );
   }
 
   /**

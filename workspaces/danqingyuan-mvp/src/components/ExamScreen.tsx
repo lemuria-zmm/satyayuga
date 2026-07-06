@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { PaintingPromptGeneratorOutput, QuestionType } from '../types';
+import type { Inspiration } from '../engine/inspirations';
+import { INSPIRATION_KIND_LABELS, MIN_INSPIRATIONS } from '../engine/inspirations';
 
 export interface ExamAnswer {
   optionId?: string;
@@ -14,7 +16,14 @@ interface ExamScreenProps {
   onSubmit: (answers: Record<string, ExamAnswer>) => Promise<void> | void;
   /** 考试模式（2026-06-28；2026-06-30 加 retake）：final=月末丹青试（庄重）；quick=温书自测（夜读）；retake=落第补考（再给一次） */
   mode?: 'final' | 'quick' | 'retake';
+  /** 自由创作灵感池（2026-07-06）：从画案手记 + 天气构建，玩家择 3-5 个 */
+  inspirations?: Inspiration[];
+  /** 自由创作拟题（2026-07-06）：择灵感后 App 调 LLM 据灵感+本科出命题 */
+  onComposeTheme?: (inspirationIds: string[]) => Promise<PaintingPromptGeneratorOutput>;
 }
+
+/** 自由创作最多可选灵感数 */
+const MAX_INSPIRATIONS = 5;
 
 /** 按模式区分门头/开场/批阅文案（2026-06-28） */
 const examChrome = {
@@ -63,7 +72,7 @@ const optionBadges = ['甲', '乙', '丙', '丁'];
 
 type ExamPhase = 'intro' | 'answering' | 'submitting';
 
-export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: ExamScreenProps) {
+export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', inspirations = [], onComposeTheme }: ExamScreenProps) {
   const chrome = examChrome[mode];
   const [answers, setAnswers] = useState<Record<string, ExamAnswer>>(
     Object.fromEntries(questions.map((q) => [q.id, { freeText: '' }])),
@@ -71,10 +80,15 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
   const [phase, setPhase] = useState<ExamPhase>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 自由创作子流程（2026-07-06）：择灵感 → 拟题(LLM) → 落墨
+  const [inspSelected, setInspSelected] = useState<string[]>([]);
+  const [composedTheme, setComposedTheme] = useState<PaintingPromptGeneratorOutput | null>(null);
+  const [composing, setComposing] = useState(false);
 
   const currentQuestion = questions[currentIndex];
   const currentAnswer = answers[currentQuestion?.id];
   const totalQuestions = questions.length;
+  const isFreeCreation = currentQuestion?.questionType === 'free_creation';
 
   function updateAnswer(questionId: string, patch: Partial<ExamAnswer>) {
     setAnswers((cur) => ({
@@ -83,8 +97,27 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
     }));
   }
 
-  const canSubmitCurrent =
-    currentAnswer?.optionId || (currentAnswer?.freeText?.trim().length ?? 0) > 0;
+  function toggleInspiration(id: string) {
+    setInspSelected((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= MAX_INSPIRATIONS ? cur : [...cur, id],
+    );
+  }
+
+  async function composeTheme() {
+    if (!onComposeTheme || inspSelected.length < MIN_INSPIRATIONS) return;
+    setComposing(true);
+    try {
+      const theme = await onComposeTheme(inspSelected);
+      setComposedTheme(theme);
+      updateAnswer(currentQuestion.id, { inspirationIds: inspSelected });
+    } finally {
+      setComposing(false);
+    }
+  }
+
+  const canSubmitCurrent = isFreeCreation
+    ? !!composedTheme && (currentAnswer?.freeText?.trim().length ?? 0) >= 10
+    : currentAnswer?.optionId || (currentAnswer?.freeText?.trim().length ?? 0) > 0;
 
   function handleNext() {
     if (currentIndex < totalQuestions - 1) {
@@ -212,64 +245,134 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final' }: Ex
             </span>
           </div>
 
-          {/* Question prompt */}
-          <div className="ex-prompt">
-            <p className="ex-prompt-text">{currentQuestion.promptText}</p>
-          </div>
-
-          {/* Options */}
-          <div className="ex-option-list">
-            {currentQuestion.options.map((option, i) => {
-              const isSelected = currentAnswer?.optionId === option.id;
-              return (
+          {isFreeCreation ? (
+            !composedTheme ? (
+              /* 自由创作 · 择灵感 */
+              <div className="ex-free-creation">
+                <p className="ex-prompt-text ex-fc-lead">
+                  丹青试压轴自作一幅——先从你这些时日的所见所闻里，择取三五样入你的画。
+                </p>
+                <div className="ex-fc-groups">
+                  {Object.entries(
+                    inspirations.reduce<Record<string, Inspiration[]>>((acc, insp) => {
+                      (acc[insp.kind] ??= []).push(insp);
+                      return acc;
+                    }, {}),
+                  ).map(([kind, list]) => (
+                    <div className="ex-fc-group" key={kind}>
+                      <h4 className="ex-fc-group-title">{INSPIRATION_KIND_LABELS[kind as Inspiration['kind']] ?? kind}</h4>
+                      <div className="ex-fc-card-list">
+                        {list.map((insp) => (
+                          <button
+                            className={`ex-fc-card ${inspSelected.includes(insp.id) ? 'selected' : ''}`}
+                            key={insp.id}
+                            onClick={() => toggleInspiration(insp.id)}
+                            type="button"
+                          >
+                            <span className="ex-fc-card-label">{insp.label}</span>
+                            {insp.note && <span className="ex-fc-card-note">{insp.note}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="ex-fc-progress">
+                  已择 {inspSelected.length} 样（取 {MIN_INSPIRATIONS}~{MAX_INSPIRATIONS} 样）
+                </p>
                 <button
-                  className={`ex-option ${isSelected ? 'selected' : ''}`}
-                  key={option.id}
-                  onClick={() => updateAnswer(currentQuestion.id, { optionId: option.id })}
+                  className="ex-submit ex-fc-compose"
+                  disabled={inspSelected.length < MIN_INSPIRATIONS || composing}
+                  onClick={composeTheme}
                   type="button"
                 >
-                  <span className="ex-option-badge">
-                    {optionBadges[i] ?? option.id}
-                  </span>
-                  <span className="ex-option-text">{option.text}</span>
-                  {isSelected && <span className="ex-option-stamp" />}
+                  {composing ? '太师拟题中……' : '请太师命题'}
                 </button>
-              );
-            })}
-          </div>
+              </div>
+            ) : (
+              /* 自由创作 · 落墨 */
+              <div className="ex-free-creation">
+                <div className="ex-prompt">
+                  <p className="ex-prompt-text">{composedTheme.promptText}</p>
+                </div>
+                <div className="ex-fc-chosen">
+                  {inspSelected
+                    .map((id) => inspirations.find((i) => i.id === id)?.label)
+                    .filter(Boolean)
+                    .map((label) => (
+                      <span className="ex-fc-chip" key={label}>{label}</span>
+                    ))}
+                </div>
+                <div className="ex-free">
+                  <span className="ex-free-label">你的创作构思</span>
+                  <div className="ex-free-area">
+                    <textarea
+                      className="ex-free-input ex-fc-input"
+                      value={currentAnswer?.freeText ?? ''}
+                      onChange={(e) => updateAnswer(currentQuestion.id, { freeText: e.target.value })}
+                      placeholder={composedTheme.freeInputHint || '说说你会取哪些入画、怎么布置经营、想立什么意……'}
+                      maxLength={300}
+                    />
+                  </div>
+                  <span className="ex-free-hint">不必真作画，说说你的立意与构思即可。</span>
+                </div>
+              </div>
+            )
+          ) : (
+            <>
+              {/* Question prompt */}
+              <div className="ex-prompt">
+                <p className="ex-prompt-text">{currentQuestion.promptText}</p>
+              </div>
 
-          {/* Free answer */}
-          <div className="ex-free">
-            <span className="ex-free-label">另作一解</span>
-            <div className="ex-free-area">
-              <textarea
-                className="ex-free-input"
-                value={currentAnswer?.freeText ?? ''}
-                onChange={(e) =>
-                  updateAnswer(currentQuestion.id, { freeText: e.target.value })
-                }
-                placeholder={
-                  currentQuestion.freeInputHint ||
-                  '若三者皆非你意，可写下你的看法……'
-                }
-                maxLength={160}
-              />
-            </div>
-            <span className="ex-free-hint">
-              此题无标准句式，只看你如何取意。
-            </span>
-          </div>
+              {/* Options */}
+              <div className="ex-option-list">
+                {currentQuestion.options.map((option, i) => {
+                  const isSelected = currentAnswer?.optionId === option.id;
+                  return (
+                    <button
+                      className={`ex-option ${isSelected ? 'selected' : ''}`}
+                      key={option.id}
+                      onClick={() => updateAnswer(currentQuestion.id, { optionId: option.id })}
+                      type="button"
+                    >
+                      <span className="ex-option-badge">{optionBadges[i] ?? option.id}</span>
+                      <span className="ex-option-text">{option.text}</span>
+                      {isSelected && <span className="ex-option-stamp" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Free answer */}
+              <div className="ex-free">
+                <span className="ex-free-label">另作一解</span>
+                <div className="ex-free-area">
+                  <textarea
+                    className="ex-free-input"
+                    value={currentAnswer?.freeText ?? ''}
+                    onChange={(e) => updateAnswer(currentQuestion.id, { freeText: e.target.value })}
+                    placeholder={currentQuestion.freeInputHint || '若三者皆非你意，可写下你的看法……'}
+                    maxLength={160}
+                  />
+                </div>
+                <span className="ex-free-hint">此题无标准句式，只看你如何取意。</span>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Submit button */}
-        <button
-          className="ex-submit"
-          disabled={!canSubmitCurrent || isSubmitting}
-          onClick={handleNext}
-          type="button"
-        >
-          {currentIndex < totalQuestions - 1 ? '落笔 · 下一题' : (mode === 'quick' ? '落笔 · 温书毕' : '落笔 · 交卷')}
-        </button>
+        {/* Submit button — 自由创作择灵感阶段(未拟题)不显主交卷键（用「请太师命题」推进） */}
+        {(!isFreeCreation || composedTheme) && (
+          <button
+            className="ex-submit"
+            disabled={!canSubmitCurrent || isSubmitting}
+            onClick={handleNext}
+            type="button"
+          >
+            {currentIndex < totalQuestions - 1 ? '落笔 · 下一题' : (mode === 'quick' ? '落笔 · 温书毕' : '落笔 · 交卷')}
+          </button>
+        )}
       </section>
     </main>
   );

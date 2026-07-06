@@ -2209,6 +2209,77 @@ button {
   margin-bottom: 18px;
 }
 
+/* 自由创作子流程（2026-07-06 丹青试改版）：择灵感 → 拟题 → 落墨 */
+.ex-free-creation {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ex-fc-lead {
+  color: #5a4a34;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.ex-fc-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 42vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.ex-fc-group-title {
+  margin: 0 0 8px;
+  color: #9c6b3b;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  border-bottom: 1px solid rgba(156, 107, 59, 0.2);
+  padding-bottom: 4px;
+}
+.ex-fc-card-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ex-fc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  max-width: 220px;
+  padding: 7px 12px;
+  background: rgba(90, 74, 52, 0.05);
+  border: 1px solid rgba(90, 74, 52, 0.2);
+  border-radius: 4px;
+  color: #3a2c1a;
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.ex-fc-card:hover { background: rgba(90, 74, 52, 0.1); }
+.ex-fc-card.selected {
+  background: rgba(156, 107, 59, 0.16);
+  border-color: #9c6b3b;
+}
+.ex-fc-card-label { font-size: 13px; font-weight: 600; }
+.ex-fc-card-note { font-size: 11px; color: rgba(58, 44, 26, 0.6); line-height: 1.4; }
+.ex-fc-progress { margin: 0; color: #7a6a52; font-size: 12px; letter-spacing: 0.06em; }
+.ex-fc-compose { margin-top: 4px; }
+.ex-fc-chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ex-fc-chip {
+  padding: 3px 10px;
+  background: rgba(156, 107, 59, 0.12);
+  border: 1px solid rgba(156, 107, 59, 0.3);
+  border-radius: 12px;
+  color: #7a4f28;
+  font-size: 12px;
+}
+.ex-fc-input { min-height: 140px; }
+
 .ex-option {
   position: relative;
   display: flex;
