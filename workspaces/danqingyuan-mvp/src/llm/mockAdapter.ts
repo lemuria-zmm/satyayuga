@@ -48,14 +48,22 @@ export class MockLlmAdapter implements LlmAdapter {
     }
     // mock 结局导师点评（2026-06-30）：examReview 非空 → 按档位点评、单向（replyOptions=[]、delta=0）
     if (request.input.examReview) {
-      const { tier, score, failed, majorSkillLabel } = request.input.examReview;
+      const { tier, score, failed, majorSkillLabel, perQuestion } = request.input.examReview;
+      // 逐题里挑最弱的一题点名失分（shallow > partial > core）
+      const tierRank = { shallow: 0, partial: 1, core: 2 } as const;
+      const weakest = perQuestion && perQuestion.length
+        ? [...perQuestion].sort((a, b) => tierRank[a.tier] - tierRank[b.tier])[0]
+        : undefined;
+      const weakNote = weakest
+        ? `尤其那道${weakest.label}，${weakest.feedback}`
+        : '';
       const dialogue = failed
-        ? `${majorSkillLabel}的火候还差着一层，笔意未到，章法也散。不过——画院惜才，准你补试一场，莫要再辜负。`
+        ? `${majorSkillLabel}的火候还差着一层。${weakNote || '笔意未到，章法也散。'}——不过画院惜才，准你补试一场，莫要再辜负。`
         : tier === 'excellent'
           ? `好。这一笔下去，意在笔先，是可造之材。${majorSkillLabel}能画到这般地步，院里多年未见。`
           : tier === 'good'
-            ? `${majorSkillLabel}上见了功夫，意境也立住了。再沉住气磨上些时日，必有大成。`
-            : `${score}分，勉强过关。${majorSkillLabel}的根骨还浅，章法尚可意趣不足，往后须多下苦功。`;
+            ? `${majorSkillLabel}上见了功夫，意境也立住了。${weakNote}再沉住气磨上些时日，必有大成。`
+            : `${score}分，勉强过关。${weakNote || `${majorSkillLabel}的根骨还浅，章法尚可意趣不足。`}往后须多下苦功。`;
       const output: CharacterDialogueOutput = {
         dialogue,
         actionText: failed

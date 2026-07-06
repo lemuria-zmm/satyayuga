@@ -88,7 +88,7 @@ const llmAdapter = createLlmAdapter();
 const SCENE_PROMPT_VERSION = 'scene_narrator@2026-07-06.v25';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
-const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-07-05.v11';
+const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-07-06.v12';
 
 /** VN 逐句（2026-06-30）：取 LLM segments，无则把整段正文当一个旁白单元兜底 */
 function buildSegments(output: { segments?: SceneSegment[]; narrativeText: string }): SceneSegment[] {
@@ -1297,6 +1297,12 @@ export function App() {
       return;
     }
     const evaluations = evaluationResponses.map((response) => response.output);
+    // 逐题表现（2026-07-06）：喂导师点评，落第时点名哪题失分（选题 / 自由创作）
+    const perQuestion = examQuestions.map((q, i) => ({
+      label: q.questionType === 'free_creation' ? '自由创作' : '选题',
+      tier: evaluations[i].interpretationTier,
+      feedback: evaluations[i].visibleFeedback,
+    }));
     // 计分（2026-07-06 丹青试改版）：丹青试=选项题+自由创作 → 加权（自由创作 0.6 重头）；其余（温书1题/补考选项题）取均值。
     const optionEval = examQuestions.map((q, i) => ({ q, ev: evaluations[i] })).find((x) => x.q.questionType !== 'free_creation')?.ev;
     const freeEval = examQuestions.map((q, i) => ({ q, ev: evaluations[i] })).find((x) => x.q.questionType === 'free_creation')?.ev;
@@ -1341,7 +1347,7 @@ export function App() {
       // 补考过 → 再来一段简评（通过档）→「继续」回考后日常；日终就寝后授衔
       setMentorReview(null);
       setEndingStage('exam_review');
-      void fetchMentorReview(retakeState, retakeEnding);
+      void fetchMentorReview(retakeState, retakeEnding, perQuestion);
       return;
     }
 
@@ -1415,7 +1421,7 @@ export function App() {
     if (endingResult) {
       setMentorReview(null);
       setEndingStage('exam_review');
-      void fetchMentorReview(nextState, endingResult);
+      void fetchMentorReview(nextState, endingResult, perQuestion);
     }
   }
 
@@ -1436,7 +1442,11 @@ export function App() {
    * 结局导师点评（2026-06-30 批一）：丹青试放榜后，本科导师按表现点评（LLM，复用 character_dialogue + examReview）。
    * 失败走兜底点评句（结局不可卡死）。
    */
-  async function fetchMentorReview(reviewState: GameState, ending: EndingResult) {
+  async function fetchMentorReview(
+    reviewState: GameState,
+    ending: EndingResult,
+    perQuestion?: { label: string; tier: 'core' | 'partial' | 'shallow'; feedback: string }[],
+  ) {
     const mentorId = mentorForStyle(reviewState.player.styleOrigin);
     const mentorRel = reviewState.relationships[mentorId];
     const majorSkillLabel = SKILL_LABELS[reviewState.player.styleOrigin];
@@ -1454,7 +1464,7 @@ export function App() {
           relationshipStage: mentorRel.stage,
           emotionState: mentorRel.emotionState,
           topicCard: '丹青试点评',
-          examReview: { tier: ending.tier, score: ending.score, failed, majorSkillLabel },
+          examReview: { tier: ending.tier, score: ending.score, failed, majorSkillLabel, perQuestion },
           recentEvents: reviewState.memory.storyLedger.slice(-2).map((entry) => entry.summary),
           relevantMemories: reviewState.memory.playerStyle.tags,
           availableClueIds: reviewState.puzzle.collectedClueIds,
@@ -1914,7 +1924,11 @@ export function App() {
           npcId={mentorForStyle(state.player.styleOrigin)}
           dialogue={mentorReview ? mentorReview.dialogue : null}
           actionText={mentorReview ? mentorReview.actionText : null}
-          caption="丹青试 · 放榜点评"
+          caption={
+            ending
+              ? `丹青试 · 放榜点评 · 得分 ${ending.score} / 过线 60（${ending.tier === 'fail' ? '未过' : '已过'}）`
+              : '丹青试 · 放榜点评'
+          }
           onContinue={advanceExamReview}
         />
       );

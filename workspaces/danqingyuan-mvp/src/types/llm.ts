@@ -80,6 +80,12 @@ export interface CharacterDialogueInput {
     score: number;
     failed: boolean;
     majorSkillLabel: string;
+    /** 逐题表现（2026-07-06）：让导师点评能点名哪题强/弱，落第时说清失分在哪 */
+    perQuestion?: {
+      label: string;
+      tier: 'core' | 'partial' | 'shallow';
+      feedback: string;
+    }[];
   };
   /** 结局见希孟（2026-06-30 批二）：放榜既毕、好感≥知己，玩家寻希孟话别。希孟说"画院之路同行"的预热话，单段、delta=0、replyOptions=[] */
   endingMeet?: boolean;
