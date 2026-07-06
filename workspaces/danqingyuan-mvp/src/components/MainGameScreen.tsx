@@ -305,19 +305,16 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
   // 场景进行中以 scene.locationId 为准（2026-06-17 修 bug：否则晨课等场景背景停在 currentLocation 如宿舍）
   const bgLocation = scene?.locationId ?? currentLocation;
   const isEveningBg = state.time.timeSlot === 'evening';
-  // 院堂场景图变体（2026-07-06 接入）：晨课=上课图 / 晚间=夜景 / 雨天=雨景 / 上下午课后=课后图 / 其余=日景。
+  // 院堂场景图变体（2026-07-06 接入；晨课上课图不好看，改回日景）：晚间=夜景 / 雨天=雨景 / 上下午课后=课后图 / 其余(含晨课/午间)=日景。
   const weather = getWeather(state.time.day);
   const isRainy = weather.includes('雨') && !weather.includes('歇');
-  const isHallClass = scene?.action.type === 'attend_class' || state.time.timeSlot === 'morning_class';
   const hallVariant = isEveningBg
     ? '/bg-main-hall-night.png'
-    : isHallClass
-      ? '/bg-main-hall-class.png'
-      : isRainy
-        ? '/bg-main-hall-rainday.png'
-        : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'afternoon'
-          ? '/bg-main-hall-afterclass.png'
-          : '/bg-main-hall.png';
+    : isRainy
+      ? '/bg-main-hall-rainday.png'
+      : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'afternoon'
+        ? '/bg-main-hall-afterclass.png'
+        : '/bg-main-hall.png';
   const backgroundUrl =
     (scene?.action.activityId && sceneActivityBackgrounds[scene.action.activityId]) ||
     (bgLocation === 'hall'
