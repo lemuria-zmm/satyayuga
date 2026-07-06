@@ -28,8 +28,6 @@ import {
   sanitizeMemoryNote,
   SEGMENT_MAX,
   SEGMENT_MIN,
-  PRACTICE_SEGMENT_MAX,
-  PRACTICE_SEGMENT_MIN,
 } from '../engine/sceneEngine';
 import { AdmissionTransition } from '../components/AdmissionTransition';
 import { DialogueScreen } from '../components/DialogueScreen';
@@ -1075,7 +1073,7 @@ export function App() {
     // 沙盒练习（2026-06-27）：引擎已确定性结算技能（resolvePractice），调 LLM 出单段沉浸文。
     // 走独立轻量路径——不进三件套场景循环、不写主线账本、不推进时段。在 isLlmScene 分支之前拦截。
     if (getActionTrack(action) === 'practice') {
-      void runPractice(base, action, result);
+      runPractice(base, action, result);
       return;
     }
 
@@ -1112,85 +1110,27 @@ export function App() {
   }
 
   /**
-   * 沙盒练习（2026-06-27 成长数值重设计）：玩家在午/晚沙盒主动练技能。
-   * 引擎已确定性结算技能（resolvePractice，含每日封顶），此处仅调 LLM 出单段沉浸文覆盖正文。
-   * 与三件套场景的区别：单段即结束、不进 reading 态（无继续/推荐/去别处 dock）、不写主线账本、不推进时段。
-   * loading 复用 ActiveScene 的 'loading-open'（显示「墨正落纸……」）；拿到文本即 setActiveScene(null)。
-   * 失败兜底：用练习卡模板句，技能照常结算（练习收益是确定性的，不因 LLM 失败而丢）。
+   * 沙盒练习（2026-06-27 成长数值重设计；2026-07-06 #2 改固定模板）：玩家在午/晚沙盒主动练技能。
+   * 引擎已确定性结算技能（resolvePractice，含每日封顶）；正文改为**从练习卡模板池随机取一句**，
+   * 不再调 LLM（省 token——练习是轻量重复行为，无需每次生成）。模板池已扩至每卡 6~7 句避免重复，
+   * 并避开上一句（anti-repeat）。单段即结束、不进 reading 态、不写主线账本、不推进时段。
    */
-  async function runPractice(base: GameState, action: GameAction, result: ReturnType<typeof applyAction>) {
+  function runPractice(base: GameState, action: GameAction, result: ReturnType<typeof applyAction>) {
     const nextState = result.nextState ?? base;
     const card = ACTIVITY_BY_ID[action.activityId ?? ''];
     const locationId = action.locationId ?? base.currentLocation;
-    const fallbackText = card?.narratives?.[Math.floor(Math.random() * (card.narratives.length || 1))] ?? '你专心练了半日。';
-
-    // 提交引擎结算（技能/体力/封顶累加），先落兜底文；地点跟到练习处
-    const commit = (text: string) => {
-      const committed: GameState = { ...nextState, lastRenderedText: text, currentLocation: locationId };
-      showSettlement(result.statePatch);
-      saveGameState(committed);
-      setHasSave(true);
-      setState(committed);
-      setActiveScene(null);
-    };
-
-    // loading 态：复用 ActiveScene 'loading-open'（沉浸文 loading 提示），不进 reading
-    setActiveScene({
-      status: 'loading-open',
-      action,
-      locationId,
-      day: base.time.day,
-      timeSlot: base.time.timeSlot,
-      npcsPresent: [],
-      facts: [],
-      allowedClueIds: [],
-      segmentCount: 1,
-      maxSegments: 1,
-      sceneCanContinue: false,
-      shouldConclude: true,
-      suggestedActions: [],
-      fallbackText,
-    });
-    setState((prev) => (prev ? { ...prev, lastRenderedText: '', currentLocation: locationId } : prev));
-
-    try {
-      const response = await llmAdapter.narrateScene({
-        traceId: `scene-practice-${Date.now()}`,
-        role: 'scene_narrator',
-        promptVersion: SCENE_PROMPT_VERSION,
-        input: {
-          phase: 'practice',
-          day: base.time.day,
-          timeSlot: base.time.timeSlot,
-          locationId,
-          currentLocationLabel: LOCATIONS[locationId]?.name,
-          weather: getWeather(base.time.day),
-          season: SEASON,
-          player: buildScenePlayerCard(base.player),
-          actionLabel: action.label,
-          facts: [`${base.player.name}在${LOCATIONS[locationId]?.name}专心练习：${action.label}`],
-          // 练习纯个人沉浸：不点主题暗线、不插 NPC、不推主线
-          themeBeat: '',
-          // 练习纯个人沉浸：不插 NPC、不推主线
-          npcsPresent: [],
-          lengthBudget: {
-            segmentMin: PRACTICE_SEGMENT_MIN,
-            segmentMax: PRACTICE_SEGMENT_MAX,
-            dayCharsUsed: base.time.narrativeCharsToday,
-            dayCharsMax: DAY_CHARS_MAX,
-          },
-          allowedClueIds: [],
-          playerStyleTags: base.memory.playerStyle.tags,
-          recentLedger: [],
-          canonWarnings: base.memory.coreCanon.spoilerBoundaries,
-        },
-        context: buildMemoryContext(base, 'scene_narrator'),
-      });
-      commit(response.output.narrativeText || fallbackText);
-    } catch {
-      // LLM 失败：落模板兜底句，技能照常结算
-      commit(fallbackText);
-    }
+    const pool = card?.narratives ?? [];
+    // 避开上一句练习文，减少连点同卡时的重复感
+    const candidates = pool.length > 1 ? pool.filter((n) => n !== base.lastRenderedText) : pool;
+    const text = candidates.length > 0
+      ? candidates[Math.floor(Math.random() * candidates.length)]
+      : '你专心练了半日，指下渐有了几分长进。';
+    const committed: GameState = { ...nextState, lastRenderedText: text, currentLocation: locationId };
+    showSettlement(result.statePatch);
+    saveGameState(committed);
+    setHasSave(true);
+    setState(committed);
+    setActiveScene(null);
   }
 
   async function handleAction(action: GameAction) {
