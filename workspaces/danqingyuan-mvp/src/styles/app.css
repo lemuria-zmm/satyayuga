@@ -4048,7 +4048,7 @@ dd {
   position: fixed;
   inset: 0;
   z-index: 150;
-  background: #efe3c8 url('/main-bg.png') center / cover no-repeat;
+  background: #efe3c8 url('/bg-main-hall.png') center / cover no-repeat;
   display: flex;
   flex-direction: column;
 }

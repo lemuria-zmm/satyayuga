@@ -164,7 +164,7 @@ const locationAtmosphere: Partial<Record<string, string>> = {
 };
 
 const locationBackgrounds: Record<LocationId, string> = {
-  hall: '/main-bg.png',
+  hall: '/bg-main-hall.png',
   library: '/library-bg.png',
   garden: '/garden-bg.png',
   market: '/market-bg.png',
@@ -306,7 +306,7 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
   const backgroundUrl =
     (scene?.action.activityId && sceneActivityBackgrounds[scene.action.activityId]) ||
     (bgLocation === 'hall' && isEveningBg
-      ? '/main-night-bg.png'
+      ? '/bg-main-hall-night.png'
       : bgLocation === 'garden' && isEveningBg
         ? '/garden-night-bg.png'
         : bgLocation === 'market' && isEveningBg
