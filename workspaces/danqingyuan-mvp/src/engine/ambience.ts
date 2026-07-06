@@ -1,18 +1,25 @@
 /** 场景氛围参数（供剧情写作器输入，v2 设计文档 §6.2） */
-export const SEASON = '暮春';
+/** 季节统一为春夏之交（暮春入初夏）——全程以此为准，勿写秋冬（2026-07-06 天气系统）。 */
+export const SEASON = '春夏之交';
 
+/** 七日天气（春夏之交，逐日变化，须在故事里落笔）。首段为短标签（供 UI 状态栏），其后为供 LLM 落笔的细节。 */
 const WEATHER_BY_DAY: Record<number, string> = {
-  1: '晴，日色和软',
-  2: '晴转薄云',
-  3: '小雨，檐声不断',
-  4: '雨歇，地砖微凉',
-  5: '阴，云脚低',
-  6: '风清，竹声飒飒',
-  7: '天朗气清',
+  1: '晴，日色和暖，绿荫渐浓',
+  2: '薄云，风里带了暑气',
+  3: '骤雨，檐声不断',
+  4: '雨歇初晴，草木新洗',
+  5: '闷阴，云脚低，蝉声乍起',
+  6: '风清，竹声飒飒，天光疏朗',
+  7: '天朗气清，日头已有夏意',
 };
 
 export function getWeather(day: number): string {
   return WEATHER_BY_DAY[day] ?? '晴';
+}
+
+/** 天气短标签（状态栏用）：取首段。 */
+export function getWeatherLabel(day: number): string {
+  return getWeather(day).split('，')[0];
 }
 
 /**

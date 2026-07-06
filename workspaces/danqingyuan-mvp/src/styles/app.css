@@ -117,6 +117,23 @@ button {
   color: #d4c8b0;
 }
 
+/* 天气 chip（2026-07-06 天气系统）：季节·当日天气短标签 */
+.gm-np-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.gm-np-weather-season {
+  color: #8fae7e;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.gm-np-weather-text {
+  color: #c5a45b;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
 .gm-np-time-badge {
   padding: 2px 10px;
   color: #c5a45b;

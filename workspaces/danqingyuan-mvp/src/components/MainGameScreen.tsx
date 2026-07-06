@@ -8,7 +8,8 @@ import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
 import { DAY_CHARS_MAX, SEGMENT_MIN } from '../engine/sceneEngine';
 import { MAX_SLOT_SCENES, isActionAffordable, isPracticeMoodLocked } from '../engine/gameEngine';
-import { getWeather } from '../engine/ambience';
+import { getWeather, getWeatherLabel } from '../engine/ambience';
+import { SEASON } from '../engine/ambience';
 import { dailyChatQuota } from '../types/core';
 import type { GameAction, GameState, LocationId, NpcId, SkillId, ValidatedStatePatch } from '../types';
 import type { ClueGraphNode } from '../types/memory';
@@ -391,6 +392,11 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
           <span className="gm-np-brand">丹青院</span>
           <span className="gm-np-sep">｜</span>
           <span className="gm-np-day">入院第{state.time.day}日</span>
+          <span className="gm-np-sep">｜</span>
+          <span className="gm-np-weather" title={`${SEASON}·${weather}`}>
+            <span className="gm-np-weather-season">{SEASON}</span>
+            <span className="gm-np-weather-text">{getWeatherLabel(state.time.day)}</span>
+          </span>
           <span className="gm-np-sep">｜</span>
           <span className="gm-np-time-badge">
             {isFinalChapter

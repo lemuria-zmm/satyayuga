@@ -84,7 +84,7 @@ import '../styles/app.css';
 
 const llmAdapter = createLlmAdapter();
 
-const SCENE_PROMPT_VERSION = 'scene_narrator@2026-07-06.v24';
+const SCENE_PROMPT_VERSION = 'scene_narrator@2026-07-06.v25';
 const MAINLINE_PROMPT_VERSION = 'mainline_planner@2026-06-30.v2';
 /** 角色对白 prompt 版本（前后端须一致，2026-06-30 v7 加结局见希孟预热指引） */
 const DIALOGUE_PROMPT_VERSION = 'character_dialogue@2026-07-05.v11';
