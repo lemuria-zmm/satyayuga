@@ -10,6 +10,8 @@ export interface GuideScript {
   speakerName: string;
   /** 立绘路径（public/char/） */
   portrait: string;
+  /** 可选场景背景图（public/）：设了则铺满作背景、不再单独渲染半身立绘（如希孟书房初遇，图里已有希孟） */
+  sceneImage?: string;
   /** 逐句点击推进 */
   lines: string[];
   /** 末句按钮文案 */
@@ -36,7 +38,7 @@ export const TUTORIAL_SLOT_FLAGS: Record<string, string> = {
   evening: 'tutorial_evening_done',
 };
 
-const SHUTONG_PORTRAIT = '/char/char-shutong-normal.png';
+const SHUTONG_PORTRAIT = '/char/char-shutong-smile.png';
 
 /** 本科导师介绍差分句（2026-06-11 拍板：山水/画理=李唐，人物=嵩，界画=择端） */
 const MAJOR_LINE_BY_STYLE: Record<SkillId, string> = {
@@ -113,7 +115,8 @@ export function getSilentSlotUnlock(state: GameState): { flagsSet: Record<string
 const XIMENG_FIRST_MEET: GuideScript = {
   id: 'ximeng_first_meet',
   speakerName: '希孟',
-  portrait: '/char/char-ximeng-normal.png',
+  portrait: '/char/char-ximeng-calm.png',
+  sceneImage: '/scene-himeng-first-meet.png',
   lines: [
     '书房尽头的窗下，立着一个青衣的背影。少年身量不高，肩背却挺得笔直，正低头对着案上一卷长长的青绿设色出神，连你进门也没察觉。',
     '日光从糊窗的纸上漏下来，照得那卷山水里的石青石绿微微发亮。他执笔的手悬在半空，许久没有落下——仿佛整座书房的安静，都是为了护住他笔尖那一点将落未落的念头。',

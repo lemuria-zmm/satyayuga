@@ -25,8 +25,13 @@ export function GuideDialogue({ script, onDone }: GuideDialogueProps) {
   }
 
   return (
-    <div className="gd-overlay">
-      <img alt={script.speakerName} className="gd-portrait" src={script.portrait} />
+    <div
+      className={script.sceneImage ? 'gd-overlay gd-overlay--scene' : 'gd-overlay'}
+      style={script.sceneImage ? { backgroundImage: `url(${script.sceneImage})` } : undefined}
+    >
+      {!script.sceneImage && (
+        <img alt={script.speakerName} className="gd-portrait" src={script.portrait} />
+      )}
       <div
         className="gd-box"
         onClick={advance}

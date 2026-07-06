@@ -3,9 +3,9 @@ import type { NpcId } from '../types';
 
 /** 结局导师点评立绘（2026-06-30）：李唐严肃、嵩/择端常态。批二见希孟复用本组件传 ximeng */
 const mentorPortrait: Record<NpcId, string> = {
-  litang: '/char/char-litang-serious.png',
-  song: '/char/char-song-normal.png',
-  zeduan: '/char/char-zeduan-normal.png',
+  litang: '/char/char-litang-stern.png',
+  song: '/char/char-song-calm.png',
+  zeduan: '/char/char-zeduan-calm.png',
   ximeng: '/char/char-ximeng-smile.png',
 };
 

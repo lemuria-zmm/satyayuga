@@ -4036,6 +4036,15 @@ dd {
   animation: fadeIn 280ms ease both;
 }
 
+/* 场景背景变体（如希孟书房初遇）：铺满场景图、不渲半身立绘，压一层暗罩保证文字可读 */
+.gd-overlay--scene {
+  background-color: rgba(14, 10, 6, 0.35);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
+}
+
 .gd-portrait {
   position: absolute;
   bottom: 0;

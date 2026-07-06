@@ -95,10 +95,10 @@ const TIME_SLOTS: GameState['time']['timeSlot'][] = ['morning_class', 'forenoon'
  * 现用 4 位 NPC 现成立绘；后续美术补通用图（青年男/女/老年男/儿童等）按需扩。
  */
 const sceneNpcSprite: Record<NpcId, string> = {
-  ximeng: '/char/char-ximeng-normal.png',
-  zeduan: '/char/char-zeduan-normal.png',
-  litang: '/char/char-litang-serious.png',
-  song: '/char/char-song-normal.png',
+  ximeng: '/char/char-ximeng-calm.png',
+  zeduan: '/char/char-zeduan-calm.png',
+  litang: '/char/char-litang-calm.png',
+  song: '/char/char-song-calm.png',
 };
 
 /** 档案实体类别中文（2026-07-01，档案库+新增飘条共用）；含 clueGraph 全 6 类 */
