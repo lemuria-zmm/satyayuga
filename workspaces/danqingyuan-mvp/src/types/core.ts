@@ -94,7 +94,8 @@ export type QuestionType =
   | 'express_intent'
   | 'character_dispute'
   | 'archive_observation'
-  | 'poem_intent';
+  | 'poem_intent'
+  | 'free_creation';
 
 export type InterpretationTier = 'core' | 'partial' | 'shallow';
 

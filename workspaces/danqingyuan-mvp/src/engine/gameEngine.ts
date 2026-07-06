@@ -234,6 +234,14 @@ export const EXAM_SKILL_GATE = 30;
 /** 本科技能不足时的封顶分（< 60 通过线，判不过） */
 export const EXAM_SKILL_CAP_SCORE = 59;
 
+/** 丹青试自由创作权重（2026-07-06 改版）：rawScore = (1-w)*选项分 + w*自由创作分。自由创作是重头，占 0.6。 */
+export const FREE_CREATION_WEIGHT = 0.6;
+
+/** 丹青试加权原始分（2026-07-06）：选项题分 + 自由创作分 按权重合成，四舍五入。纯函数便于单测。 */
+export function weightedExamRawScore(optionScore: number, freeCreationScore: number): number {
+  return Math.round((1 - FREE_CREATION_WEIGHT) * optionScore + FREE_CREATION_WEIGHT * freeCreationScore);
+}
+
 /**
  * 丹青试算分（2026-06-28）：LLM 评分均值（rawScore）+ 学识加分 floor(k/5)；
  * **本科技能 < EXAM_SKILL_GATE 时封顶 EXAM_SKILL_CAP_SCORE**（手生则无论评分多高都判不过，技能是硬门槛）。

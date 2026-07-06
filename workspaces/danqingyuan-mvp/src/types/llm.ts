@@ -118,6 +118,10 @@ export interface PaintingPromptGeneratorInput {
   tone: 'plain' | 'restrained' | 'literary';
   /** 温书自测（2026-06-30）：true 时为晚间宿舍日常温习，出纯画意题，不触碰《骸游图》/主线伏笔 */
   quickReview?: boolean;
+  /** 自由创作（2026-07-06 丹青试改版）：questionType='free_creation' 时，玩家从画案手记择取的灵感；考官据此+本科拟自由命题 */
+  inspirations?: { label: string; kind: string; note?: string }[];
+  /** 本科画科中文（自由创作命题贴合本科用，如「山水」「人物」「界画」） */
+  majorSkillLabel?: string;
 }
 
 export interface PaintingPromptGeneratorOutput {

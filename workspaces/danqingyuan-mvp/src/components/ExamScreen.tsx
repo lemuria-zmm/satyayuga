@@ -4,6 +4,8 @@ import type { PaintingPromptGeneratorOutput, QuestionType } from '../types';
 export interface ExamAnswer {
   optionId?: string;
   freeText: string;
+  /** 自由创作（2026-07-06）：所选灵感 id（记录供账本/复盘） */
+  inspirationIds?: string[];
 }
 
 interface ExamScreenProps {
@@ -54,6 +56,7 @@ const questionTypeLabels: Record<QuestionType, string> = {
   character_dispute: '人物交锋',
   archive_observation: '秘阁观画',
   poem_intent: '以诗入画',
+  free_creation: '自由创作',
 };
 
 const optionBadges = ['甲', '乙', '丙', '丁'];
