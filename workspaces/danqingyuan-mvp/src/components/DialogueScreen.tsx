@@ -45,6 +45,8 @@ interface DialogueScreenProps {
   npcId: NpcId;
   /** 当前好感（hiddenAffinity），用于梅花格显示与立绘差分 */
   affinity: number;
+  /** 立绘覆盖（2026-07-07）：闲聊页用全身立绘（希孟 A；授衔后画室 B），传入则不走表情半身差分 */
+  portraitOverride?: string;
   /** 本场可说的句数预算（主动闲聊=好感档剩余次数；首遇=独立固定额度） */
   maxTurns: number;
   /** 顶栏文案：true 显「今日还可说 N 句」（主动）；false 显「初次相识」（首遇，不占当日额度） */
@@ -63,7 +65,7 @@ interface DialogueScreenProps {
   onOpen?: (priorHistory: string[]) => Promise<CharacterDialogueOutput | undefined>;
 }
 
-export function DialogueScreen({ npcId, affinity, maxTurns, countsTowardQuota, priorHistory, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
+export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, countsTowardQuota, priorHistory, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
   // 当前希孟的话（首轮用问候语 + 默认选项；之后用 LLM 输出）
   const [response, setResponse] = useState<CharacterDialogueOutput | null>(null);
   const [replyOptions, setReplyOptions] = useState<ChatReplyOption[]>(OPENING_REPLIES);
@@ -84,11 +86,13 @@ export function DialogueScreen({ npcId, affinity, maxTurns, countsTowardQuota, p
   const turnsLeft = Math.max(0, budget - turnsUsed);
   const nameColor = npcColors[npcId];
   const plumsLit = affinity <= 0 ? 0 : Math.min(5, 1 + Math.floor(affinity / 20));
-  // 立绘按情绪差分（2026-07-06）：有回应时按 response.emotionState 切表情；进场（无回应）用 normal/好感兜底。
-  // 希孟保留好感入场差分（越熟越亲近），有回应后交给 emotionState。
-  const portrait = response
-    ? npcSpriteFor(npcId, response.emotionState, affinity)
-    : npcSpriteFor(npcId, npcId === 'ximeng' && affinity >= 40 ? 'noticing' : undefined, affinity);
+  // 立绘（2026-07-07）：闲聊页优先用 portraitOverride 全身立绘（希孟 A / 授衔后画室 B）；
+  // 未传时按情绪差分半身（2026-07-06）：有回应时按 response.emotionState 切表情；进场（无回应）用好感兜底。
+  const portrait =
+    portraitOverride ??
+    (response
+      ? npcSpriteFor(npcId, response.emotionState, affinity)
+      : npcSpriteFor(npcId, npcId === 'ximeng' && affinity >= 40 ? 'noticing' : undefined, affinity));
   // 完整往来 = 持久历史 + 本场新增
   const fullLog = [...priorHistory, ...history];
 

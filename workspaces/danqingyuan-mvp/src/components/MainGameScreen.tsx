@@ -129,12 +129,39 @@ function actionArt(action: GameAction): string | undefined {
   return undefined;
 }
 
-/** 活动进行中的场景图替换（茶坊/瓦子/夜市为街市的子场景） */
+/**
+ * 活动进行中的场景图替换（2026-07-07 扩充，明明："子场景配合行动签用，避免一直停留在一个bg单调"）。
+ * 固定子场景 + 少数按时段差分（书房夜读用灯下书案图）。
+ */
 const sceneActivityBackgrounds: Record<string, string> = {
-  teahouse: '/teahouse-bg.png',
-  eve_tingqu: '/washe-theater-bg.png',
-  eve_nightmarket: '/night-market-bg.png',
+  // 街市子场景
+  teahouse: '/bg-teahouse.png',
+  eve_tingqu: '/bg-washe-theater.png',
+  eve_nightmarket: '/bg-market-night.png',
+  market_sketch: '/bg-market-folk.png',
+  practice_market_figure: '/bg-market-folk.png',
+  practice_market_architecture: '/bg-market-bridge-canal.png',
+  meal_street: '/bg-market-folk.png',
+  // 书房子场景：查证/深查在书架间
+  library_research: '/bg-library-shelf.png',
+  library_deep_research: '/bg-library-shelf.png',
+  // 后花园子场景：观竹石在春竹畔
+  practice_garden_observe: '/bg-garden-bamboo-spring.png',
+  // 膳堂子场景：热食去灶间
+  meal_chuibing: '/bg-dining-stove.png',
+  meal_mantou: '/bg-dining-stove.png',
+  meal_botuo: '/bg-dining-stove.png',
 };
+
+/** 晚间读书类行动签 → 灯下书案图（不局限于一个行动签；白日仍用书房日景） */
+const EVENING_STUDY_ACTIVITIES = new Set(['practice_read_treatise', 'practice_view_scrolls', 'practice_deep_study']);
+
+function activityBackground(activityId: string, timeSlot: GameState['time']['timeSlot']): string | undefined {
+  if (timeSlot === 'evening' && EVENING_STUDY_ACTIVITIES.has(activityId)) {
+    return '/bg-library-desk-night.png';
+  }
+  return sceneActivityBackgrounds[activityId];
+}
 
 const ximengAtmosphere: Record<GameState['relationships']['ximeng']['emotionState'], string> = {
   distant: '他未与你搭话。只是你经过案前时，他将未干的画卷轻轻合上。',
@@ -169,14 +196,14 @@ const locationAtmosphere: Partial<Record<string, string>> = {
 };
 
 const locationBackgrounds: Record<LocationId, string> = {
-  hall: '/bg-main-hall.png',
-  library: '/library-bg.png',
-  garden: '/garden-bg.png',
-  market: '/market-bg.png',
-  dining_hall: '/dining-hall-bg.png',
-  dormitory: '/dormitory-bg.png',
-  secret_archive: '/archive-gate-bg.png',
-  ximeng_studio: '/ximeng-studio-bg.png',
+  hall: '/bg-main-hall-morning.png',
+  library: '/bg-library-day.png',
+  garden: '/bg-garden-day.png',
+  market: '/bg-market-day.png',
+  dining_hall: '/bg-dining-hall.png',
+  dormitory: '/bg-dormitory-day.png',
+  secret_archive: '/bg-archive-gate.png',
+  ximeng_studio: '/bg-ximeng-studio.png',
 };
 
 /** 右栏去处一览的固定顺序；未解锁的渲染为灰签 */
@@ -304,32 +331,47 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
 
   const isSandbox = state.time.timeSlot === 'noon' || state.time.timeSlot === 'evening';
 
-  // 场景图：活动子场景（茶坊/瓦子/夜市）优先，院堂/后花园/街市晚间换夜景。
+  // 场景图：活动子场景优先，各去处按时段/天气切变体（2026-07-07 全套场景图接入）。
   // 场景进行中以 scene.locationId 为准（2026-06-17 修 bug：否则晨课等场景背景停在 currentLocation 如宿舍）
   const bgLocation = scene?.locationId ?? currentLocation;
   const isEveningBg = state.time.timeSlot === 'evening';
-  // 院堂场景图变体（2026-07-06 接入；晨课上课图不好看，改回日景）：晚间=夜景 / 雨天=雨景 / 上下午课后=课后图 / 其余(含晨课/午间)=日景。
   const weather = getWeather(state.time.day);
   const isRainy = weather.includes('雨') && !weather.includes('歇');
+  // 院堂五变体（2026-07-07 明明拍板）：晨课=morning / 晨课后上午(含午间)=afterclass / 午膳后回院堂=afternoon / 晚间=night / 雨天(日间)=rainy。
   const hallVariant = isEveningBg
     ? '/bg-main-hall-night.png'
     : isRainy
-      ? '/bg-main-hall-rainday.png'
-      : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'afternoon'
-        ? '/bg-main-hall-afterclass.png'
-        : '/bg-main-hall.png';
+      ? '/bg-main-hall-rainy.png'
+      : state.time.timeSlot === 'afternoon'
+        ? '/bg-main-hall-afternoon.png'
+        : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'noon'
+          ? '/bg-main-hall-afterclass.png'
+          : '/bg-main-hall-morning.png';
+  // 后花园：雨天有专属雨亭图（日/夜各一）；街市雨天日间用雨景。
+  const gardenVariant = isRainy
+    ? isEveningBg
+      ? '/bg-garden-pavilion-rain-night.png'
+      : '/bg-garden-pavilion-rain-day.png'
+    : isEveningBg
+      ? '/bg-garden-night.png'
+      : '/bg-garden-day.png';
+  const marketVariant = isEveningBg
+    ? '/bg-market-night.png'
+    : isRainy
+      ? '/bg-market-rainy.png'
+      : '/bg-market-day.png';
   const backgroundUrl =
-    (scene?.action.activityId && sceneActivityBackgrounds[scene.action.activityId]) ||
+    (scene?.action.activityId && activityBackground(scene.action.activityId, state.time.timeSlot)) ||
     (bgLocation === 'hall'
       ? hallVariant
-      : bgLocation === 'garden' && isEveningBg
-        ? '/garden-night-bg.png'
-        : bgLocation === 'market' && isEveningBg
-          ? '/market-night-bg.png'
-          : bgLocation === 'library' && isEveningBg
-            ? '/library-night-bg.png'
-            : bgLocation === 'dormitory' && state.time.timeSlot !== 'evening'
-              ? '/dormitory-day-bg.png'
+      : bgLocation === 'garden'
+        ? gardenVariant
+        : bgLocation === 'market'
+          ? marketVariant
+          : bgLocation === 'library'
+            ? (isEveningBg ? '/bg-library-night.png' : '/bg-library-day.png')
+            : bgLocation === 'dormitory'
+              ? (isEveningBg ? '/bg-dormitory-night.png' : '/bg-dormitory-day.png')
               : locationBackgrounds[bgLocation]);
 
   // VN 逐句呈现（2026-06-30）：当前显示单元 = segments[segIndex]；speaker 驱动立绘+说话人名。

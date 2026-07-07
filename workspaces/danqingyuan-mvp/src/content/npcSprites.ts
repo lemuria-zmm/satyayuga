@@ -4,7 +4,7 @@ import type { NpcId, NpcEmotionState } from '../types';
  * NPC 立绘按情绪/好感选图（2026-07-06 接入新表情半身集，calm 为通用兜底）。
  *
  * 现有各 NPC 表情半身（public/char/char-{npc}-{expr}.png）：
- * - 希孟 ximeng：calm/sad/smile/stern/surprise/trust
+ * - 希孟 ximeng：calm/sad/smile/stern/trust（surprise 弃用不好看——2026-07-07 明明拍板，shaken 走 calm 兜底）
  * - 李唐 litang：calm/sad/smile/stern/surprise/trust
  * - 嵩 song：calm/sad/smile/stern/surprise（无 trust）
  * - 择端 zeduan：calm/sad/smile/stern/surprise（无 trust）
@@ -13,7 +13,7 @@ import type { NpcId, NpcEmotionState } from '../types';
  * 兜底：选不到目标表情一律回退 calm（全员必有）。
  */
 const NPC_EXPRESSIONS: Record<string, ReadonlySet<string>> = {
-  ximeng: new Set(['calm', 'sad', 'smile', 'stern', 'surprise', 'trust']),
+  ximeng: new Set(['calm', 'sad', 'smile', 'stern', 'trust']),
   litang: new Set(['calm', 'sad', 'smile', 'stern', 'surprise', 'trust']),
   song: new Set(['calm', 'sad', 'smile', 'stern', 'surprise']),
   zeduan: new Set(['calm', 'sad', 'smile', 'stern', 'surprise']),

@@ -1430,6 +1430,8 @@ export function App() {
       <ExamScreen
         questions={examQuestions}
         mode={examMode}
+        // 温书自测用宿舍夜读场景图，按玩家性别切换（2026-07-07 明明拍板），与丹青试考场视觉区分
+        bgImage={examMode === 'quick' ? `/scene-dorm-nightstudy-${state.player.gender}.png` : undefined}
         inspirations={buildInspirations(state)}
         onComposeTheme={composeFreeCreationTheme}
         onCancel={() => setIsExamOpen(false)}
@@ -1891,6 +1893,14 @@ export function App() {
     return (
       <DialogueScreen
         affinity={rel.hiddenAffinity}
+        // 希孟闲聊用全身立绘（2026-07-07 明明拍板）：日常=A；授衔后到画室寻他=B。其余 NPC 走表情半身。
+        portraitOverride={
+          dialogueNpcId === 'ximeng'
+            ? state.progress.rank !== 'student' && state.currentLocation === 'ximeng_studio'
+              ? '/char/char-ximeng-full-body-b.png'
+              : '/char/char-ximeng-full-body-a.png'
+            : undefined
+        }
         maxTurns={maxTurns}
         countsTowardQuota={!dialogueIsFirstMeet}
         priorHistory={rel.chatHistory ?? []}

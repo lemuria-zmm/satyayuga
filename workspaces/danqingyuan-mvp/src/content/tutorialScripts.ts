@@ -116,7 +116,7 @@ const XIMENG_FIRST_MEET: GuideScript = {
   id: 'ximeng_first_meet',
   speakerName: '希孟',
   portrait: '/char/char-ximeng-calm.png',
-  sceneImage: '/scene-himeng-first-meet.png',
+  sceneImage: '/scene-ximeng-first-meet.png',
   lines: [
     '书房尽头的窗下，立着一个青衣的背影。少年身量不高，肩背却挺得笔直，正低头对着案上一卷长长的青绿设色出神，连你进门也没察觉。',
     '日光从糊窗的纸上漏下来，照得那卷山水里的石青石绿微微发亮。他执笔的手悬在半空，许久没有落下——仿佛整座书房的安静，都是为了护住他笔尖那一点将落未落的念头。',

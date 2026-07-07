@@ -20,6 +20,8 @@ interface ExamScreenProps {
   inspirations?: Inspiration[];
   /** 自由创作拟题（2026-07-06）：择灵感后 App 调 LLM 据灵感+本科出命题 */
   onComposeTheme?: (inspirationIds: string[]) => Promise<PaintingPromptGeneratorOutput>;
+  /** 背景覆盖（2026-07-07）：温书自测传宿舍夜读场景图（按玩家性别），与丹青试考场视觉区分 */
+  bgImage?: string;
 }
 
 /** 自由创作最多可选灵感数 */
@@ -72,8 +74,9 @@ const optionBadges = ['甲', '乙', '丙', '丁'];
 
 type ExamPhase = 'intro' | 'answering' | 'submitting';
 
-export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', inspirations = [], onComposeTheme }: ExamScreenProps) {
+export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', inspirations = [], onComposeTheme, bgImage }: ExamScreenProps) {
   const chrome = examChrome[mode];
+  const bgStyle = bgImage ? { backgroundImage: `url(${bgImage})` } : undefined;
   const [answers, setAnswers] = useState<Record<string, ExamAnswer>>(
     Object.fromEntries(questions.map((q) => [q.id, { freeText: '' }])),
   );
@@ -141,7 +144,7 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', insp
   if (phase === 'intro') {
     return (
       <main className="ex-page">
-        <div className="ex-bg" />
+        <div className="ex-bg" style={bgStyle} />
         <div className="ex-bg-overlay" />
 
         <div className="ex-plaque">
@@ -184,7 +187,7 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', insp
   if (phase === 'submitting') {
     return (
       <main className="ex-page">
-        <div className="ex-bg" />
+        <div className="ex-bg" style={bgStyle} />
         <div className="ex-bg-overlay" />
 
         <div className="ex-plaque">
@@ -210,7 +213,7 @@ export function ExamScreen({ questions, onCancel, onSubmit, mode = 'final', insp
   // ---- Answering phase ----
   return (
     <main className="ex-page">
-      <div className="ex-bg" />
+      <div className="ex-bg" style={bgStyle} />
       <div className="ex-bg-overlay" />
 
       {/* Top plaque */}
