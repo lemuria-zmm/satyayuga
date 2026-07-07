@@ -4047,8 +4047,8 @@ dd {
 
 .gd-portrait {
   position: absolute;
-  right: calc(100% - 4px); /* 挂在 .gd-box 内、右缘贴框左缘微叠 4px（2026-07-07 明明：与对话框紧贴） */
-  bottom: 0; /* 底部与框底对齐 */
+  left: 16px; /* 站在 .gd-box 顶上、靠框左端（2026-07-07 明明红框位置） */
+  bottom: calc(100% - 8px); /* 底部踩住框顶（微叠 8px，像立在卷轴后） */
   height: min(30vh, 230px);
   max-width: 20vw;
   object-fit: contain;
