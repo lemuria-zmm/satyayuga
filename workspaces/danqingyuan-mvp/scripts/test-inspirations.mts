@@ -13,6 +13,16 @@ function check(name: string, cond: boolean) { if (cond) pass++; else { fail++; c
 function stateWithNodes(nodes: { id: string; label: string; kind: string; discovered: boolean; hidden: boolean; note?: string }[]): GameState {
   const s = createInitialGameState({ player: { name: '测者', styleOrigin: 'landscape' } });
   s.memory.clueGraph.nodes = nodes as GameState['memory']['clueGraph']['nodes'];
+  // 天气随机化后（2026-07-08）测试固定一周天气：第3日骤雨、第4日雨歇，其余晴云
+  s.weatherWeek = [
+    '晴，日色和暖，绿荫渐浓',
+    '薄云，风里带了暑气',
+    '骤雨，檐声不断',
+    '雨歇初晴，草木新洗',
+    '闷阴，云脚低，蝉声乍起',
+    '风清，竹声飒飒，天光疏朗',
+    '天朗气清，日头已有夏意',
+  ];
   return s;
 }
 

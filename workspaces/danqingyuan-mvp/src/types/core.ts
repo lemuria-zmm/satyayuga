@@ -279,6 +279,8 @@ export interface GameState {
   puzzle: PuzzleState;
   memory: import('./memory').MemoryState;
   currentLocation: LocationId;
+  /** 一周天气（2026-07-07 天气随机化）：开局 generateWeatherWeek 生成 7 条，索引=日-1；约束≥1天雨、至多2天雨（非全雨） */
+  weatherWeek?: string[];
   /** 玩家自填课表（入院引导后填写；未填则晨课不可上） */
   curriculum?: CurriculumState;
   /** 七日主线（开局种子 + 一次 LLM 扩写节拍表；失败回落模板节拍） */

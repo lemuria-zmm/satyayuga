@@ -1,3 +1,4 @@
+import { generateWeatherWeek } from './ambience';
 import { INITIAL_FLAGS } from '../content/flags';
 import type { CharacterMemory, FamilyOrigin, GameState, NpcId, PlayerProfile, SkillState } from '../types';
 
@@ -93,6 +94,7 @@ export function createInitialGameState(options: CreateGameStateOptions = {}): Ga
       flags: { ...INITIAL_FLAGS, visited_hall: true },
     },
     currentLocation: 'hall',
+    weatherWeek: generateWeatherWeek(),
     relationships: {
       ximeng: {
         npcId: 'ximeng',

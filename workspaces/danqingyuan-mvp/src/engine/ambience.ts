@@ -2,8 +2,29 @@
 /** 季节统一为春夏之交（暮春入初夏）——全程以此为准，勿写秋冬（2026-07-06 天气系统）。 */
 export const SEASON = '春夏之交';
 
-/** 七日天气（春夏之交，逐日变化，须在故事里落笔）。首段为短标签（供 UI 状态栏），其后为供 LLM 落笔的细节。 */
-const WEATHER_BY_DAY: Record<number, string> = {
+/**
+ * 七日天气（2026-07-07 改随机，明明拍板）：开局随机生成一周天气存入 GameState.weatherWeek，
+ * 约束：七天内**至少一天雨、至多两天雨**（不能全雨）；雨后次日（若非雨天）自然接"雨歇初晴"。
+ * 首段为短标签（供 UI 状态栏），其后为供 LLM 落笔的细节。
+ */
+const NON_RAIN_POOL = [
+  '晴，日色和暖，绿荫渐浓',
+  '薄云，风里带了暑气',
+  '闷阴，云脚低，蝉声乍起',
+  '风清，竹声飒飒，天光疏朗',
+  '天朗气清，日头已有夏意',
+  '晴，蝉声初起，槐影正浓',
+];
+
+const RAIN_POOL = [
+  '骤雨，檐声不断',
+  '细雨，烟丝斜织，檐滴成线',
+];
+
+const AFTER_RAIN = '雨歇初晴，草木新洗';
+
+/** 旧固定表（v16 及更早存档的天气，迁移时沿用，保证半程玩家看过的天气不变） */
+const LEGACY_WEATHER_BY_DAY: Record<number, string> = {
   1: '晴，日色和暖，绿荫渐浓',
   2: '薄云，风里带了暑气',
   3: '骤雨，檐声不断',
@@ -13,13 +34,49 @@ const WEATHER_BY_DAY: Record<number, string> = {
   7: '天朗气清，日头已有夏意',
 };
 
-export function getWeather(day: number): string {
-  return WEATHER_BY_DAY[day] ?? '晴';
+/** 是否雨天（含"雨"且非"雨歇"）——背景雨景变体/天空转场共用此判定 */
+export function isRainyWeather(weather: string): boolean {
+  return weather.includes('雨') && !weather.includes('歇');
+}
+
+/** 开局生成一周天气：1~2 天雨（随机落点），雨后接初晴，其余从晴/云池不重复取。 */
+export function generateWeatherWeek(): string[] {
+  const rainCount = Math.random() < 0.5 ? 1 : 2;
+  const days = [1, 2, 3, 4, 5, 6, 7];
+  // 随机选雨日（两天雨时不相邻，免得连雨压抑）
+  const rainDays = new Set<number>();
+  while (rainDays.size < rainCount) {
+    const d = days[Math.floor(Math.random() * days.length)];
+    if ([...rainDays].some((r) => Math.abs(r - d) <= 1)) continue;
+    rainDays.add(d);
+  }
+  const pool = [...NON_RAIN_POOL].sort(() => Math.random() - 0.5);
+  const week: string[] = [];
+  for (let d = 1; d <= 7; d++) {
+    if (rainDays.has(d)) {
+      week.push(RAIN_POOL[Math.floor(Math.random() * RAIN_POOL.length)]);
+    } else if (rainDays.has(d - 1)) {
+      week.push(AFTER_RAIN);
+    } else {
+      week.push(pool.pop() ?? NON_RAIN_POOL[0]);
+    }
+  }
+  return week;
+}
+
+/** 迁移用：旧存档沿用固定表作 weatherWeek（玩家已看过的天气不变） */
+export function legacyWeatherWeek(): string[] {
+  return [1, 2, 3, 4, 5, 6, 7].map((d) => LEGACY_WEATHER_BY_DAY[d]);
+}
+
+/** 取某日天气：优先存档里的 weatherWeek，缺失（异常/旧数据）回退固定表 */
+export function getWeather(day: number, weatherWeek?: string[]): string {
+  return weatherWeek?.[day - 1] ?? LEGACY_WEATHER_BY_DAY[day] ?? '晴';
 }
 
 /** 天气短标签（状态栏用）：取首段。 */
-export function getWeatherLabel(day: number): string {
-  return getWeather(day).split('，')[0];
+export function getWeatherLabel(day: number, weatherWeek?: string[]): string {
+  return getWeather(day, weatherWeek).split('，')[0];
 }
 
 /**

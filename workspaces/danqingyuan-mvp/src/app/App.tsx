@@ -5,7 +5,7 @@ import { buildInspirations } from '../engine/inspirations';
 import { createInitialGameState } from '../engine/initialState';
 import { applyValidatedStatePatch } from '../engine/statePatches';
 import { dailyChatQuota, stageFloor, DAILY_AFFINITY_CAP } from '../types/core';
-import { getThemeBeat, getWeather, SEASON } from '../engine/ambience';
+import { getThemeBeat, getWeather, isRainyWeather, SEASON } from '../engine/ambience';
 import {
   type EndingStage,
   nextEndingStage,
@@ -41,6 +41,7 @@ import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
 import { XimengBridge } from '../components/XimengBridge';
 import { EpilogueScreen } from '../components/EpilogueScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
+import { SkyTransition } from '../components/SkyTransition';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
 import { HaiyouRevealScreen } from '../components/HaiyouRevealScreen';
@@ -230,6 +231,9 @@ export function App() {
   const [llmError, setLlmError] = useState<string | null>(null);
   // 行动签场景图（2026-07-07）：practice/膳食等不起场景的行动签换背景用；runAction 统一设/清
   const [activityBg, setActivityBg] = useState<string | null>(null);
+  // 时段转场（2026-07-08）：时段推进瞬间全屏天空图淡入淡出；ref 记上一次日/时段判断"推进"
+  const [skyTransition, setSkyTransition] = useState<{ img: string; caption: string } | null>(null);
+  const prevTimeRef = useRef<{ day: number; slot: TimeSlot } | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
   const [newEntities, setNewEntities] = useState<{ items: ClueGraphNode[]; seq: number } | null>(null);
@@ -246,6 +250,38 @@ export function App() {
   /** 当前应播的引导脚本（固定脚本）：场景/考试/解谜/对话进行中不插播 */
   const guideStep =
     state && !activeScene && !isExamOpen && !endingStage && !dialogueNpcId ? getActiveGuideStep(state) : null;
+
+  // 时段转场（2026-07-08 明明拍板）：同日时段推进到 上午/午间/下午 时，全屏天空图淡入停一拍再淡出。
+  // 雨天用雨空；晚间无夜空图暂不出转场；开档/读档首拍(prev=null)与结局演出中不触发。
+  useEffect(() => {
+    if (!state) {
+      prevTimeRef.current = null;
+      return;
+    }
+    const cur = { day: state.time.day, slot: state.time.timeSlot };
+    const prev = prevTimeRef.current;
+    prevTimeRef.current = cur;
+    if (!prev || endingStage || !state.progress.flags.admitted) return;
+    const order: TimeSlot[] = ['morning_class', 'forenoon', 'noon', 'afternoon', 'evening'];
+    const advanced = prev.day === cur.day && order.indexOf(cur.slot) > order.indexOf(prev.slot);
+    if (!advanced) return;
+    if (cur.slot !== 'forenoon' && cur.slot !== 'noon' && cur.slot !== 'afternoon') return;
+    const rainy = isRainyWeather(getWeather(cur.day, state.weatherWeek));
+    const img = rainy
+      ? '/bg-sky-rain-day.png'
+      : cur.slot === 'forenoon'
+        ? '/bg-sky-morning-sunny.png'
+        : '/bg-sky-afternoon-sunny.png';
+    const caption =
+      cur.slot === 'forenoon'
+        ? (rainy ? '晨课毕 · 檐外雨声' : '晨课毕 · 日上三竿')
+        : cur.slot === 'noon'
+          ? (rainy ? '日过中天 · 雨未肯歇' : '日过中天 · 午间小憩')
+          : rainy
+            ? '午后 · 雨脚渐密'
+            : '午后 · 日影西斜';
+    setSkyTransition({ img, caption });
+  }, [state?.time.day, state?.time.timeSlot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 叙事时段自动开场（2026-06-18 A+C）：进入 forenoon/afternoon、走到新地点时自动开 LLM 场景；
   // 玩家通过三件套（继续/推荐/去别处）推进。去别处不推进时段、回主界面自由走动。
@@ -316,7 +352,7 @@ export function App() {
       locationId: scene.locationId,
       currentLocationLabel: LOCATIONS[scene.locationId]?.name,
       allowedLocations: anchor.progress.unlockedLocations.map((id) => LOCATIONS[id]?.name).filter(Boolean),
-      weather: getWeather(scene.day),
+      weather: getWeather(scene.day, anchor.weatherWeek),
       season: SEASON,
       player: buildScenePlayerCard(anchor.player),
       actionLabel: scene.action.label,
@@ -360,7 +396,7 @@ export function App() {
           day: 1,
           timeSlot: 'morning_class',
           locationId: 'hall',
-          weather: getWeather(1),
+          weather: getWeather(1, s.weatherWeek),
           season: SEASON,
           player: buildScenePlayerCard(s.player),
           actionLabel: '入院',
@@ -985,6 +1021,15 @@ export function App() {
     return <AdmissionTransition text={admissionText} onEnter={enterAcademy} />;
   }
 
+  // 时段转场天空图（2026-07-08）：主界面两个 render 路径共用
+  const skyOverlay = skyTransition ? (
+    <SkyTransition
+      caption={skyTransition.caption}
+      img={skyTransition.img}
+      onDone={() => setSkyTransition(null)}
+    />
+  ) : null;
+
   // 引导对话（拍板：固定脚本立绘对话框）：小书童入院介绍 / 第 1 日午间晚间 / 希孟书房首场
   if (guideStep) {
     return (
@@ -1006,6 +1051,7 @@ export function App() {
           guideActive
         />
         <GuideDialogue script={guideStep.script} onDone={() => completeGuideStep(guideStep)} />
+        {skyOverlay}
       </>
     );
   }
@@ -2017,6 +2063,7 @@ export function App() {
 
 
   return (
+    <>
     <MainGameScreen
       state={state}
       actions={actions}
@@ -2108,5 +2155,7 @@ export function App() {
         })();
       } : undefined}
     />
+    {skyOverlay}
+    </>
   );
 }

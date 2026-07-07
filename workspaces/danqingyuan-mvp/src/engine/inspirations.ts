@@ -1,6 +1,9 @@
 import type { GameState } from '../types';
 import type { ClueGraphNode } from '../types/memory';
-import { getWeatherLabel } from './ambience';
+import { getWeather, getWeatherLabel, isRainyWeather } from './ambience';
+
+/** 中文日序（灵感卡标签用） */
+const DAY_CN: Record<number, string> = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七' };
 
 /**
  * 自由创作灵感（2026-07-06 丹青试改版）。
@@ -41,12 +44,15 @@ export function buildInspirations(state: GameState): Inspiration[] {
     list.push({ id: `entity-${node.id}`, label: node.label, kind: node.kind, note: node.note });
   }
 
-  // 天气灵感：当日天气 + （若非第一日）一条更早印象最深的天气
+  // 天气灵感：当日天气 + （若已下过）最近一场雨作往日灵感（2026-07-07 天气随机化后动态找雨日）
   const day = state.time.day;
-  list.push({ id: `weather-${day}`, label: `今日的${getWeatherLabel(day)}`, kind: 'weather', note: '这一日的天光物候' });
-  if (day >= 4) {
-    // 第三日那场骤雨最有戏（春夏之交），作一条固定的往日天气灵感
-    list.push({ id: 'weather-3', label: '第三日那场骤雨', kind: 'weather', note: '檐声不断、草木新洗' });
+  list.push({ id: `weather-${day}`, label: `今日的${getWeatherLabel(day, state.weatherWeek)}`, kind: 'weather', note: '这一日的天光物候' });
+  for (let d = day - 1; d >= 1; d--) {
+    const w = getWeather(d, state.weatherWeek);
+    if (isRainyWeather(w)) {
+      list.push({ id: `weather-${d}`, label: `第${DAY_CN[d] ?? d}日那场${getWeatherLabel(d, state.weatherWeek)}`, kind: 'weather', note: '檐声犹在耳，草木新洗的气味' });
+      break;
+    }
   }
 
   // 兜底：可选灵感不足 3 个时补默认卡（去重 label）

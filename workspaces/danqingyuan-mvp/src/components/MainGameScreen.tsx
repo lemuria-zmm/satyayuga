@@ -8,7 +8,7 @@ import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
 import { DAY_CHARS_MAX, SEGMENT_MIN } from '../engine/sceneEngine';
 import { MAX_SLOT_SCENES, isActionAffordable, isPracticeMoodLocked } from '../engine/gameEngine';
-import { getWeather, getWeatherLabel } from '../engine/ambience';
+import { getWeather, getWeatherLabel, isRainyWeather } from '../engine/ambience';
 import { SEASON } from '../engine/ambience';
 import { dailyChatQuota } from '../types/core';
 import type { GameAction, GameState, LocationId, NpcId, SkillId, ValidatedStatePatch } from '../types';
@@ -167,8 +167,8 @@ const locationAtmosphere: Partial<Record<string, string>> = {
 
 const locationBackgrounds: Record<LocationId, string> = {
   hall: '/bg-main-hall-morning.png',
-  library: '/bg-library-day.png',
-  garden: '/bg-garden-day.png',
+  library: '/bg-library-morning.png',
+  garden: '/bg-garden-morning.png',
   market: '/bg-market-day.png',
   dining_hall: '/bg-dining-hall.png',
   dormitory: '/bg-dormitory-day.png',
@@ -305,8 +305,8 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
   // 场景进行中以 scene.locationId 为准（2026-06-17 修 bug：否则晨课等场景背景停在 currentLocation 如宿舍）
   const bgLocation = scene?.locationId ?? currentLocation;
   const isEveningBg = state.time.timeSlot === 'evening';
-  const weather = getWeather(state.time.day);
-  const isRainy = weather.includes('雨') && !weather.includes('歇');
+  const weather = getWeather(state.time.day, state.weatherWeek);
+  const isRainy = isRainyWeather(weather);
   // 院堂五变体（2026-07-07 明明拍板）：晨课=morning / 晨课后上午(含午间)=afterclass / 午膳后回院堂=afternoon / 晚间=night / 雨天(日间)=rainy。
   const hallVariant = isEveningBg
     ? '/bg-main-hall-night.png'
@@ -318,18 +318,31 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
           ? '/bg-main-hall-afterclass.png'
           : '/bg-main-hall-morning.png';
   // 后花园：雨天有专属雨亭图（日/夜各一）；街市雨天日间用雨景。
+  // 后花园：雨天雨亭(日/夜)；晴时晨/上午/午间=morning、下午=afternoon、晚=night（2026-07-08 明明拍板午间归 morning）
   const gardenVariant = isRainy
     ? isEveningBg
       ? '/bg-garden-pavilion-rain-night.png'
       : '/bg-garden-pavilion-rain-day.png'
     : isEveningBg
       ? '/bg-garden-night.png'
-      : '/bg-garden-day.png';
+      : state.time.timeSlot === 'afternoon'
+        ? '/bg-garden-afternoon.png'
+        : '/bg-garden-morning.png';
   const marketVariant = isEveningBg
     ? '/bg-market-night.png'
     : isRainy
       ? '/bg-market-rainy.png'
-      : '/bg-market-day.png';
+      : state.time.timeSlot === 'afternoon'
+        ? '/bg-market-afternoon.png'
+        : '/bg-market-day.png';
+  // 书房：雨天(日间)=rainy；晴时晨/上午/午间=morning、下午=afternoon、晚=night
+  const libraryVariant = isEveningBg
+    ? '/bg-library-night.png'
+    : isRainy
+      ? '/bg-library-rainy.png'
+      : state.time.timeSlot === 'afternoon'
+        ? '/bg-library-afternoon.png'
+        : '/bg-library-morning.png';
   const backgroundUrl =
     (scene?.action.activityId && activityBackground(scene.action.activityId, state.time.timeSlot)) ||
     activityBg ||
@@ -340,11 +353,7 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
         : bgLocation === 'market'
           ? marketVariant
           : bgLocation === 'library'
-            ? (isEveningBg
-                ? '/bg-library-night.png'
-                : state.time.timeSlot === 'afternoon'
-                  ? '/bg-library-afternoon.png'
-                  : '/bg-library-day.png')
+            ? libraryVariant
             : bgLocation === 'dormitory'
               ? (isEveningBg ? '/bg-dormitory-night.png' : '/bg-dormitory-day.png')
               : locationBackgrounds[bgLocation]);
@@ -418,7 +427,7 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
           <span className="gm-np-sep">｜</span>
           <span className="gm-np-weather" title={`${SEASON}·${weather}`}>
             <span className="gm-np-weather-season">{SEASON}</span>
-            <span className="gm-np-weather-text">{getWeatherLabel(state.time.day)}</span>
+            <span className="gm-np-weather-text">{getWeatherLabel(state.time.day, state.weatherWeek)}</span>
           </span>
           <span className="gm-np-sep">｜</span>
           <span className="gm-np-time-badge">

@@ -1,9 +1,10 @@
 import type { GameState } from '../types';
+import { legacyWeatherWeek } from '../engine/ambience';
 
 const SAVE_KEY = 'danqingyuan-mvp:auto-save';
 
-/** 存档 schema 版本（最新 v16，2026-07-02 秘阁五幕重做：骸游图 flag 重命名 + PuzzleState.haiyouRevealTier + 预收集线索 *Seen flag） */
-const SCHEMA_VERSION = 16;
+/** 存档 schema 版本（最新 v17，2026-07-07 天气随机化：GameState.weatherWeek；旧档沿用固定表保玩家已见天气不变） */
+const SCHEMA_VERSION = 17;
 
 export interface SaveFile {
   saveId: string;
@@ -138,6 +139,14 @@ export function migrateHaiyouFlagsV15(flags: Record<string, boolean>): Record<st
  */
 function migrateV15(saveFile: SaveFile): SaveFile {
   migrateHaiyouFlagsV15(saveFile.gameState.progress.flags as Record<string, boolean>);
+  return { ...saveFile, schemaVersion: 16 };
+}
+
+/** v16→v17（2026-07-07 天气随机化）：补 weatherWeek。旧档沿用固定表——半程玩家已看过的天气不能变。 */
+function migrateV16(saveFile: SaveFile): SaveFile {
+  if (!saveFile.gameState.weatherWeek) {
+    saveFile.gameState.weatherWeek = legacyWeatherWeek();
+  }
   return { ...saveFile, schemaVersion: SCHEMA_VERSION };
 }
 
@@ -192,6 +201,9 @@ export function loadSaveFile(): SaveFile | null {
     }
     if (parsed.schemaVersion === 15) {
       parsed = migrateV15(parsed);
+    }
+    if (parsed.schemaVersion === 16) {
+      parsed = migrateV16(parsed);
     }
     if (parsed.schemaVersion !== SCHEMA_VERSION) {
       return null;
