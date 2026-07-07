@@ -50,6 +50,7 @@ import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
+import { activityBackground } from '../content/activityBackgrounds';
 import { buildFallbackBeats, getMotifHint, rollMainlineSeed } from '../content/mainlineSeeds';
 import { BASE_LOCATIONS, getActiveGuideStep, getSilentSlotUnlock, TUTORIAL_SLOT_FLAGS } from '../content/tutorialScripts';
 import type { GuideStep } from '../content/tutorialScripts';
@@ -227,6 +228,8 @@ export function App() {
   // 自由创作已拟命题（2026-07-06 丹青试改版）：玩家选灵感后 LLM 现拟的命题，供 submitExam 评分
   const [freeCreationComposed, setFreeCreationComposed] = useState<PaintingPromptGeneratorOutput | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
+  // 行动签场景图（2026-07-07）：practice/膳食等不起场景的行动签换背景用；runAction 统一设/清
+  const [activityBg, setActivityBg] = useState<string | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
   const [newEntities, setNewEntities] = useState<{ items: ClueGraphNode[]; seq: number } | null>(null);
@@ -990,6 +993,7 @@ export function App() {
           state={state}
           actions={actions}
           llmError={llmError}
+          activityBg={activityBg}
           settlement={settlement}
           newEntities={newEntities}
           scene={activeScene}
@@ -1102,6 +1106,14 @@ export function App() {
   function runAction(base: GameState, action: GameAction) {
     const result = applyAction(base, action);
     const nextState = result.nextState ?? base;
+
+    // 行动签场景图（2026-07-07 修"点行动签不弹场景"）：practice/膳食等不起 LLM 场景的行动也要换背景。
+    // 所有行动统一在此设/清——move_to/rest/sleep 等自然清掉上一签的背景。
+    setActivityBg(
+      action.type === 'activity' && action.activityId
+        ? activityBackground(action.activityId, base.time.timeSlot) ?? null
+        : null,
+    );
 
     // 小游戏接入口预留（2026-06-12，本轮全部留空）：将来投壶→小游戏、点茶→调茶
     const card = action.type === 'activity' ? ACTIVITY_BY_ID[action.activityId ?? ''] : undefined;
@@ -2009,6 +2021,7 @@ export function App() {
       state={state}
       actions={actions}
       llmError={llmError}
+      activityBg={activityBg}
       settlement={settlement}
       newEntities={newEntities}
       scene={activeScene}

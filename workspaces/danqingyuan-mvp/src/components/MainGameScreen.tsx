@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LOCATIONS } from '../content/locations';
 import { CHARACTERS } from '../content/characters';
 import { ACTIVITY_BY_ID } from '../content/activities';
+import { activityBackground } from '../content/activityBackgrounds';
 import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
@@ -17,6 +18,8 @@ interface MainGameScreenProps {
   state: GameState;
   actions: GameAction[];
   llmError: string | null;
+  /** 行动签场景图（2026-07-07）：practice/膳食等不起场景的行动也换背景，App.runAction 统一设/清 */
+  activityBg?: string | null;
   settlement?: { patch: ValidatedStatePatch; seq: number } | null;
   /** 档案库新增实体飘条（2026-07-01） */
   newEntities?: { items: ClueGraphNode[]; seq: number } | null;
@@ -128,39 +131,7 @@ function actionArt(action: GameAction): string | undefined {
   return undefined;
 }
 
-/**
- * 活动进行中的场景图替换（2026-07-07 扩充，明明："子场景配合行动签用，避免一直停留在一个bg单调"）。
- * 固定子场景 + 少数按时段差分（书房夜读用灯下书案图）。
- */
-const sceneActivityBackgrounds: Record<string, string> = {
-  // 街市子场景
-  teahouse: '/bg-teahouse.png',
-  eve_tingqu: '/bg-washe-theater.png',
-  eve_nightmarket: '/bg-market-night.png',
-  market_sketch: '/bg-market-folk.png',
-  practice_market_figure: '/bg-market-folk.png',
-  practice_market_architecture: '/bg-market-bridge-canal.png',
-  meal_street: '/bg-market-folk.png',
-  // 书房子场景：查证/深查在书架间
-  library_research: '/bg-library-shelf.png',
-  library_deep_research: '/bg-library-shelf.png',
-  // 后花园子场景：观竹石在春竹畔
-  practice_garden_observe: '/bg-garden-bamboo-spring.png',
-  // 膳堂子场景：热食去灶间
-  meal_chuibing: '/bg-dining-stove.png',
-  meal_mantou: '/bg-dining-stove.png',
-  meal_botuo: '/bg-dining-stove.png',
-};
-
-/** 晚间读书类行动签 → 灯下书案图（不局限于一个行动签；白日仍用书房日景） */
-const EVENING_STUDY_ACTIVITIES = new Set(['practice_read_treatise', 'practice_view_scrolls', 'practice_deep_study']);
-
-function activityBackground(activityId: string, timeSlot: GameState['time']['timeSlot']): string | undefined {
-  if (timeSlot === 'evening' && EVENING_STUDY_ACTIVITIES.has(activityId)) {
-    return '/bg-library-desk-night.png';
-  }
-  return sceneActivityBackgrounds[activityId];
-}
+/* 行动签场景图（2026-07-07 抽到 content/activityBackgrounds 共享：App.runAction 与本组件两处用） */
 
 const ximengAtmosphere: Record<GameState['relationships']['ximeng']['emotionState'], string> = {
   distant: '他未与你搭话。只是你经过案前时，他将未干的画卷轻轻合上。',
@@ -271,7 +242,7 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function MainGameScreen({ state, actions, llmError, settlement, newEntities, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewExam, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
+export function MainGameScreen({ state, actions, llmError, activityBg, settlement, newEntities, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewExam, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
@@ -361,6 +332,7 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
       : '/bg-market-day.png';
   const backgroundUrl =
     (scene?.action.activityId && activityBackground(scene.action.activityId, state.time.timeSlot)) ||
+    activityBg ||
     (bgLocation === 'hall'
       ? hallVariant
       : bgLocation === 'garden'
@@ -368,7 +340,11 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
         : bgLocation === 'market'
           ? marketVariant
           : bgLocation === 'library'
-            ? (isEveningBg ? '/bg-library-night.png' : '/bg-library-day.png')
+            ? (isEveningBg
+                ? '/bg-library-night.png'
+                : state.time.timeSlot === 'afternoon'
+                  ? '/bg-library-afternoon.png'
+                  : '/bg-library-day.png')
             : bgLocation === 'dormitory'
               ? (isEveningBg ? '/bg-dormitory-night.png' : '/bg-dormitory-day.png')
               : locationBackgrounds[bgLocation]);

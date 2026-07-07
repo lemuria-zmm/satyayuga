@@ -29,14 +29,15 @@ export function GuideDialogue({ script, onDone }: GuideDialogueProps) {
       className={script.sceneImage ? 'gd-overlay gd-overlay--scene' : 'gd-overlay'}
       style={script.sceneImage ? { backgroundImage: `url(${script.sceneImage})` } : undefined}
     >
-      {!script.sceneImage && (
-        <img alt={script.speakerName} className="gd-portrait" src={script.portrait} />
-      )}
       <div
         className="gd-box"
         onClick={advance}
         role={isLast ? undefined : 'button'}
       >
+        {/* 立绘挂在框内左侧（2026-07-07）：右缘贴框左缘、底部与框底对齐，不再与框之间留大空 */}
+        {!script.sceneImage && (
+          <img alt={script.speakerName} className="gd-portrait" src={script.portrait} />
+        )}
         <span className="gd-name">{script.speakerName}</span>
         <p className="gd-text" key={lineIndex}>{script.lines[lineIndex]}</p>
         {!isLast && <span className="gd-next-hint">▼</span>}

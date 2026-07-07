@@ -3303,8 +3303,8 @@ button {
 
 .dlg-character-sprite {
   position: relative;
-  height: 86vh;
-  max-height: 860px;
+  height: 76vh;
+  max-height: 760px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(30, 25, 20, 0.15));
@@ -4047,8 +4047,8 @@ dd {
 
 .gd-portrait {
   position: absolute;
-  bottom: 26px; /* 底部与引导对话框(.gd-box bottom:26px)对齐（2026-07-07 明明拍板） */
-  left: 6%;
+  right: calc(100% - 4px); /* 挂在 .gd-box 内、右缘贴框左缘微叠 4px（2026-07-07 明明：与对话框紧贴） */
+  bottom: 0; /* 底部与框底对齐 */
   height: min(30vh, 230px);
   max-width: 20vw;
   object-fit: contain;
@@ -4782,7 +4782,7 @@ dd {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: flex-end; /* 底部锚定（2026-07-07）：半身图下缘是生图裁切边，沉到屏幕底外藏掉 */
+  align-items: center; /* 2026-07-07 回退居中：底部锚定后位置比例不对（明明），裁切边等重新出图覆盖 */
   justify-content: center;
   z-index: 9; /* 低于对话框 band(z-index:10) */
   pointer-events: none;
@@ -4790,10 +4790,9 @@ dd {
 }
 
 .gm-scene-portrait-img {
-  height: 74vh;
-  max-height: 760px;
+  height: 52vh;
+  max-height: 520px;
   width: auto;
-  margin-bottom: -3vh; /* 裁切边探出屏幕底，画面上看不到硬切痕 */
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
   animation: portraitFadeIn 460ms ease both;
