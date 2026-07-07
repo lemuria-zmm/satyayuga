@@ -3279,7 +3279,7 @@ button {
 .dlg-character {
   position: absolute;
   left: 120px;
-  bottom: 0;
+  bottom: 80px; /* 脚部与对话卷轴(.dlg-dialogue-scroll bottom:80px)底对齐（2026-07-07 明明拍板），下段身位藏在卷轴后 */
   z-index: 2;
   pointer-events: none;
   animation: dlgCharIn 500ms ease 200ms both;
@@ -3303,8 +3303,8 @@ button {
 
 .dlg-character-sprite {
   position: relative;
-  height: 76vh;
-  max-height: 680px;
+  height: 86vh;
+  max-height: 860px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(30, 25, 20, 0.15));
@@ -4047,10 +4047,10 @@ dd {
 
 .gd-portrait {
   position: absolute;
-  bottom: 0;
+  bottom: 26px; /* 底部与引导对话框(.gd-box bottom:26px)对齐（2026-07-07 明明拍板） */
   left: 6%;
-  height: min(60vh, 460px);
-  max-width: 30vw;
+  height: min(30vh, 230px);
+  max-width: 20vw;
   object-fit: contain;
   object-position: bottom;
   filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.45));
@@ -4782,16 +4782,18 @@ dd {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* 底部锚定（2026-07-07）：半身图下缘是生图裁切边，沉到屏幕底外藏掉 */
   justify-content: center;
   z-index: 9; /* 低于对话框 band(z-index:10) */
   pointer-events: none;
+  overflow: hidden;
 }
 
 .gm-scene-portrait-img {
-  height: 52vh;
-  max-height: 520px;
+  height: 74vh;
+  max-height: 760px;
   width: auto;
+  margin-bottom: -3vh; /* 裁切边探出屏幕底，画面上看不到硬切痕 */
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
   animation: portraitFadeIn 460ms ease both;

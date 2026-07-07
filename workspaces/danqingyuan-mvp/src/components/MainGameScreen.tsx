@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { LOCATIONS } from '../content/locations';
 import { CHARACTERS } from '../content/characters';
-import { npcSpriteFor } from '../content/npcSprites';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
@@ -424,7 +423,8 @@ export function MainGameScreen({ state, actions, llmError, settlement, newEntiti
         <div className="gm-scene-portrait" key={speakerNpc}>
           <img
             className="gm-scene-portrait-img"
-            src={npcSpriteFor(speakerNpc, state.relationships[speakerNpc]?.emotionState, state.relationships[speakerNpc]?.hiddenAffinity)}
+            // 正文说话立绘固定 calm（2026-07-07 明明拍板）：闲聊里的 emotionState 与场景文不同步，表情常对不上文字
+            src={sceneNpcSprite[speakerNpc]}
             alt=""
             onError={(e) => {
               e.currentTarget.style.display = 'none';
