@@ -1451,9 +1451,9 @@ button {
 
 .adm-transition-portrait {
   width: 200px;
-  height: 280px;
-  object-fit: cover;
-  object-position: top;
+  height: 300px;
+  object-fit: contain; /* 全身像完整显示（2026-07-07 明明拍板入院页用全身）；图为黑底，待透明底版出后自然融卡面 */
+  object-position: center;
   border: 1px solid rgba(107, 90, 69, 0.4);
   background: #DCD0B4;
   flex-shrink: 0;
@@ -4048,7 +4048,7 @@ dd {
 .gd-portrait {
   position: absolute;
   left: 16px; /* 站在 .gd-box 顶上、靠框左端（2026-07-07 明明红框位置） */
-  bottom: calc(100% - 8px); /* 底部踩住框顶（微叠 8px，像立在卷轴后） */
+  bottom: calc(100% - 28px); /* 底部踩住框顶（叠 28px 吃掉图底透明留白，2026-07-07 再下移贴紧） */
   height: min(30vh, 230px);
   max-width: 20vw;
   object-fit: contain;

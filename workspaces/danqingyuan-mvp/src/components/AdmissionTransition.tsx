@@ -10,7 +10,7 @@ export function AdmissionTransition({ text, onEnter }: AdmissionTransitionProps)
     <main className="adm-transition">
       <div className="adm-transition-bg" />
       <div className="adm-transition-card">
-        <img alt="小书童" className="adm-transition-portrait" src="/char/char-shutong-smile.png" />
+        <img alt="小书童" className="adm-transition-portrait" src="/char/char-shutong-full-body.png" />
         <div className="adm-transition-body">
           <h2 className="adm-transition-title">入院 · 小书童来迎</h2>
           {text ? (
