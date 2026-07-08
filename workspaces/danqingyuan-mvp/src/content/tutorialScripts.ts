@@ -1,4 +1,5 @@
 import type { GameState, LocationId, SkillId, TimeSlot } from '../types';
+import { getWeather, isRainyWeather } from '../engine/ambience';
 
 /**
  * 固定引导脚本池（拍板：引导对话用固定脚本，不走 LLM）。
@@ -159,7 +160,10 @@ export function getActiveGuideStep(state: GameState): GuideStep | null {
 
   // ③ 希孟书房首场（不再固定首次进书房触发：走进书房时引擎掷点，掷中才落 ximeng_in_library）
   if (state.currentLocation === 'library' && flags.ximeng_in_library && !flags.metXimeng) {
-    return { script: XIMENG_FIRST_MEET, flagsSet: { metXimeng: true, ximeng_in_library: false }, after: 'ximeng_chat' };
+    // 初遇场景图按当日天气选（2026-07-08 三批图补雨天版）
+    const rainy = isRainyWeather(getWeather(state.time.day, state.weatherWeek));
+    const script = rainy ? { ...XIMENG_FIRST_MEET, sceneImage: '/scene-ximeng-first-meet-rainy.png' } : XIMENG_FIRST_MEET;
+    return { script, flagsSet: { metXimeng: true, ximeng_in_library: false }, after: 'ximeng_chat' };
   }
 
   return null;

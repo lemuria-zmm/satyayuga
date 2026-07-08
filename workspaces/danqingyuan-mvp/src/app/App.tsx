@@ -265,21 +265,27 @@ export function App() {
     const order: TimeSlot[] = ['morning_class', 'forenoon', 'noon', 'afternoon', 'evening'];
     const advanced = prev.day === cur.day && order.indexOf(cur.slot) > order.indexOf(prev.slot);
     if (!advanced) return;
-    if (cur.slot !== 'forenoon' && cur.slot !== 'noon' && cur.slot !== 'afternoon') return;
-    const rainy = isRainyWeather(getWeather(cur.day, state.weatherWeek));
-    const img = rainy
-      ? '/bg-sky-rain-day.png'
-      : cur.slot === 'forenoon'
-        ? '/bg-sky-morning-sunny.png'
-        : '/bg-sky-afternoon-sunny.png';
-    const caption =
-      cur.slot === 'forenoon'
-        ? (rainy ? '晨课毕 · 檐外雨声' : '晨课毕 · 日上三竿')
-        : cur.slot === 'noon'
-          ? (rainy ? '日过中天 · 雨未肯歇' : '日过中天 · 午间小憩')
-          : rainy
-            ? '午后 · 雨脚渐密'
-            : '午后 · 日影西斜';
+    if (cur.slot === 'morning_class') return;
+    const todayWeather = getWeather(cur.day, state.weatherWeek);
+    const rainy = isRainyWeather(todayWeather);
+    // 雨歇初晴日的头一个转场给彩虹（2026-07-08 三批天空图）
+    const rainbow = cur.slot === 'forenoon' && todayWeather.includes('雨歇');
+    let img: string;
+    let caption: string;
+    if (cur.slot === 'forenoon') {
+      img = rainbow ? '/bg-sky-rainbow.png' : rainy ? '/bg-sky-rain-day.png' : '/bg-sky-morning-sunny.png';
+      caption = rainbow ? '雨过天青 · 虹见檐角' : rainy ? '晨课毕 · 檐外雨声' : '晨课毕 · 日上三竿';
+    } else if (cur.slot === 'noon') {
+      img = rainy ? '/bg-sky-rain-day.png' : '/bg-sky-noon.png';
+      caption = rainy ? '日过中天 · 雨未肯歇' : '日过中天 · 午间小憩';
+    } else if (cur.slot === 'afternoon') {
+      img = rainy ? '/bg-sky-rain-day.png' : '/bg-sky-afternoon-sunny.png';
+      caption = rainy ? '午后 · 雨脚渐密' : '午后 · 日影西斜';
+    } else {
+      // evening（2026-07-08 夜空图补齐后启用）
+      img = rainy ? '/bg-sky-rainy-night.png' : '/bg-sky-night.png';
+      caption = rainy ? '暮雨未歇 · 掌灯时分' : '日入 · 暮色四合';
+    }
     setSkyTransition({ img, caption });
   }, [state?.time.day, state?.time.timeSlot]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1157,7 +1163,11 @@ export function App() {
     // 所有行动统一在此设/清——move_to/rest/sleep 等自然清掉上一签的背景。
     setActivityBg(
       action.type === 'activity' && action.activityId
-        ? activityBackground(action.activityId, base.time.timeSlot) ?? null
+        ? activityBackground(
+            action.activityId,
+            base.time.timeSlot,
+            isRainyWeather(getWeather(base.time.day, base.weatherWeek)),
+          ) ?? null
         : null,
     );
 

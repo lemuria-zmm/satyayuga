@@ -169,7 +169,7 @@ const locationBackgrounds: Record<LocationId, string> = {
   hall: '/bg-main-hall-morning.png',
   library: '/bg-library-morning.png',
   garden: '/bg-garden-morning.png',
-  market: '/bg-market-day.png',
+  market: '/bg-market-morning.png',
   dining_hall: '/bg-dining-hall.png',
   dormitory: '/bg-dormitory-day.png',
   secret_archive: '/bg-archive-gate.png',
@@ -308,16 +308,16 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
   const weather = getWeather(state.time.day, state.weatherWeek);
   const isRainy = isRainyWeather(weather);
   // 院堂五变体（2026-07-07 明明拍板）：晨课=morning / 晨课后上午(含午间)=afterclass / 午膳后回院堂=afternoon / 晚间=night / 雨天(日间)=rainy。
+  // 院堂（2026-07-08 三批图雨天补齐早/午后/夜三态）
   const hallVariant = isEveningBg
-    ? '/bg-main-hall-night.png'
+    ? (isRainy ? '/bg-main-hall-rainy-night.png' : '/bg-main-hall-night.png')
     : isRainy
-      ? '/bg-main-hall-rainy.png'
+      ? (state.time.timeSlot === 'afternoon' ? '/bg-main-hall-rainy-afternoon.png' : '/bg-main-hall-rainy-morning.png')
       : state.time.timeSlot === 'afternoon'
         ? '/bg-main-hall-afternoon.png'
         : state.time.timeSlot === 'forenoon' || state.time.timeSlot === 'noon'
           ? '/bg-main-hall-afterclass.png'
           : '/bg-main-hall-morning.png';
-  // 后花园：雨天有专属雨亭图（日/夜各一）；街市雨天日间用雨景。
   // 后花园：雨天雨亭(日/夜)；晴时晨/上午/午间=morning、下午=afternoon、晚=night（2026-07-08 明明拍板午间归 morning）
   const gardenVariant = isRainy
     ? isEveningBg
@@ -328,13 +328,20 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
       : state.time.timeSlot === 'afternoon'
         ? '/bg-garden-afternoon.png'
         : '/bg-garden-morning.png';
+  // 街市：晨/上午/午间=morning、下午=afternoon；雨天日间=rainy、雨夜=rainy-night
   const marketVariant = isEveningBg
-    ? '/bg-market-night.png'
+    ? (isRainy ? '/bg-market-rainy-night.png' : '/bg-market-night.png')
     : isRainy
       ? '/bg-market-rainy.png'
       : state.time.timeSlot === 'afternoon'
         ? '/bg-market-afternoon.png'
-        : '/bg-market-day.png';
+        : '/bg-market-morning.png';
+  // 膳堂：雨天(日间)=rainy、下午=afternoon、其余=hall（无夜图，晚间沿用 hall）
+  const diningVariant = isRainy && !isEveningBg
+    ? '/bg-dining-rainy.png'
+    : state.time.timeSlot === 'afternoon'
+      ? '/bg-dining-afternoon.png'
+      : '/bg-dining-hall.png';
   // 书房：雨天(日间)=rainy；晴时晨/上午/午间=morning、下午=afternoon、晚=night
   const libraryVariant = isEveningBg
     ? '/bg-library-night.png'
@@ -344,7 +351,7 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
         ? '/bg-library-afternoon.png'
         : '/bg-library-morning.png';
   const backgroundUrl =
-    (scene?.action.activityId && activityBackground(scene.action.activityId, state.time.timeSlot)) ||
+    (scene?.action.activityId && activityBackground(scene.action.activityId, state.time.timeSlot, isRainy)) ||
     activityBg ||
     (bgLocation === 'hall'
       ? hallVariant
@@ -352,11 +359,13 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
         ? gardenVariant
         : bgLocation === 'market'
           ? marketVariant
-          : bgLocation === 'library'
-            ? libraryVariant
-            : bgLocation === 'dormitory'
-              ? (isEveningBg ? '/bg-dormitory-night.png' : '/bg-dormitory-day.png')
-              : locationBackgrounds[bgLocation]);
+          : bgLocation === 'dining_hall'
+            ? diningVariant
+            : bgLocation === 'library'
+              ? libraryVariant
+              : bgLocation === 'dormitory'
+                ? (isEveningBg ? '/bg-dormitory-night.png' : '/bg-dormitory-day.png')
+                : locationBackgrounds[bgLocation]);
 
   // VN 逐句呈现（2026-06-30）：当前显示单元 = segments[segIndex]；speaker 驱动立绘+说话人名。
   // 兜底：场景无 segments（旧数据/失败）时退回整段 latestSegment 当一个旁白单元。
