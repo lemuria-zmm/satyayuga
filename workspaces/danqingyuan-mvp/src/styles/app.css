@@ -1160,7 +1160,7 @@ button {
 /* ---- Top plaque ---- */
 .adm-plaque {
   position: absolute;
-  top: 20px;
+  top: 48px;
   left: 50%;
   transform: translateX(-50%);
   width: 580px;
@@ -1201,13 +1201,13 @@ button {
 .adm-scroll {
   position: absolute;
   left: 50%;
-  top: 185px;
+  top: 200px;
   /* 视口不够高/宽时整卷等比缩放，保证表单完整可见（表单 v3 内容变高后必需） */
   --adm-scroll-scale: 1;
   transform: translateX(-50%) rotate(1.2deg) scale(var(--adm-scroll-scale));
   transform-origin: top center;
   width: 1040px;
-  height: 640px;
+  height: 700px;
   z-index: 10;
   background: url('/admission/admission-scroll-bg.png') center / 100% 100% no-repeat;
   animation: admScrollIn 500ms ease 200ms both;
@@ -1235,8 +1235,8 @@ button {
 
 .adm-scroll-content {
   position: absolute;
-  /* 上沿避开纸卷撕边、下沿避开底部卷轴杆 */
-  inset: 60px 110px 38px 130px;
+  /* 上沿避开纸卷撕边、下沿抬高，令院印/未盖章/提示落在纸面内而非卷杆外（2026-07-09 修超框） */
+  inset: 52px 120px 92px 140px;
   transform: rotate(-1.2deg);
   display: flex;
   flex-direction: column;
@@ -4843,39 +4843,27 @@ dd {
 }
 
 /* ——— 开场序列重做（2026-07-09）：gate / 片头视频 / 定格 / 引语 ——— */
-/* Phase 0 · 入场 gate */
-.prologue-gate-inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+/* Phase 0 · 入场 gate（背景图 bg-opening-title 自带标题） */
+.prologue-gate {
+  background: #0b0a08;
+}
+
+.prologue-gate-bg {
+  position: absolute;
+  inset: 0;
+  background: url('/bg-opening-title.png') center / cover no-repeat;
   animation: epiVeilIn 1600ms ease both;
 }
 
-.prologue-gate-title {
-  margin: 0;
-  font-size: clamp(48px, 9vw, 92px);
-  letter-spacing: 0.24em;
-  font-weight: 700;
-  color: #e7d8b8;
-  text-shadow: 0 0 30px rgba(226, 210, 178, 0.28);
-}
-
-.prologue-gate-sub {
-  margin: 0;
-  font-size: clamp(15px, 2.4vw, 20px);
-  letter-spacing: 0.5em;
-  padding-left: 0.5em;
-  color: rgba(226, 210, 178, 0.62);
-}
-
 .prologue-gate-hint {
-  margin: 40px 0 0;
-  font-size: 13px;
-  letter-spacing: 0.22em;
-  color: rgba(226, 210, 178, 0.55);
+  position: absolute;
+  bottom: 8vh;
+  z-index: 1;
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.26em;
+  color: #f5efd8;
+  text-shadow: 0 2px 10px rgba(20, 14, 8, 0.85), 0 0 20px rgba(20, 14, 8, 0.6);
   animation: prologueHintPulse 2000ms ease-in-out infinite;
 }
 
@@ -4931,23 +4919,36 @@ dd {
   margin-bottom: 44px;
 }
 
-/* Phase 3 · 穿越引语 */
+/* Phase 3 · 穿越引语（引语页背景 bg-verse-paper，深色框+宣纸，墨字） */
+.prologue-verse {
+  background: #0b0a08;
+}
+
 .prologue-verse-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url('/bg-prologue-verse.png') center / cover no-repeat;
-  filter: brightness(0.52) saturate(0.9);
-  animation: prologueKenBurns 24s ease-out both;
+  background: url('/bg-verse-paper.png') center / cover no-repeat;
 }
 
 .prologue-verse-scrim {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(120% 90% at 50% 44%, transparent 40%, rgba(6, 5, 4, 0.72) 100%),
-    linear-gradient(180deg, rgba(6, 5, 4, 0.3) 0%, rgba(6, 5, 4, 0.15) 50%, rgba(6, 5, 4, 0.5) 100%);
+  background: radial-gradient(120% 90% at 50% 46%, transparent 62%, rgba(20, 14, 8, 0.14) 100%);
+}
+
+.prologue-verse .prologue-line {
+  color: #3a2b1b;
+  text-shadow: 0 1px 2px rgba(245, 239, 216, 0.5);
+}
+
+.prologue-verse .prologue-caret {
+  background: #5b3a24;
+}
+
+.prologue-verse .prologue-hint {
+  color: rgba(80, 58, 36, 0.75);
 }
 
 .prologue-seal {
@@ -4957,11 +4958,6 @@ dd {
   margin: 18px auto 0;
   background: url('/admission/seal-small-red.png') center / contain no-repeat;
   animation: prologueSealStamp 640ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
-}
-
-@keyframes prologueKenBurns {
-  from { transform: scale(1.12); }
-  to { transform: scale(1); }
 }
 
 @keyframes prologueSealStamp {

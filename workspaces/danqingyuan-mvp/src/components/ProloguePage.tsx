@@ -80,16 +80,12 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
     }
   }
 
-  // —— Phase 0：入场 gate ——
+  // —— Phase 0：入场 gate（背景图自带「丹青院·墨枢秘录」标题）——
   if (phase === 'gate') {
     return (
       <main className="prologue-page prologue-gate" onClick={() => setPhase('video')}>
-        <div className="prologue-veil" />
-        <div className="prologue-gate-inner">
-          <h1 className="prologue-gate-title">丹青院</h1>
-          <p className="prologue-gate-sub">墨枢秘录</p>
-          <p className="prologue-gate-hint">点击进入</p>
-        </div>
+        <div className="prologue-gate-bg" />
+        <p className="prologue-gate-hint">点击进入</p>
       </main>
     );
   }
