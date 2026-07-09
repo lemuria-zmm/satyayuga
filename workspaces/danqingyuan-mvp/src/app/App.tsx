@@ -42,6 +42,8 @@ import { XimengBridge } from '../components/XimengBridge';
 import { EpilogueScreen } from '../components/EpilogueScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import { SkyTransition } from '../components/SkyTransition';
+import { ActivityResultPopup } from '../components/ActivityResultPopup';
+import type { ActivityResult } from '../components/ActivityResultPopup';
 import type { PuzzleSubmission } from '../components/PuzzleScreen';
 import { PuzzleScreen } from '../components/PuzzleScreen';
 import { HaiyouRevealScreen } from '../components/HaiyouRevealScreen';
@@ -52,6 +54,7 @@ import { ProloguePage } from '../components/ProloguePage';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { activityBackground } from '../content/activityBackgrounds';
+import { activityPopupImage } from '../content/activityResultImages';
 import { buildFallbackBeats, getMotifHint, rollMainlineSeed } from '../content/mainlineSeeds';
 import { BASE_LOCATIONS, getActiveGuideStep, getSilentSlotUnlock, TUTORIAL_SLOT_FLAGS } from '../content/tutorialScripts';
 import type { GuideStep } from '../content/tutorialScripts';
@@ -235,6 +238,8 @@ export function App() {
   const [skyTransition, setSkyTransition] = useState<{ img: string; caption: string } | null>(null);
   const prevTimeRef = useRef<{ day: number; slot: TimeSlot } | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
+  // 午餐/市集夜娱结算弹窗（2026-07-09）：食物/活动图约1:1，改中心弹窗与体力/心情增减一同弹出
+  const [activityResult, setActivityResult] = useState<ActivityResult | null>(null);
   // 档案库新增实体飘条（2026-07-01）：本次 commit 新增的节点，主界面显数秒淡出
   const [newEntities, setNewEntities] = useState<{ items: ClueGraphNode[]; seq: number } | null>(null);
   const [activeScene, setActiveScene] = useState<ActiveScene | null>(null);
@@ -1036,6 +1041,11 @@ export function App() {
     />
   ) : null;
 
+  // 午餐/市集夜娱结算弹窗（2026-07-09）：主界面各 render 路径共用
+  const activityResultOverlay = activityResult ? (
+    <ActivityResultPopup result={activityResult} onDone={() => setActivityResult(null)} />
+  ) : null;
+
   // 引导对话（拍板：固定脚本立绘对话框）：小书童入院介绍 / 第 1 日午间晚间 / 希孟书房首场
   if (guideStep) {
     return (
@@ -1058,6 +1068,7 @@ export function App() {
         />
         <GuideDialogue script={guideStep.script} onDone={() => completeGuideStep(guideStep)} />
         {skyOverlay}
+        {activityResultOverlay}
       </>
     );
   }
@@ -1201,7 +1212,15 @@ export function App() {
     if (action.type === 'move_to') {
       setSettlement(null);
     } else {
-      showSettlement(result.statePatch);
+      // 午餐/市集夜娱（2026-07-09）：食物/活动图约1:1，走中心弹窗（图+体力/心情），不飘右下文字笺
+      const popupImage =
+        action.type === 'activity' ? activityPopupImage(action.activityId) : undefined;
+      if (popupImage) {
+        setSettlement(null);
+        setActivityResult({ image: popupImage, label: card?.label ?? '', patch: result.statePatch });
+      } else {
+        showSettlement(result.statePatch);
+      }
     }
     saveGameState(nextState);
     setHasSave(true);
@@ -2166,6 +2185,7 @@ export function App() {
       } : undefined}
     />
     {skyOverlay}
+    {activityResultOverlay}
     </>
   );
 }

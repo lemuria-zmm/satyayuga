@@ -1451,12 +1451,11 @@ button {
 
 .adm-transition-portrait {
   width: 200px;
-  height: 280px;
-  /* 暂用半身（2026-07-08）：全身图纯黑底+黑发无法自动抠（像素无边界），待明明重导透明底版再换回全身 */
-  object-fit: cover;
-  object-position: top;
-  border: 1px solid rgba(107, 90, 69, 0.4);
-  background: #DCD0B4;
+  height: 380px;
+  /* 全身像（2026-07-09 明明重导透明底版接入，替回 07-08 暂用的半身 cover） */
+  object-fit: contain;
+  object-position: bottom center;
+  align-self: flex-end;
   flex-shrink: 0;
 }
 
@@ -5015,11 +5014,12 @@ dd {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  pointer-events: none;
+  cursor: pointer;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: skyFade 1800ms ease both;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  animation: skyFade 3200ms ease both;
 }
 
 .sky-transition-caption {
@@ -5034,9 +5034,96 @@ dd {
   backdrop-filter: blur(2px);
 }
 
+.sky-transition-hint {
+  margin-bottom: 6vh;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  color: rgba(245, 240, 225, 0.55);
+  text-shadow: 0 1px 6px rgba(20, 15, 8, 0.7);
+  animation: skyHintPulse 1.6s ease-in-out infinite;
+}
+
 @keyframes skyFade {
   0% { opacity: 0; }
-  18% { opacity: 1; }
-  82% { opacity: 1; }
+  10% { opacity: 1; }
+  88% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+@keyframes skyHintPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+
+/* ---- 午餐/市集夜娱结算弹窗（2026-07-09）---- */
+.activity-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 14, 8, 0.6);
+  cursor: pointer;
+  animation: modalIn 240ms ease both;
+}
+
+.activity-result-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 20px 22px;
+  width: min(72vw, 420px);
+  max-height: 88vh;
+  background: linear-gradient(180deg, #f3ead6 0%, #e9dcc0 100%);
+  border: 1px solid rgba(120, 92, 58, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 18px 48px rgba(20, 14, 8, 0.55);
+}
+
+.activity-result-img {
+  width: 100%;
+  max-height: 56vh;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(40, 30, 18, 0.06);
+}
+
+.activity-result-label {
+  font-size: 19px;
+  letter-spacing: 0.16em;
+  color: #4a3826;
+  font-weight: 600;
+}
+
+.activity-result-lines {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.activity-result-line {
+  font-size: 16px;
+  letter-spacing: 0.08em;
+}
+
+.activity-result-line.pos { color: #3f6b3a; }
+.activity-result-line.neg { color: #a4432c; }
+
+.activity-result-btn {
+  margin-top: 2px;
+  padding: 8px 34px;
+  font-size: 16px;
+  letter-spacing: 0.3em;
+  color: #f5f0e1;
+  background: linear-gradient(180deg, #8a6a3f 0%, #6f5230 100%);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(60, 42, 20, 0.4);
+}
+
+.activity-result-btn:hover { filter: brightness(1.08); }
