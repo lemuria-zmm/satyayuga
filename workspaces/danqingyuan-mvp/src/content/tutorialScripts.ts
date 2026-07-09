@@ -47,11 +47,6 @@ const SHUTONG_PORTRAIT = '/char/char-shutong-smile.png';
 const LITANG_FULL = '/char/char-litang-standard-full-body.png';
 const SONG_FULL = '/char/char-song-standard-full-body.png';
 const ZEDUAN_FULL = '/char/char-zeduan-standard-full-body.png';
-const MAJOR_MENTOR_FULL: Record<SkillId, string> = {
-  landscape: LITANG_FULL,
-  figure: SONG_FULL,
-  architecture: ZEDUAN_FULL,
-};
 
 /** 本科导师介绍差分句（2026-06-11 拍板：山水/画理=李唐，人物=嵩，界画=择端） */
 const MAJOR_LINE_BY_STYLE: Record<SkillId, string> = {
@@ -82,7 +77,6 @@ function buildShutongAdmissionScript(styleOrigin: SkillId): GuideScript {
       4: LITANG_FULL,
       5: SONG_FULL,
       6: ZEDUAN_FULL,
-      7: MAJOR_MENTOR_FULL[styleOrigin],
     },
     endButton: '去排课表',
   };

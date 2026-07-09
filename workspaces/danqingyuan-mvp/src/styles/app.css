@@ -264,8 +264,8 @@ button {
 
 .gm-player-seal {
   position: absolute;
-  top: 16px;
-  right: 20px;
+  top: 20px;
+  right: 30px;
   font-size: 10px;
   color: #9C3328;
   border: 1px solid rgba(156, 51, 40, 0.5);
@@ -275,11 +275,15 @@ button {
 }
 
 .gm-player-name {
-  font-size: 16px;
+  font-size: 15px;
   color: #1e1914;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   margin: 0 0 4px;
+  padding: 0 24px;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gm-player-style {
@@ -1423,6 +1427,15 @@ button {
   background: rgba(42, 31, 22, 0.28);
 }
 
+/* 隐藏预载图（避免"随小书童入院"后首屏黑闪） */
+.adm-transition-preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .adm-transition-card {
   position: relative;
   display: flex;
@@ -1722,7 +1735,7 @@ button {
 
 .adm-side-note-inner {
   position: absolute;
-  inset: 50px 6px 80px;
+  inset: 42px 5px 62px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1731,9 +1744,9 @@ button {
 
 .adm-side-note-text {
   writing-mode: vertical-rl;
-  font-size: 13px;
-  line-height: 1.6;
-  letter-spacing: 0.08em;
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
   color: #2A1F16;
 }
 
@@ -3294,6 +3307,16 @@ button {
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(30, 25, 20, 0.15));
+}
+
+/* 结局/点评页立绘用的是半身像，缩到与其他弹窗立绘相当大小（2026-07-09 明明：点评页立绘太大） */
+.dlg-character--review .dlg-character-sprite {
+  height: min(46vh, 440px);
+}
+
+.dlg-character--review .dlg-character-aura {
+  width: 300px;
+  height: 460px;
 }
 
 /* ---- Left: topic slip list ---- */

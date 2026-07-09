@@ -360,7 +360,7 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
       <aside className="adm-side-note">
         <div className="adm-side-note-inner">
           <p className="adm-side-note-text">
-            入院后将以七日为期修习丹青月末参与丹青试
+            入院七日修习丹青，月末应丹青试
           </p>
         </div>
       </aside>

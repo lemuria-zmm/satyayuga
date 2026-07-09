@@ -53,7 +53,7 @@ export function EndingDialogue({ npcId, dialogue, actionText, caption, onContinu
         )}
       </header>
 
-      <div className="dlg-character">
+      <div className="dlg-character dlg-character--review">
         <div className="dlg-character-aura" />
         <img className="dlg-character-sprite" src={mentorPortrait[npcId]} alt={character.name} />
       </div>
