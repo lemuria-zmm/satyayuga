@@ -51,6 +51,7 @@ import { ArchiveBridge } from '../components/ArchiveBridge';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
+import { stopOpeningBgm } from '../audio/openingAudio';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { activityBackground } from '../content/activityBackgrounds';
@@ -440,6 +441,7 @@ export function App() {
   /** 点击「入院」：落 admitted 旗标进主界面，引导场景由 effect 自动发起 */
   function enterAcademy() {
     if (!state || !admissionText) return;
+    stopOpeningBgm(); // 开场配乐止于入院进游戏
     const entered: GameState = {
       ...state,
       progress: {

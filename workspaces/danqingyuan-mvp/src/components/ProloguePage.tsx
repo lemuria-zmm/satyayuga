@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { playOpeningBgm } from '../audio/openingAudio';
 
 interface ProloguePageProps {
   /** 引语放完（或玩家跳过）→ 进入入院名录 */
@@ -6,35 +7,52 @@ interface ProloguePageProps {
 }
 
 /**
- * 穿越引语页（2026-06-30，先简单做）：入院名录之前的一页，打字机逐字呈现穿越缘起。
- * 后续会详细设计这一页（配乐/分镜/美术）；此处先用 CSS 黑场 + 逐字打字。
+ * 开场序列（2026-07-09 重做）：入场 gate → 片头视频（青绿山水→丹青院泼彩标题，自带配乐）
+ * → 片尾定格 → 穿越引语逐行浮现落印。视频用用户手势解锁带声播放；引语背景用视频抽帧静帧。
  */
 const PROLOGUE_LINES = [
   '宣和年间，汴京。',
-  '这是后世传说中最繁华的盛世，也是史册不肯细说的前夜。',
-  '你本是千年之后的人，一觉醒来，竟成了将入丹青院的画学生。',
-  '脑海里挥之不去的，是一个史册未解的谜——',
-  '那位惊才绝艳的少年画师，画完《千里江山卷》后，为何就此消失，再无音讯？',
-  '如今，你将以同窗的身份，亲眼看着这一切发生。',
+  '后世传说中最繁华的盛世——也是史册不肯细说的前夜。',
+  '你本是千年之后的人，一梦醒来，成了即将入院的丹青学生。',
+  '心底却压着一桩说不清的悬念：这满城锦绣之下，仿佛有什么，正被悄悄抹去。',
+  '而你，将以同窗的身份，在笔墨间，亲眼看着这一切徐徐展开。',
 ];
 
-const CHAR_MS = 80; // 每字间隔
-const LINE_PAUSE_MS = 600; // 行末停顿
+const CHAR_MS = 78; // 每字间隔
+const LINE_PAUSE_MS = 540; // 行末停顿
+
+type Phase = 'gate' | 'video' | 'freeze' | 'verse';
 
 export function ProloguePage({ onContinue }: ProloguePageProps) {
+  const [phase, setPhase] = useState<Phase>('gate');
   const [lineIdx, setLineIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
+  const [sealIn, setSealIn] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const allDone = lineIdx >= PROLOGUE_LINES.length;
+  const verseDone = phase === 'verse' && lineIdx >= PROLOGUE_LINES.length;
 
+  // 进 video 阶段：显式 play（gate 点击是用户手势，允许带声自动播放）
   useEffect(() => {
-    if (allDone) return;
+    if (phase === 'video') {
+      videoRef.current?.play().catch(() => {
+        /* 播放被拒：玩家可点「跳过」进引语 */
+      });
+    }
+  }, [phase]);
+
+  // 打字机仅在 verse 阶段跑
+  useEffect(() => {
+    if (phase !== 'verse') return;
+    if (lineIdx >= PROLOGUE_LINES.length) {
+      setSealIn(true);
+      return;
+    }
     const line = PROLOGUE_LINES[lineIdx];
     if (charIdx < line.length) {
       timerRef.current = setTimeout(() => setCharIdx((c) => c + 1), CHAR_MS);
     } else {
-      // 本行打完，停顿后进入下一行
       timerRef.current = setTimeout(() => {
         setLineIdx((l) => l + 1);
         setCharIdx(0);
@@ -43,26 +61,74 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [lineIdx, charIdx, allDone]);
+  }, [phase, lineIdx, charIdx]);
 
-  // 点击：未放完 → 全部直出；已放完 → 继续
-  function handleClick() {
-    if (allDone) {
+  function enterVerse() {
+    videoRef.current?.pause();
+    playOpeningBgm(); // 视频配乐止，接低音量竹林配乐续到入院
+    setPhase('verse');
+  }
+
+  // verse 点击：未放完→全部直出；已放完→继续
+  function handleVerseClick() {
+    if (lineIdx >= PROLOGUE_LINES.length) {
       onContinue();
     } else {
       if (timerRef.current) clearTimeout(timerRef.current);
       setLineIdx(PROLOGUE_LINES.length);
+      setCharIdx(0);
     }
   }
 
+  // —— Phase 0：入场 gate ——
+  if (phase === 'gate') {
+    return (
+      <main className="prologue-page prologue-gate" onClick={() => setPhase('video')}>
+        <div className="prologue-veil" />
+        <div className="prologue-gate-inner">
+          <h1 className="prologue-gate-title">丹青院</h1>
+          <p className="prologue-gate-sub">墨枢秘录</p>
+          <p className="prologue-gate-hint">点击进入</p>
+        </div>
+      </main>
+    );
+  }
+
+  // —— Phase 1/2：片头视频 + 片尾定格 ——
+  if (phase === 'video' || phase === 'freeze') {
+    return (
+      <main className="prologue-page prologue-cinema">
+        <video
+          className="prologue-video"
+          ref={videoRef}
+          src="/opening.mp4"
+          playsInline
+          onEnded={() => setPhase('freeze')}
+        />
+        {phase === 'video' && (
+          <button className="prologue-skip" onClick={enterVerse} type="button">
+            点击跳过
+          </button>
+        )}
+        {phase === 'freeze' && (
+          <div className="prologue-freeze-veil" onClick={enterVerse}>
+            <p className="prologue-hint prologue-hint-in prologue-freeze-hint">点击继续</p>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  // —— Phase 3：穿越引语 ——
   return (
-    <main className="prologue-page" onClick={handleClick}>
-      <div className="prologue-veil" />
+    <main className="prologue-page prologue-verse" onClick={handleVerseClick}>
+      <div className="prologue-verse-bg" />
+      <div className="prologue-verse-scrim" />
       <section className="prologue-center">
         {PROLOGUE_LINES.map((line, i) => {
           if (i > lineIdx) return null;
           const shown = i < lineIdx ? line : line.slice(0, charIdx);
-          const typing = i === lineIdx && !allDone;
+          const typing = i === lineIdx && lineIdx < PROLOGUE_LINES.length;
           return (
             <p className="prologue-line" key={i}>
               {shown}
@@ -70,9 +136,10 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
             </p>
           );
         })}
+        {sealIn && <span className="prologue-seal" />}
       </section>
-      <p className={`prologue-hint${allDone ? ' prologue-hint-in' : ''}`}>
-        {allDone ? '点击继续 · 填写入院名录' : '点击跳过'}
+      <p className={`prologue-hint${verseDone ? ' prologue-hint-in' : ''}`}>
+        {verseDone ? '点击继续 · 填写入院名录' : '点击跳过'}
       </p>
     </main>
   );
