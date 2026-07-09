@@ -49,3 +49,8 @@
 2. **入院名录清理+紧凑**：删 SetupScreen 残留穿越引语块 `.adm-prologue`（还含希孟消失/千里江山卷旧文，已与开场引语重复）+ 相关 CSS；**去掉「性格」栏**（personality 传空）；姓名栏下移（content inset top 52→74 避开纸卷撕边）；行间距收紧（form-row margin-bottom 8→5）。
 3. **点击跳转黑场**：确为加载/淡入间隙露底色——video 加 `poster=bg-opening-title`（gate→视频无缝）、预载 bg-verse-paper（视频→引语）与 bg-admission-hall（引语→名录）、gate 淡入 1600→600ms、引语页底色改宣纸米色、`.adm-page` 加米色兜底底。黑场消除。
 - 重验 build✅。
+
+## 八、再追加（明明看图反馈三，同日）
+1. **入院·小书童来迎页恢复原样**：明明不要卷轴迎帖版（书童偏左、卷轴偏右不平衡），AdmissionTransition + `.adm-transition-*` CSS 回退到原「居中卡片」版（书童全身像 + 标题 + 引文 + 随小书童入院按钮），删卷轴/入场动画/朱印相关。
+2. **入院引导弹窗（GuideDialogue）**：①首句去掉"诶——你就是今日新来的学子罢？"（保留"我是院里的小书童…"）；②介绍三位导师时**背景居中弹出对应导师全身立绘**（李唐/嵩/择端，不含希孟）——GuideScript 加 `lineImages`（行号→图），本科句(行7)按 styleOrigin 弹本科导师；GuideDialogue 渲染 `.gd-mentor`(垂直水平居中、框后、淡入)。导师全身立绘 litang/song/zeduan 拷入 public/char（litang/zeduan 原白底，flood-fill 从边缘去白保留内部衣袍，song 本就透明）。
+- 重验 build✅ + 三导师图 200。

@@ -15,6 +15,8 @@ export interface GuideScript {
   sceneImage?: string;
   /** 逐句点击推进 */
   lines: string[];
+  /** 可选：某句对应的背景全身立绘（public/char/），行号→图路径；介绍导师时居中弹出 */
+  lineImages?: Record<number, string>;
   /** 末句按钮文案 */
   endButton: string;
 }
@@ -41,6 +43,16 @@ export const TUTORIAL_SLOT_FLAGS: Record<string, string> = {
 
 const SHUTONG_PORTRAIT = '/char/char-shutong-smile.png';
 
+/** 导师全身立绘（2026-07-09：入院引导介绍导师时居中弹出，不含希孟） */
+const LITANG_FULL = '/char/char-litang-standard-full-body.png';
+const SONG_FULL = '/char/char-song-standard-full-body.png';
+const ZEDUAN_FULL = '/char/char-zeduan-standard-full-body.png';
+const MAJOR_MENTOR_FULL: Record<SkillId, string> = {
+  landscape: LITANG_FULL,
+  figure: SONG_FULL,
+  architecture: ZEDUAN_FULL,
+};
+
 /** 本科导师介绍差分句（2026-06-11 拍板：山水/画理=李唐，人物=嵩，界画=择端） */
 const MAJOR_LINE_BY_STYLE: Record<SkillId, string> = {
   landscape: '你本科是山水，正是总教习李唐先生亲自带——好造化，戒尺也离得近，自己掂量。',
@@ -55,7 +67,7 @@ function buildShutongAdmissionScript(styleOrigin: SkillId): GuideScript {
     speakerName: '小书童',
     portrait: SHUTONG_PORTRAIT,
     lines: [
-      '诶——你就是今日新来的学子罢？我是院里的小书童，扫地、研墨、传话，院里大小事问我准没错。',
+      '我是院里的小书童，扫地、研墨、传话，院里大小事问我准没错。',
       '咱们丹青院是奉旨设的画院，天下习画的人挤破头想进来。这院堂便是日后点卯、晨课、听训的地方。',
       '院中一日分五段：晨课、上午、午间、下午、晚间。晨课必到，其余辰光怎么用，全看你自己。',
       '晨课的课业由你自排六日，呈给总教习过目。第七日是丹青试——考砸了，可没处哭去。',
@@ -66,6 +78,12 @@ function buildShutongAdmissionScript(styleOrigin: SkillId): GuideScript {
       '对了，院里还有位特招的讲师，唤作希孟。不授课，常独自待在书房画自己的画——等你去书房，兴许就遇上了。',
       '七日后丹青试见真章。想站稳脚跟，先把课表排明白——走，我领你去。',
     ],
+    lineImages: {
+      4: LITANG_FULL,
+      5: SONG_FULL,
+      6: ZEDUAN_FULL,
+      7: MAJOR_MENTOR_FULL[styleOrigin],
+    },
     endButton: '去排课表',
   };
 }

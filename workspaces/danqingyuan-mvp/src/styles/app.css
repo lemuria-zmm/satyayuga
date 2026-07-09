@@ -1403,7 +1403,6 @@ button {
 .adm-transition {
   position: relative;
   min-height: 100vh;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1414,79 +1413,59 @@ button {
   position: absolute;
   inset: 0;
   background: url('/admission/bg-admission-hall.png') center / cover no-repeat, #E8DFC8;
-  filter: saturate(0.94);
+  filter: saturate(0.92);
 }
 
 .adm-transition-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  /* 暖调院落暗角/景深 */
-  background:
-    radial-gradient(120% 90% at 50% 40%, transparent 46%, rgba(30, 20, 10, 0.5) 100%),
-    rgba(42, 31, 22, 0.22);
+  background: rgba(42, 31, 22, 0.28);
 }
 
-/* 小书童全身像，左下滑入 + 极缓浮动 */
-.adm-transition-boy {
-  position: absolute;
-  left: clamp(8px, 5vw, 96px);
-  bottom: 0;
-  height: min(78vh, 640px);
+.adm-transition-card {
+  position: relative;
+  display: flex;
+  gap: 28px;
+  max-width: 760px;
+  width: 100%;
+  padding: 32px;
+  background: rgba(244, 236, 215, 0.96);
+  border: 1px solid rgba(107, 90, 69, 0.5);
+  box-shadow: 0 18px 48px rgba(20, 14, 8, 0.35);
+}
+
+.adm-transition-portrait {
+  width: 200px;
+  height: 380px;
   object-fit: contain;
   object-position: bottom center;
-  z-index: 2;
-  filter: drop-shadow(0 10px 24px rgba(20, 14, 8, 0.4));
-  animation: admBoyIn 900ms cubic-bezier(0.22, 0.68, 0.32, 1) both, admBoyFloat 5.5s ease-in-out 900ms infinite;
+  align-self: flex-end;
+  flex-shrink: 0;
 }
 
-/* 中央卷轴迎帖 */
-.adm-transition-scroll {
-  position: relative;
-  z-index: 3;
-  margin-left: clamp(0px, 12vw, 200px);
-  width: min(560px, 88vw);
+.adm-transition-body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 30px 34px 32px;
-  background: url('/admission/admission-scroll-bg.png') center / 100% 100% no-repeat, rgba(244, 236, 215, 0.97);
-  border-radius: 4px;
-  box-shadow: 0 22px 54px rgba(20, 14, 8, 0.42);
-  transform-origin: top center;
-  animation: admScrollIn 720ms cubic-bezier(0.22, 0.68, 0.32, 1) both;
+  min-width: 0;
 }
 
-.adm-transition-plaque {
-  min-width: 240px;
-  margin: -6px 0 20px;
-  padding: 12px 30px;
-  text-align: center;
-  background: url('/admission/academy-plaque-bg.png') center / 100% 100% no-repeat, #3a2b1b;
-}
-
-.adm-transition-plaque-text {
-  font-size: 19px;
-  letter-spacing: 0.16em;
-  color: #f4ecd7;
-  text-shadow: 0 1px 4px rgba(20, 14, 8, 0.6);
-}
-
-.adm-transition-paper {
-  position: relative;
-  width: 100%;
-  min-height: 168px;
-  margin-bottom: 22px;
-  cursor: pointer;
+.adm-transition-title {
+  margin: 0 0 14px;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: #3B2E1E;
 }
 
 .adm-transition-text {
-  margin: 0;
-  font-size: 15.5px;
-  line-height: 2.05;
-  letter-spacing: 0.02em;
+  flex: 1;
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.9;
   color: #2A1F16;
   white-space: pre-wrap;
+  overflow-y: auto;
+  max-height: 240px;
 }
 
 .adm-transition-loading {
@@ -1494,71 +1473,27 @@ button {
   animation: scenePulse 1.6s ease-in-out infinite;
 }
 
-.adm-transition-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  margin-left: 2px;
-  vertical-align: -0.15em;
-  background: #5b3a24;
-  animation: epiCaret 760ms step-end infinite;
-}
-
-/* 朱印：引文放完盖下 */
-.adm-transition-seal {
-  position: absolute;
-  right: 4px;
-  bottom: -6px;
-  width: 58px;
-  height: 58px;
-  background: url('/admission/seal-small-red.png') center / contain no-repeat;
-  opacity: 0;
-  transform: scale(1.5) rotate(-8deg);
-  transition: opacity 420ms ease, transform 420ms cubic-bezier(0.2, 1.4, 0.4, 1);
-}
-
-.adm-transition-seal.stamped {
-  opacity: 0.92;
-  transform: scale(1) rotate(-8deg);
-}
-
-/* 入院印章按钮 */
 .adm-transition-enter {
-  padding: 11px 40px;
-  background: linear-gradient(180deg, #b2402f 0%, #9C3328 100%);
+  align-self: flex-end;
+  padding: 10px 28px;
+  background: #9C3328;
   color: #F4ECD7;
-  border: 1px solid rgba(60, 24, 16, 0.5);
-  border-radius: 4px;
+  border: none;
   font: inherit;
   font-size: 16px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(80, 24, 14, 0.4);
-  transition: filter 160ms ease, transform 160ms ease, opacity 300ms ease;
+  transition: filter 160ms ease, transform 160ms ease;
 }
 
 .adm-transition-enter:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
 .adm-transition-enter:disabled {
-  opacity: 0.35;
+  opacity: 0.5;
   cursor: default;
-}
-
-@keyframes admBoyIn {
-  from { opacity: 0; transform: translateX(-40px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes admBoyFloat {
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes admScrollIn {
-  from { opacity: 0; transform: translateY(-14px) scaleY(0.88); }
-  to { opacity: 1; transform: translateY(0) scaleY(1); }
 }
 
 
@@ -4111,6 +4046,25 @@ dd {
 @keyframes gdPortraitIn {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 介绍导师时居中弹出的全身立绘（2026-07-09）：垂直水平居中、立于对话框之后 */
+.gd-mentor {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  height: min(66vh, 600px);
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.5));
+  animation: gdMentorIn 420ms ease both;
+  pointer-events: none;
+}
+
+@keyframes gdMentorIn {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .gd-box {

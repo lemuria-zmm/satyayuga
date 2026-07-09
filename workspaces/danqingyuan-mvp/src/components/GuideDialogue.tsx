@@ -19,6 +19,7 @@ export function GuideDialogue({ script, onDone }: GuideDialogueProps) {
   }, [script.id]);
 
   const isLast = lineIndex >= script.lines.length - 1;
+  const mentorImage = script.lineImages?.[lineIndex];
 
   function advance() {
     if (!isLast) setLineIndex(lineIndex + 1);
@@ -29,6 +30,8 @@ export function GuideDialogue({ script, onDone }: GuideDialogueProps) {
       className={script.sceneImage ? 'gd-overlay gd-overlay--scene' : 'gd-overlay'}
       style={script.sceneImage ? { backgroundImage: `url(${script.sceneImage})` } : undefined}
     >
+      {/* 介绍导师时居中弹出的全身立绘（2026-07-09） */}
+      {mentorImage && <img alt="" className="gd-mentor" key={mentorImage} src={mentorImage} />}
       <div
         className="gd-box"
         onClick={advance}
