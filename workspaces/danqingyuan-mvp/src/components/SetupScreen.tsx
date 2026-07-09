@@ -140,7 +140,6 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
   const [gender, setGender] = useState<PlayerGender | null>(null);
   const [age, setAge] = useState(18);
   const [origin, setOrigin] = useState<FamilyOrigin | null>(null);
-  const [personality, setPersonality] = useState('');
   const [styleOrigin, setStyleOrigin] = useState<StyleOrigin | null>(null);
   const [aspiration, setAspiration] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -176,7 +175,7 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
         gender: gender!,
         age,
         origin: origin!,
-        personality: personality.trim(),
+        personality: '',
         aspiration: aspiration.trim(),
       });
     }, 800);
@@ -187,7 +186,6 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
     setGender(null);
     setAge(18);
     setOrigin(null);
-    setPersonality('');
     setStyleOrigin(null);
     setAspiration('');
     setSealStamped(false);
@@ -211,13 +209,6 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
       {/* Center scroll form */}
       <div className="adm-scroll">
         <div className="adm-scroll-content">
-          {/* 穿越 framing（2026-06-30）：一行点明身份与那个带进画院的疑问；详述留给入院引文 */}
-          <div className="adm-prologue">
-            <p className="adm-prologue-text">
-              千年之后的你，一梦成了宣和年间的画学生——心底揣着一个谜：那位少年画师画完《千里江山卷》后，为何就此消失？
-            </p>
-          </div>
-
           {/* Name */}
           <div className="adm-form-row">
             <label className="adm-form-label">姓名</label>
@@ -284,21 +275,6 @@ export function SetupScreen({ hasSave, onClearSave, onResume, onStart }: SetupSc
                 {originOptions.find((o) => o.id === origin)?.hint}
               </span>
             )}
-          </div>
-
-          {/* Personality: free input */}
-          <div className="adm-form-row adm-form-row-textarea">
-            <label className="adm-form-label">性格</label>
-            <div className="adm-textarea-wrap">
-              <textarea
-                className="adm-textarea"
-                value={personality}
-                onChange={(e) => setPersonality(e.target.value.slice(0, 30))}
-                placeholder="如：沉静内敛，待人温和却不肯轻易服输"
-                maxLength={30}
-              />
-              <span className="adm-char-count">{personality.length}/30</span>
-            </div>
           </div>
 
           {/* Style tendency */}

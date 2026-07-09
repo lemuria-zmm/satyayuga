@@ -1134,6 +1134,7 @@ button {
   position: fixed;
   inset: 0;
   overflow: hidden;
+  background: #e8dfc8;
 }
 
 /* ---- Background ---- */
@@ -1235,8 +1236,8 @@ button {
 
 .adm-scroll-content {
   position: absolute;
-  /* 上沿避开纸卷撕边、下沿抬高，令院印/未盖章/提示落在纸面内而非卷杆外（2026-07-09 修超框） */
-  inset: 52px 120px 92px 140px;
+  /* 上沿下移让姓名栏避开纸卷撕边、下沿抬高令院印/提示落在纸面内（2026-07-09 修超框+清引语） */
+  inset: 74px 120px 84px 140px;
   transform: rotate(-1.2deg);
   display: flex;
   flex-direction: column;
@@ -1244,33 +1245,18 @@ button {
   overflow: hidden;
 }
 
-/* 穿越 framing 引语（2026-06-30）：入院名录顶部一段小字交代身份与谜题 */
-.adm-prologue {
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(110, 90, 60, 0.22);
-}
-
-.adm-prologue-text {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.75;
-  color: #6b5538;
-  letter-spacing: 0.02em;
-}
-
 /* ---- Form rows ---- */
 .adm-form-row {
   display: grid;
   grid-template-columns: 90px 1fr;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   gap: 6px;
 }
 
 .adm-form-row-textarea {
   align-items: start;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .adm-form-label {
@@ -4852,7 +4838,7 @@ dd {
   position: absolute;
   inset: 0;
   background: url('/bg-opening-title.png') center / cover no-repeat;
-  animation: epiVeilIn 1600ms ease both;
+  animation: epiVeilIn 600ms ease both;
 }
 
 .prologue-gate-hint {
@@ -4919,9 +4905,9 @@ dd {
   margin-bottom: 44px;
 }
 
-/* Phase 3 · 穿越引语（引语页背景 bg-verse-paper，深色框+宣纸，墨字） */
+/* Phase 3 · 穿越引语（引语页背景 bg-verse-paper 宣纸，墨字） */
 .prologue-verse {
-  background: #0b0a08;
+  background: #e4d7b8;
 }
 
 .prologue-verse-bg {
@@ -4929,6 +4915,16 @@ dd {
   inset: 0;
   z-index: 0;
   background: url('/bg-verse-paper.png') center / cover no-repeat;
+  animation: epiVeilIn 700ms ease both;
+}
+
+/* 隐藏预载图（避免切 verse 黑闪） */
+.prologue-preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .prologue-verse-scrim {

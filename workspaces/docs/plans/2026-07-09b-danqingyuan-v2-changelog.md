@@ -43,3 +43,9 @@
 4. **入院名录（SetupScreen）修版式**：牌匾下移（top 20→48）；卷轴加高（640→700）+ 内容区下沿抬高（inset bottom 38→92），令院印「未盖章」+「请先补全入院名帖」落回纸面内、不再超框到卷杆外。
 5. 引语文案 / 入院匾额「入院·小书童来迎」明明确认 OK。
 - 重验 build✅ + 三资源 200 + 无 bg-prologue-verse 残留。
+
+## 七、再追加（明明看图反馈二，同日）
+1. **引语页顶部黑边**：`bg-verse-paper.png` 自带黑色 letterbox（上168/下94px），PIL 裁掉黑边→纯宣纸，cover 铺满不再露黑边。
+2. **入院名录清理+紧凑**：删 SetupScreen 残留穿越引语块 `.adm-prologue`（还含希孟消失/千里江山卷旧文，已与开场引语重复）+ 相关 CSS；**去掉「性格」栏**（personality 传空）；姓名栏下移（content inset top 52→74 避开纸卷撕边）；行间距收紧（form-row margin-bottom 8→5）。
+3. **点击跳转黑场**：确为加载/淡入间隙露底色——video 加 `poster=bg-opening-title`（gate→视频无缝）、预载 bg-verse-paper（视频→引语）与 bg-admission-hall（引语→名录）、gate 淡入 1600→600ms、引语页底色改宣纸米色、`.adm-page` 加米色兜底底。黑场消除。
+- 重验 build✅。

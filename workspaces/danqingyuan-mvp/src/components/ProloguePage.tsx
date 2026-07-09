@@ -98,9 +98,13 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
           className="prologue-video"
           ref={videoRef}
           src="/opening.mp4"
+          poster="/bg-opening-title.png"
+          preload="auto"
           playsInline
           onEnded={() => setPhase('freeze')}
         />
+        {/* 预载引语页背景，避免切到 verse 时黑屏一闪 */}
+        <img alt="" className="prologue-preload" src="/bg-verse-paper.png" />
         {phase === 'video' && (
           <button className="prologue-skip" onClick={enterVerse} type="button">
             点击跳过
@@ -120,6 +124,8 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
     <main className="prologue-page prologue-verse" onClick={handleVerseClick}>
       <div className="prologue-verse-bg" />
       <div className="prologue-verse-scrim" />
+      {/* 预载入院名录背景，避免切 setup 黑闪 */}
+      <img alt="" className="prologue-preload" src="/admission/bg-admission-hall.png" />
       <section className="prologue-center">
         {PROLOGUE_LINES.map((line, i) => {
           if (i > lineIdx) return null;
