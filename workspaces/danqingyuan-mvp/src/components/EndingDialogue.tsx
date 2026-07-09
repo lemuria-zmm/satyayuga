@@ -1,12 +1,12 @@
 import { CHARACTERS } from '../content/characters';
 import type { NpcId } from '../types';
 
-/** 结局导师点评立绘（2026-06-30）：李唐严肃、嵩/择端常态。批二见希孟复用本组件传 ximeng */
+/** 结局导师点评立绘（2026-06-30；07-09 改用全身像居中，与其他立绘一致）。批二见希孟复用本组件传 ximeng */
 const mentorPortrait: Record<NpcId, string> = {
-  litang: '/char/char-litang-stern.png',
-  song: '/char/char-song-calm.png',
-  zeduan: '/char/char-zeduan-calm.png',
-  ximeng: '/char/char-ximeng-smile.png',
+  litang: '/char/char-litang-standard-full-body.png',
+  song: '/char/char-song-standard-full-body.png',
+  zeduan: '/char/char-zeduan-standard-full-body.png',
+  ximeng: '/char/char-ximeng-full-body-a.png',
 };
 
 const npcNameColor: Record<NpcId, string> = {

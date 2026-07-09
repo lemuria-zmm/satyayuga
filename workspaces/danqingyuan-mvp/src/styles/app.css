@@ -3309,14 +3309,27 @@ button {
   filter: drop-shadow(0 8px 24px rgba(30, 25, 20, 0.15));
 }
 
-/* 结局/点评页立绘用的是半身像，缩到与其他弹窗立绘相当大小（2026-07-09 明明：点评页立绘太大） */
+/* 结局/点评页立绘用全身像、垂直水平居中，与其他弹窗立绘一致（2026-07-09 明明：位置改居中） */
+.dlg-character--review {
+  left: 50%;
+  top: 46%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  animation: dlgReviewIn 500ms ease 200ms both;
+}
+
+@keyframes dlgReviewIn {
+  from { opacity: 0; transform: translate(-50%, -46%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
 .dlg-character--review .dlg-character-sprite {
-  height: min(46vh, 440px);
+  height: min(66vh, 600px);
 }
 
 .dlg-character--review .dlg-character-aura {
-  width: 300px;
-  height: 460px;
+  width: 360px;
+  height: 560px;
 }
 
 /* ---- Left: topic slip list ---- */

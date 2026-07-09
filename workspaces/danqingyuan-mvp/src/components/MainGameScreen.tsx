@@ -484,7 +484,6 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
       {/* Left: player notebook */}
       <aside className="gm-player-panel">
         <div className="gm-player-seal">{rankLabels[state.progress.rank]}</div>
-        <h2 className="gm-player-name">{state.player.name || '无名'}</h2>
         <div className="gm-player-style">
           画风：{
             state.player.styleOrigin === 'landscape' ? '山水倾向' :

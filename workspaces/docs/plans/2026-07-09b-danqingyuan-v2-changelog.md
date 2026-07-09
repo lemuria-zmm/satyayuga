@@ -68,3 +68,8 @@
 4. **左侧课业面板玩家名超框**：`.gm-player-name` 加 nowrap/省略号+左右内距、字号 16→15；`学子` 印章 `.gm-player-seal` 内移（避开纸卷撕边）。
 5. **丹青试点评页立绘太大**：EndingDialogue 用的是半身像却按 76vh 全身位显示（成巨脸）——加 `.dlg-character--review` 修饰，立绘缩到 `min(46vh,440px)`、光晕同步缩小，与其他弹窗立绘相当。
 - 重验 build✅。
+
+## 十一、再追加（明明看图反馈六，同日）
+1. **课业面板玩家名超框** → 明明拍板**直接去掉**：MainGameScreen 删 `.gm-player-name`（保留学子印章/画风/技能/课业）。
+2. **丹青试点评页立绘位置改居中**：EndingDialogue 立绘由半身像改**全身像**（litang/song/zeduan standard-full-body、希孟 full-body-a）+ `.dlg-character--review` 改**垂直水平居中**（专属 `dlgReviewIn` 动画防 dlgCharIn 覆盖居中 transform、height min(66vh,600px)），与导师引导等其他居中立绘一致。
+- 重验 build✅ + 希孟全身图 200。
