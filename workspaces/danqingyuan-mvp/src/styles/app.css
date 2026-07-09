@@ -289,6 +289,7 @@ button {
 .gm-player-style {
   color: #6E675E;
   font-size: 12px;
+  margin-top: 18px;
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(111, 78, 54, 0.18);
