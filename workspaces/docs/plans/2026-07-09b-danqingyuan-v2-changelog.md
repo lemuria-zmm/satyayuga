@@ -54,3 +54,9 @@
 1. **入院·小书童来迎页恢复原样**：明明不要卷轴迎帖版（书童偏左、卷轴偏右不平衡），AdmissionTransition + `.adm-transition-*` CSS 回退到原「居中卡片」版（书童全身像 + 标题 + 引文 + 随小书童入院按钮），删卷轴/入场动画/朱印相关。
 2. **入院引导弹窗（GuideDialogue）**：①首句去掉"诶——你就是今日新来的学子罢？"（保留"我是院里的小书童…"）；②介绍三位导师时**背景居中弹出对应导师全身立绘**（李唐/嵩/择端，不含希孟）——GuideScript 加 `lineImages`（行号→图），本科句(行7)按 styleOrigin 弹本科导师；GuideDialogue 渲染 `.gd-mentor`(垂直水平居中、框后、淡入)。导师全身立绘 litang/song/zeduan 拷入 public/char（litang/zeduan 原白底，flood-fill 从边缘去白保留内部衣袍，song 本就透明）。
 - 重验 build✅ + 三导师图 200。
+
+## 九、再追加（明明看图反馈四，同日）
+1. **史实化名**：`宣和`→`宣合`、`汴京`→`大梁京`，全量替换（ProloguePage 引语首句、tutorialScripts 两处、ambience 主题注释、scene_narrator prompt）；**两 prompt 加化名硬约束**（scene_narrator + character_dialogue：年号写宣合/京城写大梁京，禁"宣和""汴京"真名）。prompt 升版 scene v26→**v27**、dialogue v12→**v13**（前后端常量同步），**已重启 proxy**（health 200）。
+2. **引语页底部**加免责小字「以古为幕，故事杜撰，仅供游玩消遣」(`.prologue-disclaimer`)。
+3. **李唐/择端全身立绘**：明明重导透明底新版，重拷覆盖 public/char（四角 alpha=0，无需再抠；灰底预览确认干净）。
+- 重验 build✅ + 残留 汴京/宣和 仅剩两 prompt 的"禁用"约束句本身。

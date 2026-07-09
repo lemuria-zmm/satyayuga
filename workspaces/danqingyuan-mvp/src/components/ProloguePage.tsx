@@ -11,7 +11,7 @@ interface ProloguePageProps {
  * → 片尾定格 → 穿越引语逐行浮现落印。视频用用户手势解锁带声播放；引语背景用视频抽帧静帧。
  */
 const PROLOGUE_LINES = [
-  '宣和年间，汴京。',
+  '宣合年间，大梁京。',
   '后世传说中最繁华的盛世——也是史册不肯细说的前夜。',
   '你本是千年之后的人，一梦醒来，成了即将入院的丹青学生。',
   '心底却压着一桩说不清的悬念：这满城锦绣之下，仿佛有什么，正被悄悄抹去。',
@@ -143,6 +143,7 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
       <p className={`prologue-hint${verseDone ? ' prologue-hint-in' : ''}`}>
         {verseDone ? '点击继续 · 填写入院名录' : '点击跳过'}
       </p>
+      <p className="prologue-disclaimer">以古为幕，故事杜撰，仅供游玩消遣</p>
     </main>
   );
 }

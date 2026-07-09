@@ -4901,6 +4901,17 @@ dd {
   color: rgba(80, 58, 36, 0.75);
 }
 
+/* 底部免责小字（穿越引语页） */
+.prologue-disclaimer {
+  position: absolute;
+  bottom: 18px;
+  z-index: 1;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgba(90, 68, 44, 0.55);
+}
+
 .prologue-seal {
   display: block;
   width: 66px;
