@@ -145,7 +145,7 @@ const locationBackgrounds: Record<LocationId, string> = {
   library: '/bg-library-morning.png',
   garden: '/bg-garden-morning.png',
   market: '/bg-market-morning.png',
-  dining_hall: '/bg-dining-hall.png',
+  dining_hall: '/bg-dining-noon.png',
   dormitory: '/bg-dormitory-day.png',
   secret_archive: '/bg-archive-gate.png',
   ximeng_studio: '/bg-ximeng-studio.png',
@@ -311,12 +311,16 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
       : state.time.timeSlot === 'afternoon'
         ? '/bg-market-afternoon.png'
         : '/bg-market-morning.png';
-  // 膳堂：雨天(日间)=rainy、下午=afternoon、其余=hall（无夜图，晚间沿用 hall）
+  // 膳堂：雨天(日间)=rainy、下午=afternoon、午间=noon、晨/上午=morning（无夜图，晚间沿用 noon 暖光）
   const diningVariant = isRainy && !isEveningBg
     ? '/bg-dining-rainy.png'
     : state.time.timeSlot === 'afternoon'
       ? '/bg-dining-afternoon.png'
-      : '/bg-dining-hall.png';
+      : state.time.timeSlot === 'noon'
+        ? '/bg-dining-noon.png'
+        : state.time.timeSlot === 'morning_class' || state.time.timeSlot === 'forenoon'
+          ? '/bg-dining-morning.png'
+          : '/bg-dining-noon.png';
   // 书房：雨天(日间)=rainy；晴时晨/上午/午间=morning、下午=afternoon、晚=night
   const libraryVariant = isEveningBg
     ? '/bg-library-night.png'

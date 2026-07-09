@@ -5,7 +5,7 @@
  */
 export const ACTIVITY_POPUP_IMAGE: Record<string, string> = {
   // 午膳（膳堂 + 蜜煎点茶）
-  meal_together: '/bg-dining-stove.png', // 与同僚共膳（明明指定用灶间那张）
+  meal_together: '/scene-dining-gongshan.png', // 与同僚共膳（2026-07-09 明明指定共膳图）
   meal_mantou: '/scene-dining-guanjiang.png', // 灌浆馒头
   meal_botuo: '/scene-botuo.png', // 馎饦汤面
   meal_mijian: '/scene-dining-mijian-diancha.png', // 蜜煎果子配点茶

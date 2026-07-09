@@ -38,7 +38,7 @@ check('听琴 雨夜→rainy-night', activityBackground('eve_tingqin', 'evening'
 check('观竹石 雨夜→bamboo-rainy-night', activityBackground('practice_garden_observe', 'evening', true) === '/bg-garden-bamboo-rainy-night.png');
 
 // 5. 弹窗图映射齐全（#5 #6）——9 签命中，非弹窗签为 undefined
-check('共膳→stove', activityPopupImage('meal_together') === '/bg-dining-stove.png');
+check('共膳→gongshan', activityPopupImage('meal_together') === '/scene-dining-gongshan.png');
 check('馎饦→scene-botuo', activityPopupImage('meal_botuo') === '/scene-botuo.png');
 check('灌浆馒头→guanjiang', activityPopupImage('meal_mantou') === '/scene-dining-guanjiang.png');
 check('蹴鞠→cuju-night', activityPopupImage('eve_cuju') === '/scene-market-cuju-night.png');

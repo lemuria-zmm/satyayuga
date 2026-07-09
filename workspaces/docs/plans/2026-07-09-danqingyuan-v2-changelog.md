@@ -33,7 +33,7 @@
 | **小书童全身像（#7）**：入院页 `char-shutong-smile`→`standard-full-body`，css `object-fit:cover`→`contain`+`object-position:bottom`+`align-self:flex-end`，去半身 cover 兜底底色。**入院 gd-dialogue 仍用 smile 半身**（对话框内 bust，与他 NPC 一致） | `AdmissionTransition.tsx` / `app.css:1452` |
 
 ## 四、弹窗图映射（推断，明明可调 `ACTIVITY_POPUP_IMAGE` 一处）
-- `meal_together`→`/bg-dining-stove.png`（明明指定灶间）；`meal_mantou`→`/scene-dining-guanjiang.png`（灌浆）；`meal_botuo`→`/scene-botuo.png`；`meal_mijian`→`/scene-dining-mijian-diancha.png`；`meal_chuibing`→`/bg-dining-chuibing.png`
+- `meal_together`→`/scene-dining-gongshan.png`（明明指定共膳图）；`meal_mantou`→`/scene-dining-guanjiang.png`（灌浆）；`meal_botuo`→`/scene-botuo.png`；`meal_mijian`→`/scene-dining-mijian-diancha.png`；`meal_chuibing`→`/bg-dining-chuibing.png`
 - `eve_cuju`→`/scene-market-cuju-night.png`；`eve_touhu`→touhu；`eve_weiqi`→weiqi；`eve_tingqu`→`/scene-washe-theater-night.png`（瓦舍）
 - **不入弹窗**：`meal_street`（市集无专属食物图，保留 folk 背景）、`eve_tingqin`（→后花园听琴背景）、`eve_nightmarket`（→夜市背景）
 
@@ -47,6 +47,12 @@
 2. **书房**白天研读画论/阅古画卷=书案图、钻研旧档=书架图，晚间灯下；
 3. **街市**白天吃茶 teahouse-day/雨 teahouse-rainy、夜晚街市新图；
 4. **后花园听琴**昼/夜/雨/雨夜四态、竹石雨夜；
-5. **午餐**各签弹窗（图+体力/心情，共膳=灶间）；**夜娱**蹴鞠/投壶/围棋/瓦舍弹窗；
+5. **午餐**各签弹窗（图+体力/心情，共膳=`scene-dining-gongshan`）；**夜娱**蹴鞠/投壶/围棋/瓦舍弹窗；
 6. **入院页**小书童全身像（透明底、贴底居中）——若比例/裁切不佳可调 `.adm-transition-portrait` 高度。
 7. 弹窗食物图映射如需换（如 chuibing 想要专属 scene 图），改 `ACTIVITY_POPUP_IMAGE`。
+
+## 七、追加（明明看图反馈，同日）
+- **膳堂换图**：明明删旧 `bg-dining-hall.png`、补 `bg-dining-morning`/`bg-dining-noon`。MainGameScreen diningVariant 改 晨·上午=morning / 午间=noon / 下午=afternoon / 雨=rainy / 晚间沿用 noon；静态兜底 `dining_hall`→noon。清 `bg-dining-hall` 全部引用（2 处）+删 public 旧图。
+- **与同僚共膳**弹窗图 `bg-dining-stove`→**`scene-dining-gongshan.png`**（明明指定）。
+- **雨夜听琴 / 雨夜竹石写生**：明明换了新图，重拷覆盖 `bg-garden-listening-to-qin-rainy-night` / `bg-garden-bamboo-rainy-night`。
+- 重验 build✅ + test 23/0 + weather 14/0 + 无 `bg-dining-hall` 残留。
