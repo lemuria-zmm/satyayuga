@@ -33,5 +33,13 @@
 1. **四人四位置**（明明：不要都居中）：李唐左下(不太靠下)/择端右上/嵩右下/希孟中间(压轴略大)，均不贴边。`.cc-figure` 改 `--cc-tx` 变量支持混合锚点 + `.cc-fig-{key}` 各自 left/right/top/bottom/height。
 2. **粒子太大→改细密**（明明：身体化成非常细密的粒子飘散）：inkDissolve 重写为**按人物轮廓采样**——把背影 `<img>`(同源白底)缩到 ~3.2px 网格 `drawImage`+`getImageData` 读身体像素(跳纯白底)，每身体像素撒一枚**微粒(r 0.5~1.5px、取像素本色)**，上限 4200；轻微湍流散开、缓淡出=身体化成细密烟尘。`.cc-figure--exit` 改**原地淡出为主**(仅极轻上飘缩)，让 canvas 粒子承载溶解。build✅。
 
+## 六、看图反馈二（同日·结局全链走查）
+1. **希孟画室入口不再提前出现**（明明：考后日常就冒出画室入口）：删 App 里"好感≥知己自动解锁 ximeng_studio 去处"的 useEffect——画室不再作可访问去处；画室体验改由日终「见希孟」承载。
+2. **见希孟对话背景=希孟画室**：EndingDialogue 加 `bgImage` prop，ximeng_meet 传 `/bg-ximeng-studio.png`（明明更新的黄昏画室新图，含千里江山卷案头）。
+3. **秘阁引桥页背景改 bg-admission-hall**（明明：这页选 admission-hall）：`.ab-page` 铺 admission-hall + `.ab-veil` 改半透暗罩(透出院堂+压暗保文字可读)。更新的 `bg-admission-hall`/`解谜页`→`puzzle-bg` 图已重拷 public。
+4. **见希孟立绘改全身像B**（授衔后寻他）：EndingDialogue.ximeng portrait `full-body-a`→`full-body-b`。
+5. **谢幕粒子色彩丰富化**（明明：颜色随服装、多渐变、不单色）：inkDissolve 每粒取服装本色后加**明暗抖动(0.7~1.42)**+**部分向金色渐融(24%,mix 0.2~0.72)**+纯金亮点(6%)，粒子由深到浅、掺金呈渐变而非单色。
+- 重验 build✅+回归 23/0·14/0，四资源 200，无 console.log。
+
 ## 待明明确认（可后调）
 - 四人致意文案（`curtainCallText.ts`）；② multiply「融画」ghostly 风格 vs 日后透明底"实体+溶解"（透明底到位去 multiply 一键切）；③ 各段时长/字速、figure 大小位置；④ 是否要换真 p5（现原生 canvas 效果一致）；⑤ DEV「预览谢幕」按钮上线前删。

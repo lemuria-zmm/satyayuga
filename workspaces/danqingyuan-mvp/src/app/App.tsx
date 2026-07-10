@@ -518,16 +518,8 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  // 希孟画室解锁（2026-06-25）：好感 ≥ 知己(60) 解锁 ximeng_studio，去处面板亮起，可前往触发画室专属场景
-  useEffect(() => {
-    if (!state) return;
-    if (state.relationships.ximeng.hiddenAffinity < 60) return;
-    if (state.progress.unlockedLocations.includes('ximeng_studio')) return;
-    const patched = applyValidatedStatePatch(state, { unlockedLocations: ['ximeng_studio'] });
-    saveGameState(patched);
-    setState(patched);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  // 希孟画室不再作为可访问去处提前解锁（2026-07-10 明明）：画室体验改由日终「见希孟」一段承载（其对话背景=画室）。
+  // 原「好感≥知己自动解锁 ximeng_studio 去处」已撤——避免第七日考后日常面板提前出现画室入口。
 
   /** 七日主线规划（拍板）：开局种子 + 一次 LLM 扩写节拍表；失败回落模板节拍 */
   async function ensureMainline(s: GameState) {
@@ -2063,6 +2055,7 @@ export function App() {
           dialogue={ximengMeet ? ximengMeet.dialogue : null}
           actionText={ximengMeet ? ximengMeet.actionText : null}
           caption="放榜既毕 · 寻希孟"
+          bgImage="/bg-ximeng-studio.png"
           onContinue={() => advanceEndingStage('ximeng_meet')}
         />
       );
@@ -2164,6 +2157,12 @@ export function App() {
         const devState: GameState = {
           ...state,
           skills: { ...state.skills, [state.player.styleOrigin]: Math.max(state.skills[state.player.styleOrigin], 35) },
+          // 拉高希孟好感到知己(≥60)+已遇，保证日终"见希孟"一段会播（走通整条结局链）
+          progress: { ...state.progress, flags: { ...state.progress.flags, metXimeng: true } },
+          relationships: {
+            ...state.relationships,
+            ximeng: { ...state.relationships.ximeng, hiddenAffinity: Math.max(state.relationships.ximeng.hiddenAffinity, 65), stage: 'confidant' },
+          },
           memory: {
             ...state.memory,
             clueGraph: {
@@ -2173,7 +2172,7 @@ export function App() {
           },
           currentLocation: 'hall',
           time: { ...state.time, day: 7, timeSlot: 'morning_class', isExamDay: true },
-          lastRenderedText: '开发捷径：直达第七日丹青试。',
+          lastRenderedText: '开发捷径：直达第七日丹青试（已拉满希孟好感，走通结局全链）。',
         };
         saveGameState(devState);
         setHasSave(true);

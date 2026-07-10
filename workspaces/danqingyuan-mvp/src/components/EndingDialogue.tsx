@@ -6,7 +6,7 @@ const mentorPortrait: Record<NpcId, string> = {
   litang: '/char/char-litang-standard-full-body.png',
   song: '/char/char-song-standard-full-body.png',
   zeduan: '/char/char-zeduan-standard-full-body.png',
-  ximeng: '/char/char-ximeng-full-body-a.png',
+  ximeng: '/char/char-ximeng-full-body-b.png',
 };
 
 const npcNameColor: Record<NpcId, string> = {
@@ -24,6 +24,8 @@ interface EndingDialogueProps {
   actionText?: string | null;
   /** 顶部小标（如「丹青试 · 放榜」） */
   caption?: string;
+  /** 可选背景图（如见希孟用希孟画室）；缺省用 .dlg-bg 默认庭院图 */
+  bgImage?: string;
   /** 「继续」推进序列 */
   onContinue: () => void;
 }
@@ -33,14 +35,14 @@ interface EndingDialogueProps {
  * 不用 DialogueScreen——后者带好感梅花格/句数额度等闲聊噪音，结局点评是单向的。
  * 导师点评（A）、批二见希孟（D）都用它。
  */
-export function EndingDialogue({ npcId, dialogue, actionText, caption, onContinue }: EndingDialogueProps) {
+export function EndingDialogue({ npcId, dialogue, actionText, caption, bgImage, onContinue }: EndingDialogueProps) {
   const character = CHARACTERS[npcId];
   const nameColor = npcNameColor[npcId];
   const loading = dialogue === null;
 
   return (
     <main className="dlg-page">
-      <div className="dlg-bg" />
+      <div className="dlg-bg" style={bgImage ? { backgroundImage: `url('${bgImage}')` } : undefined} />
       <div className="dlg-bg-overlay" />
 
       <header className="dlg-top-bar">

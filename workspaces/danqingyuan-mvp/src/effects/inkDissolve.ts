@@ -64,6 +64,7 @@ export function createInkDissolve(container: HTMLElement): InkDissolve {
     }
 
     let budget = MAX_PARTICLES - particles.length;
+    const clamp = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
     for (let gy = 0; gy < rows && budget > 0; gy++) {
       for (let gx = 0; gx < cols && budget > 0; gx++) {
         let cr = 60, cg = 70, cb = 80;
@@ -76,18 +77,32 @@ export function createInkDissolve(container: HTMLElement): InkDissolve {
           if (cr > 240 && cg > 240 && cb > 240) continue;
         }
         if (Math.random() < 0.35) continue; // 抽稀，保密集又不爆量
-        const gold = Math.random() < 0.05;
+
+        // 颜色随粒子而变（渐变、不单色）：取服装本色 + 明暗抖动 + 部分向金色渐融
+        const bright = rnd(0.7, 1.42);
+        let pr = clamp(cr * bright);
+        let pg = clamp(cg * bright);
+        let pb = clamp(cb * bright);
+        const goldMix = Math.random();
+        if (goldMix < 0.24) {
+          const m = rnd(0.2, 0.72); // 向金渐融
+          pr = clamp(pr * (1 - m) + 216 * m);
+          pg = clamp(pg * (1 - m) + 184 * m);
+          pb = clamp(pb * (1 - m) + 116 * m);
+        }
+        const gold = Math.random() < 0.06; // 纯金亮点
+
         particles.push({
           x: rect.x + gx * STEP + rnd(-1, 1),
           y: rect.y + gy * STEP + rnd(-1, 1),
           vx: rnd(-9, 9),
           vy: rnd(-30, -8),
-          r: gold ? rnd(0.6, 1.3) : rnd(0.5, 1.5),
+          r: gold ? rnd(0.6, 1.4) : rnd(0.5, 1.8),
           life: 0,
-          maxLife: rnd(1.6, 3.2),
-          cr,
-          cg,
-          cb,
+          maxLife: rnd(1.6, 3.4),
+          cr: gold ? 216 : pr,
+          cg: gold ? 184 : pg,
+          cb: gold ? 116 : pb,
           gold,
         });
         budget--;
