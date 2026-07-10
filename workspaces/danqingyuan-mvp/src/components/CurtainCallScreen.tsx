@@ -79,7 +79,7 @@ export function CurtainCallScreen({ ending, onReset }: CurtainCallScreenProps) {
     if (inkRef.current && img && host) {
       const fr = img.getBoundingClientRect();
       const hr = host.getBoundingClientRect();
-      inkRef.current.burst({ x: fr.left - hr.left, y: fr.top - hr.top, w: fr.width, h: fr.height });
+      inkRef.current.burst(img, { x: fr.left - hr.left, y: fr.top - hr.top, w: fr.width, h: fr.height });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lineIndex]);
@@ -107,7 +107,7 @@ export function CurtainCallScreen({ ending, onReset }: CurtainCallScreenProps) {
             ref={(el) => {
               figureRefs.current[f] = el;
             }}
-            className={`cc-figure cc-figure--${state}`}
+            className={`cc-figure cc-fig-${f} cc-figure--${state}`}
             src={`/char/char-${f}-full-body-back.png`}
             alt=""
           />

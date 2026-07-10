@@ -5344,38 +5344,44 @@ dd {
   animation: ccMist 12s ease-in-out infinite alternate;
 }
 
-/* 角色背影：白底 multiply 融入山水；一次一个，enter 前景 / exit 递退入画 */
+/* 角色背影：白底 multiply 融入山水；一次一个，四人四个位置 */
 .cc-figure {
   position: absolute;
-  left: 50%;
-  bottom: 0;
+  --cc-tx: 0px;
   z-index: 2;
-  height: 64vh;
-  max-height: 660px;
+  height: 54vh;
+  max-height: 600px;
   object-fit: contain;
   object-position: bottom center;
   mix-blend-mode: multiply;
   pointer-events: none;
-  transform: translateX(-50%);
-  transition: opacity 1500ms ease, transform 1600ms cubic-bezier(0.4, 0, 0.5, 1), filter 1600ms ease;
+  transform: translateX(var(--cc-tx));
+  transition: opacity 1000ms ease, transform 1400ms cubic-bezier(0.4, 0, 0.5, 1), filter 1400ms ease;
 }
+
+/* 四人位置（相对区分、不贴边）：李唐左下·择端右上·嵩右下·希孟中间(压轴较大) */
+.cc-fig-litang { left: 12%; bottom: 11%; height: 50vh; }
+.cc-fig-zeduan { right: 11%; top: 10%; height: 43vh; }
+.cc-fig-song { right: 13%; bottom: 7%; height: 53vh; }
+.cc-fig-ximeng { left: 50%; --cc-tx: -50%; bottom: 8%; height: 60vh; }
 
 .cc-figure--before {
   opacity: 0;
-  transform: translateX(-50%) translateY(28px) scale(1.02);
+  transform: translateX(var(--cc-tx)) translateY(26px) scale(1.02);
 }
 
 .cc-figure--enter {
   opacity: 1;
-  transform: translateX(-50%) translateY(0) scale(1);
-  transition: opacity 1100ms ease, transform 1100ms cubic-bezier(0.22, 0.68, 0.32, 1);
+  transform: translateX(var(--cc-tx)) translateY(0) scale(1);
+  transition: opacity 1000ms ease, transform 1100ms cubic-bezier(0.22, 0.68, 0.32, 1);
 }
 
-/* 入画：向雾中灭点上移+缩小+淡出+晕开 */
+/* 入画：原地淡出为主（身体化成细密粒子飘散，由 canvas 承载），仅极轻上飘缩 */
 .cc-figure--exit {
   opacity: 0;
-  transform: translateX(-50%) translateY(-24vh) scale(0.46);
-  filter: blur(3px);
+  transform: translateX(var(--cc-tx)) translateY(-5vh) scale(0.94);
+  filter: blur(1.5px);
+  transition: opacity 900ms ease, transform 1400ms ease, filter 900ms ease;
 }
 
 .cc-vignette {

@@ -29,5 +29,9 @@
 - `npm run build`（tsc+vite）✅（bundle 376→381KB）；回归 `test-activity-backgrounds` 23/0、`test-weather` 14/0；src 无 console.log；五资源 dev :5176 全 200。
 - **待明明真机走查**（:5176 主界面「预览谢幕」直跳）：山水淡入·缓推、四人 multiply 融画逐一谢幕、水墨溶散、回顾逐行、末位希孟入画→朱印+标题+重开；点击可跳过/快进；reduce-motion 无粒子仍完整。通玩：…→揭卷→epilogue(落幕)→谢幕→重开不断裂。
 
+## 五、看图反馈一（同日）
+1. **四人四位置**（明明：不要都居中）：李唐左下(不太靠下)/择端右上/嵩右下/希孟中间(压轴略大)，均不贴边。`.cc-figure` 改 `--cc-tx` 变量支持混合锚点 + `.cc-fig-{key}` 各自 left/right/top/bottom/height。
+2. **粒子太大→改细密**（明明：身体化成非常细密的粒子飘散）：inkDissolve 重写为**按人物轮廓采样**——把背影 `<img>`(同源白底)缩到 ~3.2px 网格 `drawImage`+`getImageData` 读身体像素(跳纯白底)，每身体像素撒一枚**微粒(r 0.5~1.5px、取像素本色)**，上限 4200；轻微湍流散开、缓淡出=身体化成细密烟尘。`.cc-figure--exit` 改**原地淡出为主**(仅极轻上飘缩)，让 canvas 粒子承载溶解。build✅。
+
 ## 待明明确认（可后调）
 - 四人致意文案（`curtainCallText.ts`）；② multiply「融画」ghostly 风格 vs 日后透明底"实体+溶解"（透明底到位去 multiply 一键切）；③ 各段时长/字速、figure 大小位置；④ 是否要换真 p5（现原生 canvas 效果一致）；⑤ DEV「预览谢幕」按钮上线前删。

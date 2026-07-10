@@ -1,10 +1,11 @@
 /**
- * 水墨溶解粒子（2026-07-10，谢幕页角色"入画"瞬间）。
- * 原生 canvas + requestAnimationFrame（无第三方依赖）：给定屏幕矩形，撒墨点/石青/金粉粒子，
- * 向上飘散、晕开、淡出，像人影化进水墨。`prefers-reduced-motion` 下不应创建（调用方判断）。
+ * 水墨溶解粒子（2026-07-10；07-10 改细密——按人物轮廓采样，身体化成非常细密的粒子飘散）。
+ * 原生 canvas + requestAnimationFrame（无第三方依赖）。给定人物 <img>（白底，同源可采样）+ 屏幕矩形，
+ * 把身体像素抽成密集的微粒（取像素本色），向上飘散、轻微扩散、缓缓淡出，如人影化进烟尘。
+ * `prefers-reduced-motion` 下不应创建（调用方判断）。
  */
 export interface InkDissolve {
-  burst: (rect: { x: number; y: number; w: number; h: number }) => void;
+  burst: (img: HTMLImageElement, rect: { x: number; y: number; w: number; h: number }) => void;
   destroy: () => void;
 }
 
@@ -14,19 +15,13 @@ interface Particle {
   vx: number;
   vy: number;
   r: number;
-  grow: number;
   life: number;
   maxLife: number;
-  color: [number, number, number];
+  cr: number;
+  cg: number;
+  cb: number;
   gold: boolean;
 }
-
-const INK_COLORS: [number, number, number][] = [
-  [46, 58, 68], // 墨
-  [38, 74, 96], // 石青
-  [74, 96, 74], // 石绿
-  [30, 40, 48],
-];
 
 export function createInkDissolve(container: HTMLElement): InkDissolve {
   const canvas = document.createElement('canvas');
@@ -47,30 +42,56 @@ export function createInkDissolve(container: HTMLElement): InkDissolve {
   const particles: Particle[] = [];
   let raf = 0;
   let last = 0;
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 
-  function rand(a: number, b: number) {
-    // 无 Math.random 依赖限制（浏览器端可用）
-    return a + Math.random() * (b - a);
-  }
+  const MAX_PARTICLES = 4200;
 
-  function burst(rect: { x: number; y: number; w: number; h: number }) {
-    const count = 150;
-    for (let i = 0; i < count; i++) {
-      const gold = Math.random() < 0.12;
-      // 偏下（脚部/衣摆）起更多，向上飘散
-      const fy = Math.pow(Math.random(), 0.7);
-      particles.push({
-        x: rect.x + rand(0.1, 0.9) * rect.w,
-        y: rect.y + fy * rect.h,
-        vx: rand(-14, 14),
-        vy: rand(-46, -14),
-        r: gold ? rand(1.2, 2.6) : rand(6, 20),
-        grow: rand(6, 18),
-        life: 0,
-        maxLife: rand(1.4, 2.8),
-        color: INK_COLORS[(Math.random() * INK_COLORS.length) | 0],
-        gold,
-      });
+  function burst(img: HTMLImageElement, rect: { x: number; y: number; w: number; h: number }) {
+    // 采样精度：每 ~3.2 屏幕px 一格（细密），offscreen 缩到该网格读像素
+    const STEP = 3.2;
+    const cols = Math.max(4, Math.round(rect.w / STEP));
+    const rows = Math.max(4, Math.round(rect.h / STEP));
+    let data: Uint8ClampedArray | null = null;
+    try {
+      const off = document.createElement('canvas');
+      off.width = cols;
+      off.height = rows;
+      const octx = off.getContext('2d', { willReadFrequently: true })!;
+      octx.drawImage(img, 0, 0, cols, rows);
+      data = octx.getImageData(0, 0, cols, rows).data;
+    } catch {
+      data = null; // 采样失败（理论不会，同源）→ 退化为矩形随机
+    }
+
+    let budget = MAX_PARTICLES - particles.length;
+    for (let gy = 0; gy < rows && budget > 0; gy++) {
+      for (let gx = 0; gx < cols && budget > 0; gx++) {
+        let cr = 60, cg = 70, cb = 80;
+        if (data) {
+          const idx = (gy * cols + gx) * 4;
+          cr = data[idx];
+          cg = data[idx + 1];
+          cb = data[idx + 2];
+          // 纯白=底，跳过；只取身体像素
+          if (cr > 240 && cg > 240 && cb > 240) continue;
+        }
+        if (Math.random() < 0.35) continue; // 抽稀，保密集又不爆量
+        const gold = Math.random() < 0.05;
+        particles.push({
+          x: rect.x + gx * STEP + rnd(-1, 1),
+          y: rect.y + gy * STEP + rnd(-1, 1),
+          vx: rnd(-9, 9),
+          vy: rnd(-30, -8),
+          r: gold ? rnd(0.6, 1.3) : rnd(0.5, 1.5),
+          life: 0,
+          maxLife: rnd(1.6, 3.2),
+          cr,
+          cg,
+          cb,
+          gold,
+        });
+        budget--;
+      }
     }
   }
 
@@ -87,31 +108,24 @@ export function createInkDissolve(container: HTMLElement): InkDissolve {
         particles.splice(i, 1);
         continue;
       }
-      const k = p.life / p.maxLife; // 0→1
+      const k = p.life / p.maxLife;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 6 * dt; // 微重力，飘升后回落
-      p.vx *= 0.99;
-      p.r += p.grow * dt;
-      const alpha = Math.sin((1 - k) * Math.PI * 0.5) * (p.gold ? 0.55 : 0.32);
+      p.vy += 5 * dt; // 微重力
+      p.vx *= 0.985;
+      p.vx += rnd(-6, 6) * dt; // 轻微湍流散开
+      const alpha = Math.sin((1 - k) * Math.PI * 0.5) * (p.gold ? 0.85 : 0.7);
 
       if (p.gold) {
         ctx.globalCompositeOperation = 'lighter';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(212,180,110,${alpha})`;
-        ctx.fill();
+        ctx.fillStyle = `rgba(214,182,112,${alpha})`;
       } else {
         ctx.globalCompositeOperation = 'source-over';
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
-        const [r, gg, b] = p.color;
-        g.addColorStop(0, `rgba(${r},${gg},${b},${alpha})`);
-        g.addColorStop(1, `rgba(${r},${gg},${b},0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = `rgba(${p.cr},${p.cg},${p.cb},${alpha})`;
       }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.globalCompositeOperation = 'source-over';
     raf = requestAnimationFrame(frame);
