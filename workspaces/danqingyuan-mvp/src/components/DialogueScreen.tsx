@@ -53,6 +53,10 @@ interface DialogueScreenProps {
   countsTowardQuota: boolean;
   /** 此前持久化的对话往来（2026-06-26）：「往来」记录区展示 + 续聊衔接 */
   priorHistory: string[];
+  /** 可选背景图（如结局见希孟用希孟画室）；缺省用 .dlg-bg 默认庭院图 */
+  bgImage?: string;
+  /** 结局叙话模式（2026-07-10）：顶栏/收尾/告辞文案改结局措辞，不显"今日" */
+  endingMode?: boolean;
   onCancel: () => void;
   /** 单轮闲聊：玩家选中的回复 + 语气 + 本场往来历史 + 是否最后一次 → NPC 回应 */
   onSubmit: (
@@ -65,7 +69,7 @@ interface DialogueScreenProps {
   onOpen?: (priorHistory: string[]) => Promise<CharacterDialogueOutput | undefined>;
 }
 
-export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, countsTowardQuota, priorHistory, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
+export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, countsTowardQuota, priorHistory, bgImage, endingMode, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
   // 当前希孟的话（首轮用问候语 + 默认选项；之后用 LLM 输出）
   const [response, setResponse] = useState<CharacterDialogueOutput | null>(null);
   const [replyOptions, setReplyOptions] = useState<ChatReplyOption[]>(OPENING_REPLIES);
@@ -160,7 +164,7 @@ export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, co
 
   return (
     <main className="dlg-page">
-      <div className="dlg-bg" />
+      <div className="dlg-bg" style={bgImage ? { backgroundImage: `url('${bgImage}')` } : undefined} />
       <div className="dlg-bg-overlay" />
 
       <header className="dlg-top-bar">
@@ -186,7 +190,11 @@ export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, co
         </span>
         <span className="dlg-top-sep">｜</span>
         <span className="dlg-top-status">
-          {countsTowardQuota ? `今日还可说 ${turnsLeft} 句` : `初次相识 · 还可说 ${turnsLeft} 句`}
+          {endingMode
+            ? `还可叙 ${turnsLeft} 句`
+            : countsTowardQuota
+              ? `今日还可说 ${turnsLeft} 句`
+              : `初次相识 · 还可说 ${turnsLeft} 句`}
         </span>
         <span className="dlg-top-sep">｜</span>
         <button className="dlg-log-toggle" onClick={() => setShowLog((v) => !v)} type="button">
@@ -238,7 +246,7 @@ export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, co
         <div className="dlg-input-bar-inner">
           {ended ? (
             <div className="dlg-input-bar-left">
-              <span className="dlg-input-topic-hint">{concluded ? '今日叙话已尽，改日再来。' : '话已说尽，他重新执起笔。'}</span>
+              <span className="dlg-input-topic-hint">{endingMode ? '这一席话，暂告段落。' : concluded ? '今日叙话已尽，改日再来。' : '话已说尽，他重新执起笔。'}</span>
             </div>
           ) : isSubmitting ? (
             <div className="dlg-input-bar-left">
@@ -274,7 +282,7 @@ export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, co
           )}
           <div className="dlg-input-bar-right">
             <button className="dlg-cancel-btn" onClick={onCancel} type="button">
-              {ended ? '回到院中' : '告辞'}
+              {endingMode ? (ended ? '就此别过' : '别过') : ended ? '回到院中' : '告辞'}
             </button>
           </div>
         </div>

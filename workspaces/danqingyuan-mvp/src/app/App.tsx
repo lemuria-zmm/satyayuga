@@ -221,7 +221,6 @@ export function App() {
   // 导师点评 LLM 文：null=生成中
   const [mentorReview, setMentorReview] = useState<{ dialogue: string; actionText: string } | null>(null);
   // 见希孟 LLM 文：null=生成中
-  const [ximengMeet, setXimengMeet] = useState<{ dialogue: string; actionText: string } | null>(null);
   const [dialogueNpcId, setDialogueNpcId] = useState<NpcId | null>(null);
   /** 当前闲聊是否为剧情首遇（2026-06-26）：首遇不计入每日闲聊次数 */
   const [dialogueIsFirstMeet, setDialogueIsFirstMeet] = useState(false);
@@ -1320,7 +1319,6 @@ export function App() {
     setFreeCreationComposed(null);
     setPuzzleAssessmentPrompt(null);
     setMentorReview(null);
-    setXimengMeet(null);
     setDialogueNpcId(null);
     setExamQuestions([]);
     setPuzzleAssessmentPrompt(null);
@@ -1578,9 +1576,10 @@ export function App() {
     const next = nextEndingStage(from, state.ending, state);
 
     if (next === 'ximeng_meet') {
-      setXimengMeet(null);
-      void fetchXimengMeet(state);
+      // 结局见希孟改为自由多轮闲聊（2026-07-10 明明，上限 50 回）：开对话页，聊完 onCancel 推进序列
+      setDialogueIsFirstMeet(false);
       setEndingStage('ximeng_meet');
+      setDialogueNpcId('ximeng');
       return;
     }
     if (next === 'puzzle') {
@@ -1621,40 +1620,6 @@ export function App() {
       setIsExamOpen(true);
     } catch (error) {
       setLlmError(renderLlmError(error));
-    }
-  }
-
-  /** 见希孟话别（2026-06-30 批二）：复用 character_dialogue + endingMeet，希孟说预热话。失败走兜底句（序列不卡死）。 */
-  async function fetchXimengMeet(meetState: GameState) {
-    const rel = meetState.relationships.ximeng;
-    try {
-      const response = await llmAdapter.generateCharacterDialogue({
-        traceId: `ending-ximeng-${Date.now()}`,
-        role: 'character_dialogue',
-        promptVersion: DIALOGUE_PROMPT_VERSION,
-        input: {
-          npcId: 'ximeng',
-          day: meetState.time.day,
-          timeSlot: meetState.time.timeSlot,
-          locationId: meetState.currentLocation,
-          relationshipStage: rel.stage,
-          emotionState: rel.emotionState,
-          topicCard: '画院之路同行',
-          endingMeet: true,
-          recentDialogue: (rel.chatHistory ?? []).slice(-6),
-          recentEvents: meetState.memory.storyLedger.slice(-2).map((entry) => entry.summary),
-          relevantMemories: meetState.memory.playerStyle.tags,
-          availableClueIds: meetState.puzzle.collectedClueIds,
-          canonWarnings: meetState.memory.coreCanon.spoilerBoundaries,
-        },
-        context: buildMemoryContext(meetState, 'character_dialogue', 'ximeng'),
-      });
-      setXimengMeet({ dialogue: response.output.dialogue, actionText: response.output.actionText });
-    } catch {
-      setXimengMeet({
-        dialogue: '你既留下了，那条没画完的水路，迟早要一起去走一趟。',
-        actionText: '希孟看了你许久，将手中半卷青绿轻轻按了按。',
-      });
     }
   }
 
@@ -1966,7 +1931,8 @@ export function App() {
     setDialogueNpcId(npcId);
   }
 
-  if (dialogueNpcId) {
+  // 结局见希孟的对话在 endingStage 分支单独渲染（带画室背景/50回/推进序列）；此处只管日常闲聊
+  if (dialogueNpcId && endingStage !== 'ximeng_meet') {
     const rel = state.relationships[dialogueNpcId];
     // 本场句数预算（2026-06-26）：主动闲聊=好感档剩余次数；首遇=独立固定额度 FIRST_MEET_CHAT_TURNS
     const maxTurns = dialogueIsFirstMeet
@@ -2049,14 +2015,24 @@ export function App() {
       return <XimengBridge onContinue={() => advanceEndingStage('ximeng_bridge')} />;
     }
     if (endingStage === 'ximeng_meet') {
+      // 结局见希孟：自由多轮闲聊（上限 50 回），聊完/告辞→推进序列（2026-07-10 明明）
+      const rel = state.relationships.ximeng;
       return (
-        <EndingDialogue
+        <DialogueScreen
           npcId="ximeng"
-          dialogue={ximengMeet ? ximengMeet.dialogue : null}
-          actionText={ximengMeet ? ximengMeet.actionText : null}
-          caption="放榜既毕 · 寻希孟"
+          affinity={rel.hiddenAffinity}
+          portraitOverride="/char/char-ximeng-full-body-b.png"
           bgImage="/bg-ximeng-studio.png"
-          onContinue={() => advanceEndingStage('ximeng_meet')}
+          endingMode
+          maxTurns={50}
+          countsTowardQuota={false}
+          priorHistory={rel.chatHistory ?? []}
+          onCancel={() => {
+            setDialogueNpcId(null);
+            advanceEndingStage('ximeng_meet');
+          }}
+          onSubmit={submitDialogue}
+          onOpen={openDialogue}
         />
       );
     }

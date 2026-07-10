@@ -47,5 +47,8 @@
 3. **见希孟 UI 下移**（明明：对话框+立绘往下，底部空太多）：EndingDialogue ximeng 页加 `.dlg-page--meet`，立绘由居中改**落地站姿下移**（bottom:20/82vh，脚藏卷轴后）+ 对话框 bottom 80→26，收掉底部空白。
 - 重验 build✅，两背景资源 200。
 
+## 八、见希孟改自由对话（同日，明明）
+结局「见希孟」原是单向模板句（EndingDialogue），改为**玩家自由多轮闲聊·上限 50 回**：ximeng_meet 阶段改渲 `DialogueScreen`（复用 submitDialogue/openDialogue 管道），`maxTurns=50`、背景=希孟画室、立绘=全身B、新增 `endingMode`（顶栏「还可叙N句」/收尾/告辞措辞改结局向）；聊完或告辞→onCancel 推进序列（archive_bridge）。删旧 `fetchXimengMeet`/`ximengMeet` 单向拉取；日常闲聊渲染加 `endingStage!=='ximeng_meet'` 守卫避免双渲。build✅+回归 23/0·14/0。
+
 ## 待明明确认（可后调）
 - 四人致意文案（`curtainCallText.ts`）；② multiply「融画」ghostly 风格 vs 日后透明底"实体+溶解"（透明底到位去 multiply 一键切）；③ 各段时长/字速、figure 大小位置；④ 是否要换真 p5（现原生 canvas 效果一致）；⑤ DEV「预览谢幕」按钮上线前删。
