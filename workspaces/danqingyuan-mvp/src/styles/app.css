@@ -3333,6 +3333,32 @@ button {
   height: 560px;
 }
 
+/* 见希孟（ximeng_meet）：立绘改落地站姿+下移、对话框下移，收掉底部大片空白（2026-07-10 明明） */
+.dlg-page--meet .dlg-character--review {
+  top: auto;
+  bottom: 20px;
+  transform: translateX(-50%);
+  animation: dlgMeetIn 550ms ease 200ms both;
+}
+
+@keyframes dlgMeetIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(22px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.dlg-page--meet .dlg-character--review .dlg-character-sprite {
+  height: 82vh;
+  max-height: 860px;
+}
+
+.dlg-page--meet .dlg-character--review .dlg-character-aura {
+  top: 42%;
+}
+
+.dlg-page--meet .dlg-dialogue-scroll {
+  bottom: 26px;
+}
+
 /* ---- Left: topic slip list ---- */
 .dlg-topic-list {
   position: absolute;
@@ -4687,14 +4713,14 @@ dd {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: url('/admission/bg-admission-hall.png') center / cover no-repeat, #080604;
+  background: url('/bg-secret-room.png') center / cover no-repeat, #080604;
 }
 
 .ab-veil {
   position: absolute;
   inset: 0;
-  /* 半透暗罩：透出院堂，仍压暗保文字可读（2026-07-10 明明：背景改 bg-admission-hall） */
-  background: radial-gradient(circle at 50% 42%, rgba(24, 18, 12, 0.52) 0%, rgba(8, 6, 4, 0.82) 80%);
+  /* 半透暗罩：透出秘阁密室，仍压暗保文字可读（2026-07-10 明明：改 bg-secret-room） */
+  background: radial-gradient(circle at 50% 42%, rgba(24, 18, 12, 0.5) 0%, rgba(8, 6, 4, 0.8) 82%);
   animation: epiVeilIn 1100ms ease both;
 }
 

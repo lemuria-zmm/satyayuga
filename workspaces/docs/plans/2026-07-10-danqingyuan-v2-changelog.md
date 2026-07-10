@@ -41,5 +41,11 @@
 5. **谢幕粒子色彩丰富化**（明明：颜色随服装、多渐变、不单色）：inkDissolve 每粒取服装本色后加**明暗抖动(0.7~1.42)**+**部分向金色渐融(24%,mix 0.2~0.72)**+纯金亮点(6%)，粒子由深到浅、掺金呈渐变而非单色。
 - 重验 build✅+回归 23/0·14/0，四资源 200，无 console.log。
 
+## 七、看图反馈三（同日）
+1. **入院页背景修回原样**：上轮误把新 bg-admission-hall（实为秘阁密室暗图）覆盖，连累入院名录背景变暗——`git checkout` 恢复原 `bg-admission-hall.png`（浅院堂）。
+2. **秘阁引桥背景改 bg-secret-room**（明明：进秘阁前用密室图，之前 admission-hall 是错的）：新增 `public/bg-secret-room.png`，`.ab-page` 背景改指它。
+3. **见希孟 UI 下移**（明明：对话框+立绘往下，底部空太多）：EndingDialogue ximeng 页加 `.dlg-page--meet`，立绘由居中改**落地站姿下移**（bottom:20/82vh，脚藏卷轴后）+ 对话框 bottom 80→26，收掉底部空白。
+- 重验 build✅，两背景资源 200。
+
 ## 待明明确认（可后调）
 - 四人致意文案（`curtainCallText.ts`）；② multiply「融画」ghostly 风格 vs 日后透明底"实体+溶解"（透明底到位去 multiply 一键切）；③ 各段时长/字速、figure 大小位置；④ 是否要换真 p5（现原生 canvas 效果一致）；⑤ DEV「预览谢幕」按钮上线前删。

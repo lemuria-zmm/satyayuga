@@ -41,7 +41,7 @@ export function EndingDialogue({ npcId, dialogue, actionText, caption, bgImage, 
   const loading = dialogue === null;
 
   return (
-    <main className="dlg-page">
+    <main className={npcId === 'ximeng' ? 'dlg-page dlg-page--meet' : 'dlg-page'}>
       <div className="dlg-bg" style={bgImage ? { backgroundImage: `url('${bgImage}')` } : undefined} />
       <div className="dlg-bg-overlay" />
 
