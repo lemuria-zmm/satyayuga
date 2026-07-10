@@ -40,6 +40,7 @@ import { EndingDialogue } from '../components/EndingDialogue';
 import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
 import { XimengBridge } from '../components/XimengBridge';
 import { EpilogueScreen } from '../components/EpilogueScreen';
+import { CurtainCallScreen } from '../components/CurtainCallScreen';
 import { MainGameScreen } from '../components/MainGameScreen';
 import { SkyTransition } from '../components/SkyTransition';
 import { ActivityResultPopup } from '../components/ActivityResultPopup';
@@ -2088,7 +2089,16 @@ export function App() {
       );
     }
     if (endingStage === 'epilogue' && ending) {
-      return <EpilogueScreen ending={ending} onReset={resetGame} />;
+      return (
+        <EpilogueScreen
+          ending={ending}
+          buttonLabel="落幕"
+          onReset={() => advanceEndingStage('epilogue')}
+        />
+      );
+    }
+    if (endingStage === 'curtain_call' && ending) {
+      return <CurtainCallScreen ending={ending} onReset={resetGame} />;
     }
   }
 
@@ -2184,6 +2194,25 @@ export function App() {
             setLlmError(renderLlmError(error));
           }
         })();
+      } : undefined}
+      onPreviewCurtain={import.meta.env.DEV ? () => {
+        // DEV 预览谢幕（2026-07-10）：塞 mock ending 直跳 curtain_call
+        const mockEnding: EndingResult = {
+          tier: 'good',
+          title: '良·画正',
+          score: 74,
+          cappedBySkill: false,
+          rankChange: 'painter_regular',
+          unlockArchive: true,
+          unlockStudio: false,
+          summaryLines: [],
+        };
+        const devState: GameState = { ...state, ending: mockEnding };
+        setActiveScene(null);
+        setSettlement(null);
+        setDialogueNpcId(null);
+        setState(devState);
+        setEndingStage('curtain_call');
       } : undefined}
     />
     {skyOverlay}

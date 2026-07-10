@@ -5315,3 +5315,199 @@ dd {
 }
 
 .activity-result-btn:hover { filter: brightness(1.08); }
+
+/* ——— 结尾谢幕页（步入江山·落幕，2026-07-10）——— */
+.cc-page {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0b0a08;
+  cursor: pointer;
+}
+
+.cc-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url('/bg-shanshui.png') center / cover no-repeat;
+  animation: ccFadeIn 2000ms ease both, ccKenBurns 46s ease-out both;
+}
+
+/* 雾气：上下柔雾缓慢起伏 */
+.cc-mist {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(240, 235, 220, 0.45) 0%, transparent 26%, transparent 72%, rgba(230, 224, 205, 0.4) 100%);
+  animation: ccMist 12s ease-in-out infinite alternate;
+}
+
+/* 角色背影：白底 multiply 融入山水；一次一个，enter 前景 / exit 递退入画 */
+.cc-figure {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 2;
+  height: 64vh;
+  max-height: 660px;
+  object-fit: contain;
+  object-position: bottom center;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 1500ms ease, transform 1600ms cubic-bezier(0.4, 0, 0.5, 1), filter 1600ms ease;
+}
+
+.cc-figure--before {
+  opacity: 0;
+  transform: translateX(-50%) translateY(28px) scale(1.02);
+}
+
+.cc-figure--enter {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  transition: opacity 1100ms ease, transform 1100ms cubic-bezier(0.22, 0.68, 0.32, 1);
+}
+
+/* 入画：向雾中灭点上移+缩小+淡出+晕开 */
+.cc-figure--exit {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-24vh) scale(0.46);
+  filter: blur(3px);
+}
+
+.cc-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(120% 96% at 50% 42%, transparent 52%, rgba(18, 12, 6, 0.5) 100%);
+}
+
+.cc-ink {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.cc-ink-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 回顾文字：底部居中，暗底衬托浅山水上的可读性 */
+.cc-text {
+  position: absolute;
+  left: 50%;
+  bottom: 13vh;
+  z-index: 5;
+  transform: translateX(-50%);
+  width: min(780px, 86vw);
+  text-align: center;
+}
+
+.cc-line {
+  margin: 0;
+  font-size: 19px;
+  line-height: 2;
+  letter-spacing: 0.06em;
+  color: #f3ead2;
+  text-shadow: 0 2px 10px rgba(14, 9, 4, 0.92), 0 0 24px rgba(14, 9, 4, 0.7);
+  animation: ccFadeIn 700ms ease both;
+}
+
+.cc-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  background: #f3ead2;
+  animation: epiCaret 760ms step-end infinite;
+}
+
+/* 终幕：朱印 + 标题 + 重新开始（渐暗定格） */
+.cc-finale {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  background: rgba(11, 10, 8, 0);
+  transition: opacity 1400ms ease, background 1400ms ease;
+}
+
+.cc-finale-in {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(11, 10, 8, 0.66);
+}
+
+.cc-seal {
+  width: 66px;
+  height: 66px;
+  background: url('/admission/seal-small-red.png') center / contain no-repeat;
+  animation: prologueSealStamp 640ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+.cc-title {
+  margin: 6px 0 0;
+  font-size: clamp(40px, 7vw, 72px);
+  letter-spacing: 0.24em;
+  font-weight: 700;
+  color: #e7d8b8;
+  text-shadow: 0 0 30px rgba(226, 210, 178, 0.3);
+}
+
+.cc-subtitle {
+  margin: 0;
+  font-size: clamp(14px, 2.2vw, 19px);
+  letter-spacing: 0.5em;
+  padding-left: 0.5em;
+  color: rgba(226, 210, 178, 0.66);
+}
+
+.cc-restart-btn {
+  margin-top: 26px;
+  padding: 10px 40px;
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: 0.22em;
+  color: #f4ecd7;
+  background: linear-gradient(180deg, #8a6a3f 0%, #6f5230 100%);
+  border: 1px solid rgba(60, 42, 20, 0.5);
+  border-radius: 5px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(40, 26, 12, 0.5);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.cc-restart-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@keyframes ccFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ccKenBurns {
+  from { transform: scale(1.1); }
+  to { transform: scale(1); }
+}
+
+@keyframes ccMist {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}

@@ -22,7 +22,8 @@ export type EndingStage =
   | 'archive_bridge' // 日终·秘阁引桥过场（门虚掩→推门而入）
   | 'puzzle' // 日终·秘阁五幕解谜（PuzzleScreen）
   | 'reveal' // 日终·骸游图揭卷（HaiyouRevealScreen）
-  | 'epilogue'; // 日终·收尾文章（EpilogueScreen，续作预热）
+  | 'epilogue' // 日终·收尾文章（EpilogueScreen，续作预热）
+  | 'curtain_call'; // 日终·谢幕落幕（CurtainCallScreen，四人入画+回顾，终幕）
 
 /** 见希孟门槛：希孟好感≥知己(60)，与画室入口一致 */
 export const XIMENG_MEET_AFFINITY = 60;
@@ -42,7 +43,8 @@ export function mentorForStyle(styleOrigin: SkillId): NpcId {
  * - archive_bridge → puzzle
  * - puzzle → reveal
  * - reveal → epilogue
- * - epilogue → null（终点）
+ * - epilogue → curtain_call
+ * - curtain_call → null（终幕）
  */
 export function nextEndingStage(
   current: EndingStage,
@@ -64,6 +66,8 @@ export function nextEndingStage(
     case 'reveal':
       return 'epilogue';
     case 'epilogue':
+      return 'curtain_call';
+    case 'curtain_call':
       return null;
     case 'exam_review':
     case 'retake':

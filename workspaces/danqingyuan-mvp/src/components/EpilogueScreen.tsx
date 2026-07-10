@@ -4,8 +4,10 @@ import type { EndingResult } from '../types';
 
 interface EpilogueScreenProps {
   ending: EndingResult;
-  /** 重新开始：日终收尾序列终点，回开局表单 */
+  /** 末尾按钮动作（日终收尾序列：推进到谢幕，或回开局表单） */
   onReset: () => void;
+  /** 末尾按钮文案（默认「重新开始」；接谢幕时用「落幕」） */
+  buttonLabel?: string;
 }
 
 const CHAR_MS = 60;
@@ -16,7 +18,7 @@ const LINE_PAUSE_MS = 550;
  * 黑场 + 逐行打字机呈现 `epilogueText` 固定模板；全部播完后淡入「重新开始」。
  * 秘阁五幕已在序列内走完，此处只作最终收束——不再有入秘阁/画室入口。
  */
-export function EpilogueScreen({ ending, onReset }: EpilogueScreenProps) {
+export function EpilogueScreen({ ending, onReset, buttonLabel = '重新开始' }: EpilogueScreenProps) {
   const lines = buildEpilogueLines(ending.tier);
   const [lineIndex, setLineIndex] = useState(0);
   const [shown, setShown] = useState(0);
@@ -64,7 +66,7 @@ export function EpilogueScreen({ ending, onReset }: EpilogueScreenProps) {
         <div className={`epi-tail${allDone ? ' epi-tail-in' : ''}`}>
           {allDone && (
             <button className="epi-reset-btn" onClick={(e) => { e.stopPropagation(); onReset(); }} type="button">
-              重新开始
+              {buttonLabel}
             </button>
           )}
         </div>
