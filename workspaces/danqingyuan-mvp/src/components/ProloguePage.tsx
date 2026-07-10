@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { playOpeningBgm } from '../audio/openingAudio';
+import { playBgm } from '../audio/audioManager';
 
 interface ProloguePageProps {
   /** 引语放完（或玩家跳过）→ 进入入院名录 */
@@ -65,7 +65,7 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
 
   function enterVerse() {
     videoRef.current?.pause();
-    playOpeningBgm(); // 视频配乐止，接低音量竹林配乐续到入院
+    playBgm('/opening-bgm.mp3', 0.3); // 视频配乐止，接低音量竹林配乐（后续 setup 起由 audio director 接管）
     setPhase('verse');
   }
 

@@ -57,6 +57,10 @@ interface DialogueScreenProps {
   bgImage?: string;
   /** 结局叙话模式（2026-07-10）：顶栏/收尾/告辞文案改结局措辞，不显"今日" */
   endingMode?: boolean;
+  /** 开场覆盖（2026-07-10）：见希孟等场景用固定开场白/动作/回复选项（NPC 主动问候），不走 onOpen */
+  openingLine?: string;
+  openingAction?: string;
+  openingReplies?: ChatReplyOption[];
   onCancel: () => void;
   /** 单轮闲聊：玩家选中的回复 + 语气 + 本场往来历史 + 是否最后一次 → NPC 回应 */
   onSubmit: (
@@ -69,10 +73,10 @@ interface DialogueScreenProps {
   onOpen?: (priorHistory: string[]) => Promise<CharacterDialogueOutput | undefined>;
 }
 
-export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, countsTowardQuota, priorHistory, bgImage, endingMode, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
+export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, countsTowardQuota, priorHistory, bgImage, endingMode, openingLine, openingAction, openingReplies, onCancel, onSubmit, onOpen }: DialogueScreenProps) {
   // 当前希孟的话（首轮用问候语 + 默认选项；之后用 LLM 输出）
   const [response, setResponse] = useState<CharacterDialogueOutput | null>(null);
-  const [replyOptions, setReplyOptions] = useState<ChatReplyOption[]>(OPENING_REPLIES);
+  const [replyOptions, setReplyOptions] = useState<ChatReplyOption[]>(openingReplies ?? OPENING_REPLIES);
   const [freeInput, setFreeInput] = useState('');
   // 本场新增的往来（叠加在 priorHistory 之后）
   const [history, setHistory] = useState<string[]>([]);
@@ -122,8 +126,8 @@ export function DialogueScreen({ npcId, affinity, portraitOverride, maxTurns, co
   }, []);
 
   // 当前显示的 NPC 台词（LLM 输出，含收尾时的自然作别语）
-  const npcLine = response ? response.dialogue : npcGreeting[npcId];
-  const npcAction = response ? response.actionText : npcAtmosphere[npcId];
+  const npcLine = response ? response.dialogue : (openingLine ?? npcGreeting[npcId]);
+  const npcAction = response ? response.actionText : (openingAction ?? npcAtmosphere[npcId]);
 
   async function pickReply(text: string, tone: ChatReplyTone | undefined) {
     if (isSubmitting || ended) return;

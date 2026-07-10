@@ -52,7 +52,7 @@ import { ArchiveBridge } from '../components/ArchiveBridge';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
-import { stopOpeningBgm } from '../audio/openingAudio';
+import { playBgm, playAmbient } from '../audio/audioManager';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { activityBackground } from '../content/activityBackgrounds';
@@ -441,7 +441,6 @@ export function App() {
   /** 点击「入院」：落 admitted 旗标进主界面，引导场景由 effect 自动发起 */
   function enterAcademy() {
     if (!state || !admissionText) return;
-    stopOpeningBgm(); // 开场配乐止于入院进游戏
     const entered: GameState = {
       ...state,
       progress: {
@@ -519,6 +518,57 @@ export function App() {
 
   // 希孟画室不再作为可访问去处提前解锁（2026-07-10 明明）：画室体验改由日终「见希孟」一段承载（其对话背景=画室）。
   // 原「好感≥知己自动解锁 ximeng_studio 去处」已撤——避免第七日考后日常面板提前出现画室入口。
+
+  // 音频导演（2026-07-10 明明）：按当前场景切背景乐 + 环境声（环境声仅日常：晨/午鸟鸣、雨天雨声）。同曲不重启。
+  useEffect(() => {
+    if (!prologueSeen) return; // 开场由 ProloguePage 自管（片头视频音 + 竹林）
+    if (!state || !state.progress.flags.admitted) {
+      playBgm('/bgm-main.mp3'); // 入院名录 / 小书童来迎
+      playAmbient(null);
+      return;
+    }
+    if (isExamOpen) {
+      playBgm('/bgm-exam.mp3');
+      playAmbient(null);
+      return;
+    }
+    if (endingStage) {
+      const track =
+        endingStage === 'curtain_call' || endingStage === 'epilogue'
+          ? '/bgm-curtain.mp3'
+          : endingStage === 'title_grant'
+            ? '/bgm-main.mp3'
+            : endingStage === 'ximeng_bridge' || endingStage === 'ximeng_meet' || endingStage === 'exam_review'
+              ? '/bgm-dialogue.mp3'
+              : '/bgm-exam.mp3'; // archive_bridge / puzzle / reveal / retake
+      playBgm(track);
+      playAmbient(null);
+      return;
+    }
+    if (dialogueNpcId) {
+      playBgm('/bgm-dialogue.mp3'); // 希孟闲聊
+      playAmbient(null);
+      return;
+    }
+    // 日常主循环：按时段选乐；环境声按时段+天气（仅日常）
+    const slot = state.time.timeSlot;
+    const bgmTrack =
+      slot === 'morning_class' || slot === 'forenoon'
+        ? '/bgm-morning.mp3'
+        : slot === 'noon' || slot === 'afternoon'
+          ? '/bgm-noon.mp3'
+          : '/bgm-evening.mp3';
+    playBgm(bgmTrack);
+    const rainy = isRainyWeather(getWeather(state.time.day, state.weatherWeek));
+    const amb = rainy
+      ? '/amb-rain.mp3'
+      : slot === 'morning_class' || slot === 'forenoon'
+        ? '/amb-birds-morning.mp3'
+        : slot === 'noon' || slot === 'afternoon'
+          ? '/amb-birds-afternoon.mp3'
+          : null; // 夜间无鸟鸣
+    playAmbient(amb);
+  }, [prologueSeen, state, endingStage, dialogueNpcId, isExamOpen]);
 
   /** 七日主线规划（拍板）：开局种子 + 一次 LLM 扩写节拍表；失败回落模板节拍 */
   async function ensureMainline(s: GameState) {
@@ -2027,12 +2077,18 @@ export function App() {
           maxTurns={50}
           countsTowardQuota={false}
           priorHistory={rel.chatHistory ?? []}
+          openingAction="希孟正对着案上一卷将干的青绿理着，见你进来，搁下了笔，侧过脸。"
+          openingLine="放榜了罢？——考得如何？"
+          openingReplies={[
+            { text: '侥幸过了，得授祗候。', tone: 'warm' },
+            { text: '有几处答得不好，还差得远。', tone: 'neutral' },
+            { text: '你怎么在这儿？这地方不是不便来么。', tone: 'probing' },
+          ]}
           onCancel={() => {
             setDialogueNpcId(null);
             advanceEndingStage('ximeng_meet');
           }}
           onSubmit={submitDialogue}
-          onOpen={openDialogue}
         />
       );
     }
