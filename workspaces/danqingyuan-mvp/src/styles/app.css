@@ -5343,7 +5343,7 @@ dd {
 
 .activity-result-btn:hover { filter: brightness(1.08); }
 
-/* ——— 结尾谢幕页（步入江山·落幕，2026-07-10）——— */
+/* ——— 结尾谢幕长卷（步入江山·展卷，2026-07-10 方案A）——— */
 .cc-page {
   position: fixed;
   inset: 0;
@@ -5352,77 +5352,103 @@ dd {
   cursor: pointer;
 }
 
-.cc-bg {
+/* 横向长卷：N 屏并排，随 beat translateX 展开 */
+.cc-scroll {
+  display: flex;
+  height: 100%;
+  width: max-content;
+  transition: transform 1600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cc-panel {
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  flex: 0 0 100vw;
+  overflow: hidden;
+}
+
+.cc-panel-bg {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url('/bg-shanshui.png') center / cover no-repeat;
-  animation: ccFadeIn 2000ms ease both, ccKenBurns 46s ease-out both;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  animation: ccKenBurns 40s ease-out both;
 }
 
-/* 雾气：上下柔雾缓慢起伏 */
-.cc-mist {
+/* 柔雾 + 右侧竖排文字区的轻微提亮/压角，保证文字可读 */
+.cc-panel-mist {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(240, 235, 220, 0.45) 0%, transparent 26%, transparent 72%, rgba(230, 224, 205, 0.4) 100%);
-  animation: ccMist 12s ease-in-out infinite alternate;
+    linear-gradient(180deg, rgba(240, 235, 220, 0.4) 0%, transparent 22%, transparent 74%, rgba(228, 222, 203, 0.44) 100%),
+    linear-gradient(270deg, rgba(244, 238, 222, 0.5) 0%, transparent 34%);
 }
 
-/* 角色背影：白底 multiply 融入山水；一次一个，四人四个位置 */
+/* 角色背影：白底 multiply 融入画；按每屏人数/序号定位 */
 .cc-figure {
   position: absolute;
-  --cc-tx: 0px;
+  --cc-tx: -50%;
   z-index: 2;
-  height: 54vh;
-  max-height: 600px;
+  bottom: 6%;
+  left: 50%;
+  height: 60vh;
+  max-height: 660px;
   object-fit: contain;
   object-position: bottom center;
   mix-blend-mode: multiply;
   pointer-events: none;
   transform: translateX(var(--cc-tx));
-  transition: opacity 1000ms ease, transform 1400ms cubic-bezier(0.4, 0, 0.5, 1), filter 1400ms ease;
+  transition: opacity 1000ms ease, transform 1400ms ease, filter 1400ms ease;
 }
 
-/* 四人位置（相对区分、不贴边）：李唐左下·择端右上·嵩右下·希孟中间(压轴较大) */
-.cc-fig-litang { left: 12%; bottom: 11%; height: 50vh; }
-.cc-fig-zeduan { right: 11%; top: 10%; height: 43vh; }
-.cc-fig-song { right: 13%; bottom: 7%; height: 53vh; }
-.cc-fig-ximeng { left: 50%; --cc-tx: -50%; bottom: 8%; height: 60vh; }
+/* 单人：居中偏前；双人（对弈屏）：左李唐、右择端 */
+.cc-fig-n1 { left: 50%; --cc-tx: -50%; height: 62vh; }
+.cc-fig-n2.cc-fig-i0 { left: 30%; --cc-tx: -50%; height: 54vh; }
+.cc-fig-n2.cc-fig-i1 { left: 70%; --cc-tx: -50%; height: 54vh; }
 
-.cc-figure--before {
-  opacity: 0;
-  transform: translateX(var(--cc-tx)) translateY(26px) scale(1.02);
-}
-
+.cc-figure--hidden { opacity: 0; }
 .cc-figure--enter {
   opacity: 1;
   transform: translateX(var(--cc-tx)) translateY(0) scale(1);
-  transition: opacity 1000ms ease, transform 1100ms cubic-bezier(0.22, 0.68, 0.32, 1);
 }
-
-/* 入画：原地淡出为主（身体化成细密粒子飘散，由 canvas 承载），仅极轻上飘缩 */
-.cc-figure--exit {
+.cc-figure--exit,
+.cc-figure--gone {
   opacity: 0;
-  transform: translateX(var(--cc-tx)) translateY(-5vh) scale(0.94);
+  transform: translateX(var(--cc-tx)) translateY(-5vh) scale(0.95);
   filter: blur(1.5px);
-  transition: opacity 900ms ease, transform 1400ms ease, filter 900ms ease;
 }
 
-.cc-vignette {
+/* 右侧竖排回顾文字（每屏都有、写足） */
+.cc-panel-vtext {
   position: absolute;
-  inset: 0;
+  top: 11%;
+  right: 5%;
   z-index: 3;
-  pointer-events: none;
-  background: radial-gradient(120% 96% at 50% 42%, transparent 52%, rgba(18, 12, 6, 0.5) 100%);
+  max-height: 78vh;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
 }
 
+.cc-vline {
+  margin: 0 0 0 0.85em;
+  font-size: 19px;
+  line-height: 1.9;
+  letter-spacing: 0.12em;
+  color: #2a2018;
+  text-shadow: 0 1px 3px rgba(245, 239, 216, 0.85), 0 0 10px rgba(245, 239, 216, 0.6);
+  animation: ccVlineIn 800ms ease both;
+}
+
+/* 水墨溶解 canvas（屏幕空间，覆盖当前屏） */
 .cc-ink {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 4;
+  z-index: 20;
   pointer-events: none;
 }
 
@@ -5433,42 +5459,24 @@ dd {
   height: 100%;
 }
 
-/* 回顾文字：底部居中，暗底衬托浅山水上的可读性 */
-.cc-text {
-  position: absolute;
-  left: 50%;
-  bottom: 13vh;
-  z-index: 5;
-  transform: translateX(-50%);
-  width: min(780px, 86vw);
-  text-align: center;
-}
-
-.cc-line {
+.cc-skip-hint {
+  position: fixed;
+  right: 32px;
+  bottom: 26px;
+  z-index: 21;
   margin: 0;
-  font-size: 19px;
-  line-height: 2;
-  letter-spacing: 0.06em;
-  color: #f3ead2;
-  text-shadow: 0 2px 10px rgba(14, 9, 4, 0.92), 0 0 24px rgba(14, 9, 4, 0.7);
-  animation: ccFadeIn 700ms ease both;
-}
-
-.cc-caret {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  margin-left: 3px;
-  vertical-align: -0.15em;
-  background: #f3ead2;
-  animation: epiCaret 760ms step-end infinite;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  color: rgba(80, 60, 38, 0.6);
+  text-shadow: 0 1px 4px rgba(245, 239, 216, 0.7);
+  animation: prologueHintPulse 2200ms ease-in-out infinite;
 }
 
 /* 终幕：朱印 + 标题 + 重新开始（渐暗定格） */
 .cc-finale {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 6;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5483,7 +5491,7 @@ dd {
 .cc-finale-in {
   opacity: 1;
   pointer-events: auto;
-  background: rgba(11, 10, 8, 0.66);
+  background: rgba(11, 10, 8, 0.68);
 }
 
 .cc-seal {
@@ -5530,17 +5538,12 @@ dd {
   transform: translateY(-1px);
 }
 
-@keyframes ccFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 @keyframes ccKenBurns {
-  from { transform: scale(1.1); }
+  from { transform: scale(1.08); }
   to { transform: scale(1); }
 }
 
-@keyframes ccMist {
-  from { opacity: 0.7; }
-  to { opacity: 1; }
+@keyframes ccVlineIn {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
 }

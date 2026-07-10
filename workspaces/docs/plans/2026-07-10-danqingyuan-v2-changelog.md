@@ -54,5 +54,9 @@
 1. **见希孟开场改主动问候**：DialogueScreen 加 `openingLine/openingAction/openingReplies` 覆盖props；见希孟不再走 onOpen（LLM 开场），改**固定开场**——希孟搁笔侧脸「放榜了罢？——考得如何？」+ 三选项（侥幸过了得祗候/几处答得不好/你怎么在这儿），此后自由闲聊照常走 submitDialogue。
 2. **音乐+环境声全场景接入**（明明 Sound 文件已按场景命名）：新建 `audio/audioManager.ts`（bgm + ambient 两声道，交叉淡化、同曲不重启、手势后出声兜底）；App 加**音频导演 useEffect** 按场景切曲——入院/授衔=bgm-main(林海春华)、晨课上午=morning、午下午=noon、夜间=evening、闲聊/见希孟/引桥/点评=dialogue(希孟闲聊)、考试/秘阁/解谜/揭卷=exam、收尾/谢幕=curtain；**环境声仅日常**：雨天=rain、晨上午=birds-morning、午下午=birds-afternoon、夜间无（考试/解谜/结局等不加环境声）。开场并入 audioManager（片头视频音→竹林 opening-bgm，删旧 openingAudio.ts）。10 个音频文件 ASCII 重命名拷 public。build✅+回归 23/0·14/0。
 
+## 十、谢幕改长卷展卷 + 入院BGM换曲（同日，明明）
+1. **入院/授衔 BGM 换成夜景后花园那首**（替林海春华，删 bgm-main.mp3）。
+2. **谢幕改方案A·长卷展卷**（明明选）：CurtainCallScreen 重写为**横向长卷四屏**依次展开——嵩（嵩立舟头）→ 择端·李唐（二人对弈）→ 希孟（俯瞰山水）→ 定格青绿山水；每屏对应背影 multiply 融画+细密粒子消融（保留），**右侧竖排回顾文字**逐列浮现、每屏写足；卷尾朱印+标题+重开。beat 驱动 translateX 展卷，点击可快进（先催消融再展卷）。3 张 vignette 拷 public；curtainCallText 重构为 `CurtainPanel[]`（bg/figures/lines）。build✅+回归 23/0·14/0。（亭子与舟 暂未用，备用。）
+
 ## 待明明确认（可后调）
 - 四人致意文案（`curtainCallText.ts`）；② multiply「融画」ghostly 风格 vs 日后透明底"实体+溶解"（透明底到位去 multiply 一键切）；③ 各段时长/字速、figure 大小位置；④ 是否要换真 p5（现原生 canvas 效果一致）；⑤ DEV「预览谢幕」按钮上线前删。
