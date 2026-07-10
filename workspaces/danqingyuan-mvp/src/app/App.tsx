@@ -523,7 +523,7 @@ export function App() {
   useEffect(() => {
     if (!prologueSeen) return; // 开场由 ProloguePage 自管（片头视频音 + 竹林）
     if (!state || !state.progress.flags.admitted) {
-      playBgm('/bgm-main.mp3'); // 入院名录 / 小书童来迎
+      playBgm('/bgm-evening.mp3'); // 入院名录 / 小书童来迎（2026-07-10 明明：换成夜景后花园那首）
       playAmbient(null);
       return;
     }
@@ -537,7 +537,7 @@ export function App() {
         endingStage === 'curtain_call' || endingStage === 'epilogue'
           ? '/bgm-curtain.mp3'
           : endingStage === 'title_grant'
-            ? '/bgm-main.mp3'
+            ? '/bgm-evening.mp3'
             : endingStage === 'ximeng_bridge' || endingStage === 'ximeng_meet' || endingStage === 'exam_review'
               ? '/bgm-dialogue.mp3'
               : '/bgm-exam.mp3'; // archive_bridge / puzzle / reveal / retake
