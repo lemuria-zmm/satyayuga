@@ -44,3 +44,13 @@ export function npcSpriteFor(npcId: NpcId, emotionState?: NpcEmotionState, affin
   if (!avail.has(expr)) expr = avail.has('calm') ? 'calm' : [...avail][0];
   return `/char/char-${npcId}-${expr}.png`;
 }
+
+/**
+ * 正文 VN 立绘按 scene_narrator 给的 segment.emotion（表情名）直接选图（2026-07-11）。
+ * 该 NPC 没有此表情则回退 calm；缺省（旁白/未标）也用 calm。
+ */
+export function npcExpressionSprite(npcId: NpcId, expr?: string): string {
+  const avail = NPC_EXPRESSIONS[npcId] ?? new Set(['calm']);
+  const e = expr && avail.has(expr) ? expr : 'calm';
+  return `/char/char-${npcId}-${e}.png`;
+}

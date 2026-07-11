@@ -4,6 +4,7 @@ import { CHARACTERS } from '../content/characters';
 import { ACTIVITY_BY_ID } from '../content/activities';
 import { activityBackground } from '../content/activityBackgrounds';
 import { buildSettlementLines, skillLabels } from './settlementLines';
+import { npcExpressionSprite } from '../content/npcSprites';
 import { COURSES } from '../content/courses';
 import type { ActiveScene } from '../app/App';
 import type { ValidatedSuggestedAction } from '../engine/sceneEngine';
@@ -390,11 +391,11 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
 
       {/* 场景立绘（2026-06-30 VN 逐句）：当前单元说话人立绘，居中站立、随 speaker 切换 */}
       {speakerNpc && (
-        <div className="gm-scene-portrait" key={speakerNpc}>
+        <div className="gm-scene-portrait" key={`${speakerNpc}-${curSeg?.emotion ?? 'calm'}`}>
           <img
             className="gm-scene-portrait-img"
-            // 正文说话立绘固定 calm（2026-07-07 明明拍板）：闲聊里的 emotionState 与场景文不同步，表情常对不上文字
-            src={sceneNpcSprite[speakerNpc]}
+            // 正文说话立绘按 scene_narrator 给的 segment.emotion 选表情（2026-07-11 明明：要与正文情绪相符），无则回退 calm
+            src={npcExpressionSprite(speakerNpc, curSeg?.emotion)}
             alt=""
             onError={(e) => {
               e.currentTarget.style.display = 'none';

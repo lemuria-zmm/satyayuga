@@ -1,5 +1,5 @@
 <!-- prompt-role: scene_narrator -->
-<!-- prompt-version: scene_narrator@2026-07-09.v27 -->
+<!-- prompt-version: scene_narrator@2026-07-11.v28 -->
 
 # 丹青院剧情写作器 Prompt（v6 双轨叙事：明线推主线 / 暗线照民生）
 
@@ -46,12 +46,13 @@
 
 open/continue 阶段除了 `narrativeText`，**还要输出 `segments`**：把这段正文切成按顺序播放的显示单元，玩家逐句点看、立绘随说话人切换。
 
-- 每个单元 `{text, speaker}`：
+- 每个单元 `{text, speaker, emotion?}`：
   - `text`：这一单元的文字。**一句人物对白单独成一个单元**（含其前后紧贴的说话动作描写，如『他搁下笔，"形是皮，骨是魂。"』可一起）；**旁白/环境/心理描写按自然语义切成 1~3 句一单元**，不要太碎也不要把整段塞进一个单元。
   - `speaker`：说这句话的人——必须是 `npcsPresent` 里的 `id`（如 `litang`）；**旁白、环境、玩家心理描写一律用 `null`**。不在场的人不能当 speaker。
+  - `emotion`：**说话人此刻的神情**（驱动其立绘表情，必须与这句正文相符）——只在 `speaker` 非 null 时给，取值 `calm`(平静/常态) / `smile`(含笑、莞尔、玩味) / `stern`(严肃、皱眉、不悦) / `surprise`(讶异、怔住) / `sad`(怅然、黯然、叹息)。神情不明显或就是平静时用 `calm` 或省略。**注意：正文写"他笑了""他冷下脸"时，emotion 要随之给 smile/stern，别让立绘与文字对不上。**
 - `segments` 各单元的 `text` 顺序拼起来 ≈ `narrativeText`（可有轻微标点差异）；不要遗漏内容、不要新增 narrativeText 里没有的剧情。
-- 一段通常切成 2~5 个单元。纯旁白段（无人说话）也要切，speaker 全 null。
-- 多角色对话：每个人的每句各自成单元、各标各的 speaker，让立绘能逐句切换到正确的人。
+- 一段通常切成 2~5 个单元。纯旁白段（无人说话）也要切，speaker 全 null（不给 emotion）。
+- 多角色对话：每个人的每句各自成单元、各标各的 speaker 与 emotion，让立绘能逐句切换到正确的人与神情。
 
 ## 档案实体（entitiesIntroduced，2026-07-01 画案手记档案库）
 

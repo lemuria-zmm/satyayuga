@@ -77,11 +77,13 @@ const VARIANT_ACTIVITIES: Record<string, VariantSet> = {
   practice_read_treatise: {
     day: '/bg-library-desk-day.png',
     night: '/bg-library-desk-night.png',
+    rainy: '/bg-library-desk-rainy.png',
     rainyNight: '/bg-library-desk-night.png',
   },
   practice_view_scrolls: {
     day: '/bg-library-desk-day.png',
     night: '/bg-library-desk-night.png',
+    rainy: '/bg-library-desk-rainy.png',
     rainyNight: '/bg-library-desk-night.png',
   },
   practice_deep_study: {

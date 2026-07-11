@@ -283,6 +283,8 @@ export interface SceneSegment {
   text: string;
   /** 说话人：在场 NPC 的 id；旁白/无人说话为 null */
   speaker: NpcId | null;
+  /** 说话人此刻神情（2026-07-11）：驱动正文立绘表情；旁白/无明显情绪省略（前端回退 calm） */
+  emotion?: 'calm' | 'smile' | 'stern' | 'surprise' | 'sad';
 }
 
 /** 档案实体（2026-07-01 档案库）：本段剧情里新出现、值得记档的人物/线索/道具/地点，入画案手记档案库 */

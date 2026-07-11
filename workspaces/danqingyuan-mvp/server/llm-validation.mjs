@@ -118,13 +118,19 @@ export function sanitizeLlmOutputForRole(role, output, input = undefined) {
       });
     }
     // segments（2026-06-30 VN 逐句）：剔除空 text 单元，非法 speaker 归 null（旁白）。空数组则删字段，前端整段兜底
+    // emotion（2026-07-11）：说话人此刻神情，非法值删除（前端回退 calm）
     if (Array.isArray(output.segments)) {
+      const allowedExpr = new Set(['calm', 'smile', 'stern', 'surprise', 'sad']);
       output.segments = output.segments
         .filter((s) => isPlainObject(s) && typeof s.text === 'string' && s.text.trim().length > 0)
-        .map((s) => ({
-          text: s.text.trim(),
-          speaker: allowedSceneNpcIds.has(s.speaker) ? s.speaker : null,
-        }));
+        .map((s) => {
+          const seg = {
+            text: s.text.trim(),
+            speaker: allowedSceneNpcIds.has(s.speaker) ? s.speaker : null,
+          };
+          if (seg.speaker && allowedExpr.has(s.emotion)) seg.emotion = s.emotion;
+          return seg;
+        });
       if (output.segments.length === 0) delete output.segments;
     }
     sanitizeEntities(output);
