@@ -5545,15 +5545,11 @@ dd {
   to { opacity: 1; }
 }
 
-/* ——— 每日过场小剧场（2026-07-11 明明）——— */
+/* ——— 每日过场小剧场（2026-07-11 明明；文字右上竖排、墨色贴合宣纸）——— */
 .di-page {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
   background: #0b0a08;
   cursor: pointer;
 }
@@ -5568,15 +5564,15 @@ dd {
   animation: ccFadeIn 1400ms ease both, diKenBurns 20s ease-out both;
 }
 
-/* 底部暗幕：抬起文字可读性；顶部极淡压角放"第N日"小字 */
+/* 极淡右上提亮 + 四角轻压：托起右上竖排墨字，又不压掉宣纸质感 */
 .di-scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(0deg, rgba(10, 7, 4, 0.82) 0%, rgba(10, 7, 4, 0.5) 20%, transparent 46%),
-    linear-gradient(180deg, rgba(10, 7, 4, 0.4) 0%, transparent 18%);
+    radial-gradient(78% 64% at 84% 24%, rgba(247, 241, 224, 0.5) 0%, transparent 60%),
+    radial-gradient(130% 100% at 50% 50%, transparent 66%, rgba(20, 14, 8, 0.2) 100%);
 }
 
 .di-day {
@@ -5586,50 +5582,54 @@ dd {
   z-index: 2;
   font-size: 14px;
   letter-spacing: 0.28em;
-  color: rgba(240, 230, 208, 0.82);
-  text-shadow: 0 2px 8px rgba(10, 7, 4, 0.9);
+  color: rgba(70, 52, 34, 0.75);
+  text-shadow: 0 1px 4px rgba(247, 241, 224, 0.85);
   animation: ccFadeIn 1200ms ease both;
 }
 
+/* 右上竖排小故事（列右→左） */
 .di-text {
-  position: relative;
+  position: absolute;
+  top: 8vh;
+  right: 5vw;
   z-index: 2;
-  width: min(880px, 88vw);
-  margin-bottom: 12vh;
-  text-align: center;
+  max-height: 78vh;
+  writing-mode: vertical-rl;
 }
 
 .di-line {
-  margin: 0 0 12px;
-  font-size: 20px;
-  line-height: 2;
-  letter-spacing: 0.08em;
-  color: #f3ead2;
-  text-shadow: 0 2px 10px rgba(10, 7, 4, 0.95), 0 0 22px rgba(10, 7, 4, 0.7);
+  margin: 0 0 0 0.9em;
+  font-size: 21px;
+  line-height: 1.95;
+  letter-spacing: 0.14em;
+  color: #3a2c1c;
+  text-shadow: 0 1px 3px rgba(247, 241, 223, 0.92), 0 0 12px rgba(247, 241, 223, 0.7);
+  animation: ccFadeIn 700ms ease both;
 }
 
 .di-caret {
   display: inline-block;
   width: 2px;
   height: 1em;
-  margin-left: 3px;
-  vertical-align: -0.15em;
-  background: #f3ead2;
+  margin-top: 3px;
+  background: #5b3a24;
   animation: epiCaret 760ms step-end infinite;
 }
 
 .di-hint {
   position: absolute;
-  bottom: 40px;
+  bottom: 36px;
+  right: 40px;
   z-index: 2;
   margin: 0;
   font-size: 13px;
   letter-spacing: 0.22em;
-  color: rgba(240, 230, 208, 0.5);
+  color: rgba(70, 52, 34, 0.55);
+  text-shadow: 0 1px 4px rgba(247, 241, 224, 0.7);
 }
 
 .di-hint-in {
-  color: rgba(240, 230, 208, 0.82);
+  color: rgba(70, 52, 34, 0.85);
   animation: prologueHintPulse 2000ms ease-in-out infinite;
 }
 
