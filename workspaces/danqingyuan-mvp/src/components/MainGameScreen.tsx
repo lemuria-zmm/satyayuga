@@ -33,10 +33,6 @@ interface MainGameScreenProps {
   onFollowSuggestion: (next: ValidatedSuggestedAction) => void;
   onAction: (action: GameAction) => void;
   onReset: () => void;
-  onDevSkip?: () => void;
-  /** DEV 预览丹青试（2026-07-06）：直达第七日丹青试并种画案手记灵感，测自由创作 */
-  onPreviewExam?: () => void;
-  onPreviewCurtain?: () => void;
   /** 与希孟深谈（2026-06-25 重新接回）：好感≥同僚时便签卡可点 */
   onChat?: (npcId: NpcId) => void;
   /** 引导面板激活中（2026-06-15）：隐藏背景正文与行动签 dock，避免与小书童引导同屏 */
@@ -218,7 +214,7 @@ function useInkTrail(containerRef: React.RefObject<HTMLElement | null>) {
   }, [containerRef]);
 }
 
-export function MainGameScreen({ state, actions, llmError, activityBg, settlement, newEntities, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onDevSkip, onPreviewExam, onPreviewCurtain, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
+export function MainGameScreen({ state, actions, llmError, activityBg, settlement, newEntities, scene, onContinue, onLeaveScene, onAdvanceSegment, onFollowSuggestion, onAction, onReset, onChat, guideActive, onOpenArchive }: MainGameScreenProps) {
   const pageRef = useRef<HTMLElement>(null);
   useInkTrail(pageRef);
 
@@ -471,15 +467,6 @@ export function MainGameScreen({ state, actions, llmError, activityBg, settlemen
         <div className="gm-nameplate-right">
           {onOpenArchive && (
             <button className="gm-np-btn" onClick={onOpenArchive} type="button">画案手记</button>
-          )}
-          {onDevSkip && (
-            <button className="gm-np-btn" onClick={onDevSkip} type="button">开秘阁</button>
-          )}
-          {onPreviewExam && (
-            <button className="gm-np-btn" onClick={onPreviewExam} type="button">预览丹青试</button>
-          )}
-          {onPreviewCurtain && (
-            <button className="gm-np-btn" onClick={onPreviewCurtain} type="button">预览谢幕</button>
           )}
           <button className="gm-np-btn" onClick={onReset} type="button">重开</button>
         </div>
