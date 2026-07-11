@@ -41,6 +41,8 @@ import { TitleGrantOverlay } from '../components/TitleGrantOverlay';
 import { XimengBridge } from '../components/XimengBridge';
 import { EpilogueScreen } from '../components/EpilogueScreen';
 import { CurtainCallScreen } from '../components/CurtainCallScreen';
+import { DayInterludeScreen } from '../components/DayInterludeScreen';
+import { DAY_INTERLUDES, type DayInterlude } from '../content/dayInterludes';
 import { MainGameScreen } from '../components/MainGameScreen';
 import { SkyTransition } from '../components/SkyTransition';
 import { ActivityResultPopup } from '../components/ActivityResultPopup';
@@ -238,6 +240,9 @@ export function App() {
   // 时段转场（2026-07-08）：时段推进瞬间全屏天空图淡入淡出；ref 记上一次日/时段判断"推进"
   const [skyTransition, setSkyTransition] = useState<{ img: string; caption: string } | null>(null);
   const prevTimeRef = useRef<{ day: number; slot: TimeSlot } | null>(null);
+  // 每日过场小剧场（2026-07-11）：就寝跨日→次日晨课前的全屏水墨小故事
+  const [dayInterlude, setDayInterlude] = useState<{ interlude: DayInterlude; day: number } | null>(null);
+  const prevDayRef = useRef<number | null>(null);
   const [settlement, setSettlement] = useState<{ patch: ValidatedStatePatch; seq: number } | null>(null);
   // 午餐/市集夜娱结算弹窗（2026-07-09）：食物/活动图约1:1，改中心弹窗与体力/心情增减一同弹出
   const [activityResult, setActivityResult] = useState<ActivityResult | null>(null);
@@ -294,6 +299,20 @@ export function App() {
     }
     setSkyTransition({ img, caption });
   }, [state?.time.day, state?.time.timeSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 每日过场小剧场（2026-07-11 明明）：就寝跨日 day 递增 → 次日晨课前弹全屏水墨小故事（进第2~7日各一段）。
+  useEffect(() => {
+    if (!state || !state.progress.flags.admitted) {
+      prevDayRef.current = state?.time.day ?? null;
+      return;
+    }
+    const cur = state.time.day;
+    const prev = prevDayRef.current;
+    prevDayRef.current = cur;
+    if (prev == null || cur <= prev) return; // 仅跨日递增触发（读档/首拍不触发）
+    const il = DAY_INTERLUDES[cur];
+    if (il) setDayInterlude({ interlude: il, day: cur });
+  }, [state?.time.day, state?.progress.flags.admitted]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 叙事时段自动开场（2026-06-18 A+C）：进入 forenoon/afternoon、走到新地点时自动开 LLM 场景；
   // 玩家通过三件套（继续/推荐/去别处）推进。去别处不推进时段、回主界面自由走动。
@@ -1089,6 +1108,17 @@ export function App() {
   const activityResultOverlay = activityResult ? (
     <ActivityResultPopup result={activityResult} onDone={() => setActivityResult(null)} />
   ) : null;
+
+  // 每日过场小剧场（2026-07-11）：跨日次晨全屏水墨小故事，看完进次日（优先于主界面/引导）
+  if (dayInterlude) {
+    return (
+      <DayInterludeScreen
+        interlude={dayInterlude.interlude}
+        day={dayInterlude.day}
+        onDone={() => setDayInterlude(null)}
+      />
+    );
+  }
 
   // 引导对话（拍板：固定脚本立绘对话框）：小书童入院介绍 / 第 1 日午间晚间 / 希孟书房首场
   if (guideStep) {
