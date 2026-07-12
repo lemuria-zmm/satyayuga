@@ -31,3 +31,11 @@
 
 ## 五、验证
 `npm run build`✅；无 console.log；proxy 重启 health 200（后端预设改动需重启）。
+
+## 六、部署上线前准备（VPS 单服务 + 隧道 HTTPS）
+- **单服务托管**：`server/llm-proxy.mjs` 增加静态托管——`SERVE_STATIC=1` 时同源提供 `dist/`（SPA 回退 index.html），含 **Range 支持**（mp4/mp3 可拖动/播放）、路径穿越防护（编码 `..` → 403）、按类型 Cache-Control（assets 长缓存、index 不缓存）。绑定地址改 `LLM_PROXY_HOST`（dev 默认 127.0.0.1，生产设 0.0.0.0）。默认关闭静态，dev 行为不变。
+- **脚本**：`build:prod`（`VITE_LLM_ADAPTER=proxy` → 前端相对 `/api/llm` 同源）；`start`（`SERVE_STATIC=1 LLM_PROXY_HOST=0.0.0.0`）。
+- **Dockerfile**（多阶段）+ `.dockerignore`：构建阶段跑 build:prod，运行阶段仅 node+server+dist（运行期无 npm 依赖），含 HEALTHCHECK。
+- **部署指南** `docs/plans/2026-07-12-deploy-guide.md`：Docker/裸 Node/pm2 三法 + Cloudflare Tunnel 自动 HTTPS + 上线自检清单 + 已知（500MB 资源体量、无鉴权限流、二期挂点）。
+- **BYOK-only 简化**：服务端无需任何模型 key（provider 默认 mock，仅收到 clientProvider 才转发），部署零密钥。
+- 冒烟验证：build:prod ✅；8790 起 prod-mode 服务，/health serveStatic:true、GET / 200 text/html、SPA 回退 200、hashed asset 200、编码穿越 403、mp3 Range 206 Content-Range 正确。

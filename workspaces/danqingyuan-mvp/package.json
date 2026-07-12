@@ -11,6 +11,8 @@
     "llm:proxy:deepseek": "LLM_PROVIDER=deepseek node server/llm-proxy.mjs",
     "llm:smoke": "node scripts/llm-smoke.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:prod": "tsc --noEmit && VITE_LLM_ADAPTER=proxy vite build",
+    "start": "SERVE_STATIC=1 LLM_PROXY_HOST=0.0.0.0 node server/llm-proxy.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

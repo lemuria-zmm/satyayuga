@@ -193,3 +193,10 @@ originSessionId: 8a77a200-671f-4d6c-9ae7-98afea07d9f7
 - **BYOK 收敛为唯一**（明明：不再接入主办方模型）：删「用主办方额度」跳过；byokConfig 删 skip 逻辑，llmAccessReady=已配置 key。首页开始/读取前若走代理未配 key → 弹设置引导。
 - **模型列表更新**（明明适配表，去 MiniMax）：DeepSeek(api.deepseek.com) deepseek-v4-flash默认/-pro；GLM(open.bigmodel.cn/api/paas/v4) glm-4.6默认/glm-4-flash/-plus/glm-5.2；Kimi(api.moonshot.cn/v1) moonshot-v1-128k默认/-32k/kimi-k2.6/k2.5/k2.7-code/-highspeed。
 - **超时兜底**：openai-compatible-provider 加 90s AbortController（`LLM_REQUEST_TIMEOUT_MS` 可调）——修「Kimi 一直没响应」：无超时挂起卡死 → 现抛明确可重试错误。
+
+## 决策（2026-07-12）：内测部署准备（VPS 单服务 + 隧道 HTTPS）
+- 目标：自己的云服务器/VPS，单 Node 进程同源托管前端+`/api/llm`；HTTPS 交 Cloudflare Tunnel 自动（不自配证书/不开公网端口）。
+- `llm-proxy.mjs` 加静态托管（`SERVE_STATIC=1` 提供 dist + SPA 回退 + Range + 穿越防护 + Cache-Control），绑定 `LLM_PROXY_HOST`（默认 127.0.0.1，生产 0.0.0.0）；默认关闭不影响 dev。
+- 脚本 `build:prod`(VITE_LLM_ADAPTER=proxy)/`start`；Dockerfile 多阶段（运行期仅 node+server+dist，无 npm 依赖）+.dockerignore；部署指南 `docs/plans/2026-07-12-deploy-guide.md`。
+- **BYOK-only → 服务端零密钥**（provider 默认 mock，仅收到 clientProvider 才转发）。冒烟全过（健康/静态/SPA/穿越403/Range206）。
+- 待办：真机 VPS 上跑一遍 + 隧道；规模化再把 public 挪 CDN、加 access code 限流（routeLlmRequest else 分支已留挂点）。
