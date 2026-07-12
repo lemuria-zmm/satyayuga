@@ -7,8 +7,8 @@ interface ProloguePageProps {
 }
 
 /**
- * 开场序列（2026-07-09 重做）：入场 gate → 片头视频（青绿山水→丹青院泼彩标题，自带配乐）
- * → 片尾定格 → 穿越引语逐行浮现落印。视频用用户手势解锁带声播放；引语背景用视频抽帧静帧。
+ * 开场序列（2026-07-09 重做，2026-07-12 gate 交由 TitleScreen）：片头视频（青绿山水→丹青院泼彩标题，自带配乐）
+ * → 片尾定格 → 穿越引语逐行浮现落印。首页「开始游戏」点击已解锁带声播放；引语背景用视频抽帧静帧。
  */
 const PROLOGUE_LINES = [
   '宣合年间，大梁京。',
@@ -21,10 +21,10 @@ const PROLOGUE_LINES = [
 const CHAR_MS = 78; // 每字间隔
 const LINE_PAUSE_MS = 540; // 行末停顿
 
-type Phase = 'gate' | 'video' | 'freeze' | 'verse';
+type Phase = 'video' | 'freeze' | 'verse';
 
 export function ProloguePage({ onContinue }: ProloguePageProps) {
-  const [phase, setPhase] = useState<Phase>('gate');
+  const [phase, setPhase] = useState<Phase>('video');
   const [lineIdx, setLineIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [sealIn, setSealIn] = useState(false);
@@ -78,16 +78,6 @@ export function ProloguePage({ onContinue }: ProloguePageProps) {
       setLineIdx(PROLOGUE_LINES.length);
       setCharIdx(0);
     }
-  }
-
-  // —— Phase 0：入场 gate（背景图自带「丹青院·墨枢秘录」标题）——
-  if (phase === 'gate') {
-    return (
-      <main className="prologue-page prologue-gate" onClick={() => setPhase('video')}>
-        <div className="prologue-gate-bg" />
-        <p className="prologue-gate-hint">点击进入</p>
-      </main>
-    );
   }
 
   // —— Phase 1/2：片头视频 + 片尾定格 ——

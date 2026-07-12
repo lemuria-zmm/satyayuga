@@ -183,3 +183,13 @@ originSessionId: 8a77a200-671f-4d6c-9ae7-98afea07d9f7
 
 **Why:** 明明认为现在的游戏只是空壳，缺乏活生生的古代生活模拟（课程表、午休、娱乐、宋代饮食）。
 **How to apply:** 后续所有丹青院的实现工作按此方向推进；旧 MVP 设计文档（2026-06-03）中与此冲突的部分以本决策为准。
+
+---
+
+## 决策（2026-07-12）：首页主菜单 + 设置面板；BYOK 收敛为唯一接入
+- 原「点击进入」gate → **首页三按钮**（开始游戏 / 读取存档 / 设置，竖排水平居中，`TitleScreen.tsx`）。开始游戏进开场序列；读取存档直载自动存档（load 时补 setPrologueSeen(true) 让音频导演接管）；设置弹面板。ProloguePage 去 gate 从 video 起；App 入口 `menuStep`；删强制 LlmAccessScreen 门。
+- **居中坑**：`.title-menu` 复用 `modalIn` 动画，其 transform 覆盖 translateX(-50%) 致右移 → 专用关键帧 `titleMenuIn`。
+- **设置**：音乐开关（audioManager setMuted/isMuted，localStorage 持久，静音淡出+暂停）；BYOK（厂商+Key+模型下拉+自定义手填）。
+- **BYOK 收敛为唯一**（明明：不再接入主办方模型）：删「用主办方额度」跳过；byokConfig 删 skip 逻辑，llmAccessReady=已配置 key。首页开始/读取前若走代理未配 key → 弹设置引导。
+- **模型列表更新**（明明适配表，去 MiniMax）：DeepSeek(api.deepseek.com) deepseek-v4-flash默认/-pro；GLM(open.bigmodel.cn/api/paas/v4) glm-4.6默认/glm-4-flash/-plus/glm-5.2；Kimi(api.moonshot.cn/v1) moonshot-v1-128k默认/-32k/kimi-k2.6/k2.5/k2.7-code/-highspeed。
+- **超时兜底**：openai-compatible-provider 加 90s AbortController（`LLM_REQUEST_TIMEOUT_MS` 可调）——修「Kimi 一直没响应」：无超时挂起卡死 → 现抛明确可重试错误。

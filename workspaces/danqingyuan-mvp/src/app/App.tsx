@@ -54,8 +54,7 @@ import { ArchiveBridge } from '../components/ArchiveBridge';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
-import { LlmAccessScreen } from '../components/LlmAccessScreen';
-import { llmAccessReady } from '../llm/byokConfig';
+import { TitleScreen } from '../components/TitleScreen';
 import { playBgm, playAmbient } from '../audio/audioManager';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
@@ -216,10 +215,10 @@ function renderLlmError(error: unknown) {
 export function App() {
   const [state, setState] = useState<GameState | null>(null);
   const [hasSave, setHasSave] = useState(() => loadSaveFile() !== null);
-  // LLM 接入门（2026-07-11 BYOK）：走代理时需先配置自带 key 或跳过用主办方额度
-  const [llmReady, setLlmReady] = useState(() => llmAccessReady());
-  // 穿越引语页（2026-06-30）：入院名录前的打字机引语，每次进程只放一次（有存档可续则跳过）
-  const [prologueSeen, setPrologueSeen] = useState(() => loadSaveFile() !== null);
+  // 首页主菜单（2026-07-12）：'title'=首页三按钮；'opening'=已点开始游戏，进开场序列
+  const [menuStep, setMenuStep] = useState<'title' | 'opening'>('title');
+  // 穿越引语页（2026-06-30）：入院名录前的打字机引语；点「开始游戏」后放一次（读取存档直接跳过）
+  const [prologueSeen, setPrologueSeen] = useState(false);
   const [isExamOpen, setIsExamOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   // 结局演出段（2026-06-30；2026-07-05 第七日重构）：exam_review 考后简评 / 日终收尾序列各幕。null=不在演出中，UI 临时态不入存档。
@@ -1062,29 +1061,36 @@ export function App() {
   }, [actions, activeScene, dialogueNpcId, examQuestions, isExamOpen, endingStage, llmError, puzzleAssessmentPrompt, state]);
 
   if (state === null) {
-    if (!llmReady) {
-      return <LlmAccessScreen onReady={() => setLlmReady(true)} />;
+    if (menuStep === 'title') {
+      return (
+        <TitleScreen
+          hasSave={hasSave}
+          onStart={() => setMenuStep('opening')}
+          onLoad={() => {
+            const saveFile = loadSaveFile();
+            if (saveFile) {
+              setPrologueSeen(true); // 读取存档跳过开场，音频导演正常接管
+              setState(saveFile.gameState);
+              if (!saveFile.gameState.progress.flags.admitted) {
+                setAdmissionText(null);
+                void fetchAdmissionIntro(saveFile.gameState);
+              }
+            }
+          }}
+        />
+      );
     }
     if (!prologueSeen) {
       return <ProloguePage onContinue={() => setPrologueSeen(true)} />;
     }
     return (
       <SetupScreen
-        hasSave={hasSave}
+        hasSave={false}
         onClearSave={() => {
           clearSaveFile();
           setHasSave(false);
         }}
-        onResume={() => {
-          const saveFile = loadSaveFile();
-          if (saveFile) {
-            setState(saveFile.gameState);
-            if (!saveFile.gameState.progress.flags.admitted) {
-              setAdmissionText(null);
-              void fetchAdmissionIntro(saveFile.gameState);
-            }
-          }
-        }}
+        onResume={() => {}}
         onStart={(player) => {
           const nextState = createInitialGameState({ player });
           saveGameState(nextState);

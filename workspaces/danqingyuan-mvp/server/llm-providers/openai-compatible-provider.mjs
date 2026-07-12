@@ -4,19 +4,21 @@
  * 每次请求由玩家配置临时构建；apiKey 只过内存转发，不落库、不写日志。
  */
 
-/** 四家厂商预设（玩家可覆盖 model / baseUrl） */
+/** 三家厂商预设（玩家可覆盖 model；2026-07-12 明明更新模型名） */
 export const BYOK_PRESETS = {
-  deepseek: { label: 'DeepSeek 深度求索', baseUrl: 'https://api.deepseek.com', model: 'deepseek-chat' },
-  glm: { label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
-  kimi: { label: 'Kimi 月之暗面', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
-  minimax: { label: 'MiniMax', baseUrl: 'https://api.minimax.chat/v1', model: 'abab6.5s-chat' },
+  deepseek: { label: 'DeepSeek 深度求索', baseUrl: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
+  glm: { label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.6' },
+  kimi: { label: 'Kimi 月之暗面', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-128k' },
 };
+
+/** 单请求超时（毫秒）：防某家 API 挂起导致"一直没有响应"，超时后抛明确错误可重试。 */
+const REQUEST_TIMEOUT_MS = Number(process.env.LLM_REQUEST_TIMEOUT_MS ?? 90000);
 
 /** 按玩家配置 {provider, apiKey, model?, baseUrl?} 建一个一次性 provider */
 export function createProviderFromClientConfig(cfg) {
   const preset = cfg && BYOK_PRESETS[cfg.provider];
   if (!preset) {
-    throw new Error(`不支持的厂商："${cfg?.provider}"（可选 deepseek / glm / kimi / minimax）。`);
+    throw new Error(`不支持的厂商："${cfg?.provider}"（可选 deepseek / glm / kimi）。`);
   }
   const apiKey = typeof cfg.apiKey === 'string' ? cfg.apiKey.trim() : '';
   if (!apiKey) {
@@ -30,11 +32,24 @@ export function createProviderFromClientConfig(cfg) {
   return {
     name: `byok:${cfg.provider}`,
     async generate(request, promptBundle, retryContext) {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload({ model, request, promptBundle, retryContext, maxTokens })),
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      let response;
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildPayload({ model, request, promptBundle, retryContext, maxTokens })),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if (err?.name === 'AbortError') {
+          throw new Error(`自定义 API（${cfg.provider}）在 ${Math.round(REQUEST_TIMEOUT_MS / 1000)} 秒内无响应，请检查网络或模型名后重试。`);
+        }
+        throw new Error(`自定义 API（${cfg.provider}）连接失败：${err?.message ?? '网络错误'}`);
+      } finally {
+        clearTimeout(timer);
+      }
       const body = await response.json().catch(() => null);
       if (!response.ok) {
         // 不回显 key；只带厂商返回的错误信息
