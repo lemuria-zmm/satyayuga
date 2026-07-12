@@ -8,6 +8,7 @@ import {
 } from './llm-validation.mjs';
 import { loadLocalEnv } from './env-loader.mjs';
 import { createLlmProvider } from './llm-providers/provider-factory.mjs';
+import { createProviderFromClientConfig } from './llm-providers/openai-compatible-provider.mjs';
 import { listPromptBundles, loadPromptBundle } from './prompt-loader.mjs';
 
 const localEnv = loadLocalEnv();
@@ -106,8 +107,11 @@ async function routeLlmRequest(request) {
   }
   const promptBundle = await loadPromptBundle(request.role);
 
+  // BYOK（2026-07-11）：请求带 clientProvider 用玩家自带 key 临时建 provider（不落库/不日志）；否则用服务端默认
+  const provider = request.clientProvider ? createProviderFromClientConfig(request.clientProvider) : llmProvider;
+
   return createValidatedEnvelope(request, promptBundle, (retryContext) =>
-    llmProvider.generate(request, promptBundle, retryContext),
+    provider.generate(request, promptBundle, retryContext),
   );
 }
 

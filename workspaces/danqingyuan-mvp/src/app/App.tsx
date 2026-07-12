@@ -54,6 +54,8 @@ import { ArchiveBridge } from '../components/ArchiveBridge';
 import { SchedulePlanner } from '../components/SchedulePlanner';
 import { SetupScreen } from '../components/SetupScreen';
 import { ProloguePage } from '../components/ProloguePage';
+import { LlmAccessScreen } from '../components/LlmAccessScreen';
+import { llmAccessReady } from '../llm/byokConfig';
 import { playBgm, playAmbient } from '../audio/audioManager';
 import { getStudiedSkills } from '../content/courses';
 import { ACTIVITY_BY_ID } from '../content/activities';
@@ -214,6 +216,8 @@ function renderLlmError(error: unknown) {
 export function App() {
   const [state, setState] = useState<GameState | null>(null);
   const [hasSave, setHasSave] = useState(() => loadSaveFile() !== null);
+  // LLM 接入门（2026-07-11 BYOK）：走代理时需先配置自带 key 或跳过用主办方额度
+  const [llmReady, setLlmReady] = useState(() => llmAccessReady());
   // 穿越引语页（2026-06-30）：入院名录前的打字机引语，每次进程只放一次（有存档可续则跳过）
   const [prologueSeen, setPrologueSeen] = useState(() => loadSaveFile() !== null);
   const [isExamOpen, setIsExamOpen] = useState(false);
@@ -1058,6 +1062,9 @@ export function App() {
   }, [actions, activeScene, dialogueNpcId, examQuestions, isExamOpen, endingStage, llmError, puzzleAssessmentPrompt, state]);
 
   if (state === null) {
+    if (!llmReady) {
+      return <LlmAccessScreen onReady={() => setLlmReady(true)} />;
+    }
     if (!prologueSeen) {
       return <ProloguePage onContinue={() => setPrologueSeen(true)} />;
     }

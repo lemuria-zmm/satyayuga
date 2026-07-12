@@ -5637,3 +5637,147 @@ dd {
   from { transform: scale(1.06); }
   to { transform: scale(1); }
 }
+
+/* ——— LLM 接入配置（BYOK，2026-07-11 内测付费通道·一期）——— */
+.la-page {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0a08;
+  padding: 32px;
+}
+
+.la-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, #16110b 0%, #060504 80%);
+}
+
+.la-card {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 92vw);
+  padding: 34px 38px 30px;
+  background: linear-gradient(180deg, #f3ead6 0%, #e9dcc0 100%);
+  border: 1px solid rgba(120, 92, 58, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 20px 56px rgba(10, 7, 4, 0.6);
+  animation: modalIn 320ms ease both;
+}
+
+.la-title {
+  margin: 0 0 12px;
+  font-size: 26px;
+  letter-spacing: 0.16em;
+  color: #4a3826;
+  text-align: center;
+}
+
+.la-intro {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: #6b5538;
+  text-align: center;
+}
+
+.la-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #8a7658;
+}
+
+.la-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: #5b4630;
+}
+
+.la-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.la-provider {
+  flex: 1 1 auto;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #5b4630;
+  background: rgba(255, 252, 244, 0.6);
+  border: 1px solid rgba(120, 92, 58, 0.4);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+
+.la-provider--on {
+  color: #f4ecd7;
+  background: linear-gradient(180deg, #8a6a3f 0%, #6f5230 100%);
+  border-color: rgba(60, 42, 20, 0.6);
+}
+
+.la-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  color: #2a1f16;
+  background: rgba(255, 253, 247, 0.85);
+  border: 1px solid rgba(120, 92, 58, 0.45);
+  border-radius: 4px;
+}
+
+.la-input:focus {
+  outline: none;
+  border-color: #9c7a44;
+}
+
+.la-hint {
+  margin: 10px 0 18px;
+  font-size: 12px;
+  color: #8a7658;
+}
+
+.la-start {
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: 0.2em;
+  color: #f4ecd7;
+  background: linear-gradient(180deg, #b2402f 0%, #9c3328 100%);
+  border: 1px solid rgba(60, 24, 16, 0.5);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: filter 160ms ease, opacity 200ms ease;
+}
+
+.la-start:hover:not(:disabled) { filter: brightness(1.08); }
+.la-start:disabled { opacity: 0.4; cursor: default; }
+
+.la-skip {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 6px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: #8a7658;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.la-skip:hover { color: #5b4630; }

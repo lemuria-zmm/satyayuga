@@ -13,6 +13,7 @@ import type {
   SceneNarratorOutput,
 } from '../types';
 import type { LlmAdapter } from './adapter';
+import { loadByok } from './byokConfig';
 
 type ProxyRequest =
   | LlmRequestEnvelope<CharacterDialogueInput>
@@ -64,12 +65,15 @@ export class ProxyLlmAdapter implements LlmAdapter {
   }
 
   private async post<TOutput>(request: ProxyRequest): Promise<LlmResponseEnvelope<TOutput>> {
+    // BYOK：附带玩家自带 API 配置（key 只此刻随请求转发，不持久到服务端）
+    const byok = loadByok();
+    const payload = byok ? { ...request, clientProvider: byok } : request;
     const response = await fetch(this.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
