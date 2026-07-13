@@ -200,3 +200,10 @@ originSessionId: 8a77a200-671f-4d6c-9ae7-98afea07d9f7
 - 脚本 `build:prod`(VITE_LLM_ADAPTER=proxy)/`start`；Dockerfile 多阶段（运行期仅 node+server+dist，无 npm 依赖）+.dockerignore；部署指南 `docs/plans/2026-07-12-deploy-guide.md`。
 - **BYOK-only → 服务端零密钥**（provider 默认 mock，仅收到 clientProvider 才转发）。冒烟全过（健康/静态/SPA/穿越403/Range206）。
 - 待办：真机 VPS 上跑一遍 + 隧道；规模化再把 public 挪 CDN、加 access code 限流（routeLlmRequest else 分支已留挂点）。
+
+## 已上线（2026-07-13）：阿里云香港 ECS 内测环境
+- 线上 **https://danqingyuan.xyz**（阿里云香港 ECS，2C4G Ubuntu22.04，公网 8.217.129.250）。免 ICP 备案靠香港地域。
+- 栈：Docker 容器（`-p 8787:8787 --restart unless-stopped`）跑单服务 → Caddy(systemd, `/usr/bin/caddy`, ExecStart 须与 which caddy 一致否则 203/EXEC)反代 443→8787，自动 Let's Encrypt。域名 danqingyuan.xyz 阿里云解析 A→IP。
+- **放弃 Cloudflare 免费隧道**：对国内线路绕远/抖动致音频断续+请求慢；改直连香港后顺畅。隧道降级为"无域名快速自测"备选。
+- 踩坑（详见 deploy-guide 踩坑备忘）：cloud shell 粘贴会拆断多行/带`|`/含`&`的命令；443 没开时本机 curl 走回环会误报成功；git clone 必须 `-b danqingyuan-v2-baseline`；新域名要等实名+NS。
+- 更新线上：`git pull && docker build -t danqingyuan:latest . && docker restart danqingyuan`。玩家须自带 API Key + 用电脑宽屏浏览器 + 非无痕。部署全流程见 `docs/plans/2026-07-12-deploy-guide.md`。
