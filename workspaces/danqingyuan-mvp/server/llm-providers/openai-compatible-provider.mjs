@@ -26,7 +26,7 @@ export function createProviderFromClientConfig(cfg) {
   }
   const baseUrl = (cfg.baseUrl || preset.baseUrl).replace(/\/$/u, '');
   const model = (typeof cfg.model === 'string' && cfg.model.trim()) || preset.model;
-  const maxTokens = Number(process.env.LLM_MAX_TOKENS ?? 1400);
+  const maxTokens = Number(process.env.LLM_MAX_TOKENS ?? 4096);
   const endpoint = `${baseUrl}/chat/completions`;
 
   return {
